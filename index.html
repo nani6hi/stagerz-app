@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>STAGERZ</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,700&family=Bebas+Neue&family=Cormorant+Garamond:wght@300;400;600&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html,body{
+  width:100%;height:100%;
+  background:#07050f;
+  font-family:'Cormorant Garamond',serif;
+  overflow:hidden;
+  user-select:none;
+}
+
+/* ── STAGE HERO ── */
+.stage{
+  position:fixed;inset:0;
+  background:#07050f;
+  display:flex;flex-direction:column;
+  align-items:center;justify-content:space-between;
+  padding:0 0 32px;
+}
+
+/* Concert background */
+.stage-bg{
+  position:absolute;inset:0;
+  background:
+    radial-gradient(ellipse at 50% 35%,rgba(40,20,100,0.5) 0%,transparent 65%),
+    radial-gradient(ellipse at 20% 80%,rgba(20,10,80,0.3) 0%,transparent 50%),
+    radial-gradient(ellipse at 80% 80%,rgba(20,10,80,0.3) 0%,transparent 50%),
+    #07050f;
+}
+
+/* Stage lights */
+.lights{position:absolute;inset:0;overflow:hidden;}
+.beam{
+  position:absolute;top:-10px;
+  width:1.5px;height:55%;
+  transform-origin:top center;
+  opacity:0.6;
+}
+.beam:nth-child(1){left:12%;background:linear-gradient(180deg,rgba(80,60,255,0.8),transparent);transform:rotate(-18deg);}
+.beam:nth-child(2){left:28%;background:linear-gradient(180deg,rgba(255,255,255,0.6),transparent);transform:rotate(-8deg);}
+.beam:nth-child(3){left:50%;background:linear-gradient(180deg,rgba(255,220,100,0.7),transparent);width:2px;}
+.beam:nth-child(4){left:72%;background:linear-gradient(180deg,rgba(255,255,255,0.6),transparent);transform:rotate(8deg);}
+.beam:nth-child(5){left:88%;background:linear-gradient(180deg,rgba(80,60,255,0.8),transparent);transform:rotate(18deg);}
+
+/* Bulb row */
+.bulb-row{
+  position:absolute;top:0;left:0;right:0;
+  height:14px;
+  background:rgba(5,3,14,0.9);
+  border-bottom:1px solid rgba(255,255,255,0.04);
+  display:flex;align-items:center;
+  justify-content:space-around;
+  padding:0 12px;
+  z-index:2;
+}
+.bulb{
+  width:6px;height:6px;border-radius:50%;
+  animation:bflick var(--d,1.8s) ease-in-out infinite alternate;
+}
+.bulb.blue{background:radial-gradient(circle,#a090ff,#6050e0);box-shadow:0 0 5px 2px rgba(100,80,255,0.5);}
+.bulb.gold{background:radial-gradient(circle,#ffe080,#d4a840);box-shadow:0 0 5px 2px rgba(212,168,64,0.5);}
+.bulb.white{background:radial-gradient(circle,#fff,#c0c0e0);box-shadow:0 0 4px 2px rgba(255,255,255,0.4);}
+@keyframes bflick{from{opacity:0.6;}to{opacity:1;}}
+
+/* Silhouettes */
+.silhouettes{
+  position:absolute;
+  bottom:38%;left:0;right:0;
+  height:38%;
+  display:flex;align-items:flex-end;
+  justify-content:center;
+  gap:0;padding:0 10px;
+  z-index:1;
+}
+.sil{
+  opacity:0.75;
+  filter:blur(0.3px);
+}
+
+/* Stage floor */
+.floor{
+  position:absolute;
+  bottom:0;left:0;right:0;height:38%;
+  background:linear-gradient(180deg,
+    rgba(20,10,60,0.0) 0%,
+    rgba(10,5,30,0.4) 40%,
+    rgba(5,2,15,0.85) 100%
+  );
+  z-index:1;
+}
+
+/* Floor reflection line */
+.floor-line{
+  position:absolute;
+  bottom:38%;left:8%;right:8%;
+  height:1px;
+  background:linear-gradient(90deg,
+    transparent,
+    rgba(100,80,255,0.25),
+    rgba(150,120,255,0.4),
+    rgba(100,80,255,0.25),
+    transparent
+  );
+  z-index:2;
+}
+
+/* ── CONTENT ── */
+.content{
+  position:relative;z-index:10;
+  display:flex;flex-direction:column;
+  align-items:center;
+  padding:0 24px;
+  margin-top:auto;
+  width:100%;
+}
+
+/* Logo */
+.logo{
+  font-family:'Playfair Display',serif;
+  font-weight:900;
+  font-size:clamp(44px,13vw,64px);
+  letter-spacing:6px;
+  text-align:center;
+  background:linear-gradient(135deg,#c0b0ff 0%,#e8e0ff 25%,#ffffff 45%,#d4a840 65%,#f0c860 80%,#d4a840 100%);
+  -webkit-background-clip:text;
+  -webkit-text-fill-color:transparent;
+  background-clip:text;
+  filter:drop-shadow(0 0 12px rgba(120,100,255,0.3));
+  margin-bottom:6px;
+  line-height:1;
+}
+
+/* Deco rule */
+.deco{
+  display:flex;align-items:center;gap:10px;
+  margin-bottom:8px;
+}
+.dl{height:1px;width:40px;}
+.dl.l{background:linear-gradient(90deg,transparent,#b89040);}
+.dl.r{background:linear-gradient(90deg,#b89040,transparent);}
+.dd{width:6px;height:6px;background:#c8a040;transform:rotate(45deg);}
+
+/* Tagline */
+.tagline{
+  font-family:'Cormorant Garamond',serif;
+  font-size:11px;font-weight:300;
+  letter-spacing:6px;text-transform:uppercase;
+  color:rgba(180,160,255,0.6);
+  margin-bottom:4px;
+}
+.globe{font-size:14px;margin-bottom:6px;opacity:0.8;}
+
+/* Philosophy */
+.philosophy{
+  font-family:'Cormorant Garamond',serif;
+  font-size:10px;font-weight:300;
+  font-style:italic;
+  letter-spacing:1.5px;
+  color:rgba(212,168,64,0.45);
+  text-align:center;
+  padding:0 10px;
+  margin-bottom:28px;
+  line-height:1.5;
+}
+
+/* Artist chips */
+.chips{
+  display:flex;flex-wrap:wrap;
+  gap:6px;justify-content:center;
+  margin-bottom:24px;
+  padding:0 8px;
+}
+.chip{
+  padding:4px 11px;
+  border-radius:20px;
+  font-size:9px;letter-spacing:0.5px;
+  background:rgba(100,80,255,0.08);
+  border:1px solid rgba(100,80,255,0.18);
+  color:rgba(180,160,255,0.55);
+  font-family:'Cormorant Garamond',serif;
+}
+
+/* Buttons */
+.btn-primary{
+  width:100%;max-width:320px;
+  padding:15px;
+  background:linear-gradient(135deg,#3020a0,#5040c8,#3020a0);
+  color:#fff;border:none;border-radius:4px;
+  font-family:'Bebas Neue',sans-serif;
+  font-size:16px;letter-spacing:3px;
+  cursor:pointer;margin-bottom:10px;
+  box-shadow:0 6px 20px rgba(60,40,180,0.35),inset 0 1px 0 rgba(255,255,255,0.08);
+  position:relative;overflow:hidden;
+  transition:transform 0.1s,opacity 0.2s;
+}
+.btn-primary::after{
+  content:'';position:absolute;
+  bottom:0;left:0;right:0;height:1px;
+  background:linear-gradient(90deg,transparent,rgba(212,168,64,0.5),transparent);
+}
+.btn-primary:active{transform:scale(0.98);opacity:0.9;}
+
+.btn-secondary{
+  width:100%;max-width:320px;
+  padding:14px;
+  background:rgba(255,255,255,0.03);
+  color:rgba(200,180,255,0.55);
+  border:1px solid rgba(100,80,255,0.18);
+  border-radius:4px;
+  font-family:'Bebas Neue',sans-serif;
+  font-size:16px;letter-spacing:3px;
+  cursor:pointer;
+  transition:border-color 0.2s,color 0.2s,transform 0.1s;
+}
+.btn-secondary:active{transform:scale(0.98);}
+
+.free-note{
+  font-size:9px;letter-spacing:1.5px;
+  text-transform:uppercase;
+  color:rgba(255,255,255,0.14);
+  margin-top:12px;text-align:center;
+}
+.free-note em{color:rgba(212,168,64,0.35);font-style:normal;}
+</style>
+</head>
+<body>
+
+<div class="stage">
+
+  <!-- Background -->
+  <div class="stage-bg"></div>
+
+  <!-- Bulbs -->
+  <div class="bulb-row">
+    <div class="bulb blue" style="--d:1.6s"></div>
+    <div class="bulb white" style="--d:2.0s"></div>
+    <div class="bulb blue" style="--d:1.4s"></div>
+    <div class="bulb gold" style="--d:1.8s"></div>
+    <div class="bulb white" style="--d:1.5s"></div>
+    <div class="bulb blue" style="--d:2.2s"></div>
+    <div class="bulb gold" style="--d:1.7s"></div>
+    <div class="bulb white" style="--d:1.9s"></div>
+    <div class="bulb blue" style="--d:1.3s"></div>
+    <div class="bulb gold" style="--d:2.1s"></div>
+    <div class="bulb white" style="--d:1.6s"></div>
+    <div class="bulb blue" style="--d:1.8s"></div>
+  </div>
+
+  <!-- Stage lights -->
+  <div class="lights">
+    <div class="beam"></div>
+    <div class="beam"></div>
+    <div class="beam"></div>
+    <div class="beam"></div>
+    <div class="beam"></div>
+  </div>
+
+  <!-- Silhouettes -->
+  <div class="silhouettes">
+    <!-- Guitarist -->
+    <svg class="sil" width="52" height="90" viewBox="0 0 52 90" fill="rgba(0,0,0,0.85)">
+      <ellipse cx="26" cy="9" rx="7" ry="8"/>
+      <path d="M19,17 Q26,20 33,17 L36,45 Q26,50 16,45 Z"/>
+      <path d="M19,22 Q12,16 7,10" stroke="rgba(0,0,0,0.85)" stroke-width="5" stroke-linecap="round" fill="none"/>
+      <path d="M33,24 Q40,20 44,28 Q46,32 42,34 Q38,36 36,30" stroke="rgba(0,0,0,0.85)" stroke-width="4" stroke-linecap="round" fill="none"/>
+      <path d="M20,45 Q18,65 15,90" stroke="rgba(0,0,0,0.85)" stroke-width="7" stroke-linecap="round" fill="none"/>
+      <path d="M32,45 Q34,65 37,90" stroke="rgba(0,0,0,0.85)" stroke-width="7" stroke-linecap="round" fill="none"/>
+    </svg>
+
+    <!-- Dancer -->
+    <svg class="sil" width="44" height="95" viewBox="0 0 44 95" fill="rgba(0,0,0,0.85)">
+      <ellipse cx="22" cy="8" rx="7" ry="8"/>
+      <path d="M15,16 Q22,19 29,16 L31,42 Q22,47 13,42 Z"/>
+      <path d="M15,20 Q8,14 3,8" stroke="rgba(0,0,0,0.85)" stroke-width="5" stroke-linecap="round" fill="none"/>
+      <path d="M29,22 Q36,26 40,34" stroke="rgba(0,0,0,0.85)" stroke-width="5" stroke-linecap="round" fill="none"/>
+      <path d="M17,42 Q14,62 9,90" stroke="rgba(0,0,0,0.85)" stroke-width="7" stroke-linecap="round" fill="none"/>
+      <path d="M27,42 Q32,58 40,72" stroke="rgba(0,0,0,0.85)" stroke-width="7" stroke-linecap="round" fill="none"/>
+    </svg>
+
+    <!-- Singer with mic -->
+    <svg class="sil" width="48" height="100" viewBox="0 0 48 100" fill="rgba(0,0,0,0.85)">
+      <ellipse cx="24" cy="9" rx="8" ry="9"/>
+      <path d="M16,18 Q24,22 32,18 L34,48 Q24,53 14,48 Z"/>
+      <path d="M32,20 Q38,18 40,22 Q42,26 40,32 Q36,38 32,32" stroke="rgba(0,0,0,0.85)" stroke-width="4" stroke-linecap="round" fill="none"/>
+      <line x1="38" y1="26" x2="44" y2="20" stroke="rgba(0,0,0,0.85)" stroke-width="3"/>
+      <path d="M16,22 Q10,28 8,36" stroke="rgba(0,0,0,0.85)" stroke-width="5" stroke-linecap="round" fill="none"/>
+      <path d="M18,48 Q16,68 13,100" stroke="rgba(0,0,0,0.85)" stroke-width="7" stroke-linecap="round" fill="none"/>
+      <path d="M30,48 Q32,68 35,100" stroke="rgba(0,0,0,0.85)" stroke-width="7" stroke-linecap="round" fill="none"/>
+    </svg>
+
+    <!-- Camera operator -->
+    <svg class="sil" width="50" height="85" viewBox="0 0 50 85" fill="rgba(0,0,0,0.85)">
+      <ellipse cx="25" cy="9" rx="7" ry="8"/>
+      <path d="M18,17 Q25,20 32,17 L34,44 Q25,49 16,44 Z"/>
+      <path d="M32,22 Q40,20 46,22 Q48,26 46,32 Q40,34 32,30" stroke="rgba(0,0,0,0.85)" stroke-width="4" stroke-linecap="round" fill="none"/>
+      <path d="M18,20 Q12,24 10,30" stroke="rgba(0,0,0,0.85)" stroke-width="5" stroke-linecap="round" fill="none"/>
+      <path d="M19,44 Q17,64 14,85" stroke="rgba(0,0,0,0.85)" stroke-width="7" stroke-linecap="round" fill="none"/>
+      <path d="M31,44 Q33,64 36,85" stroke="rgba(0,0,0,0.85)" stroke-width="7" stroke-linecap="round" fill="none"/>
+    </svg>
+  </div>
+
+  <!-- Floor -->
+  <div class="floor"></div>
+  <div class="floor-line"></div>
+
+  <!-- Content -->
+  <div class="content">
+    <div class="logo">STAGERZ</div>
+    <div class="deco">
+      <div class="dl l"></div><div class="dd"></div><div class="dl r"></div>
+    </div>
+    <div class="tagline">Your World Stage</div>
+    <div class="globe">🌍</div>
+    <div class="philosophy">Every great work needs more than one kind of artist.</div>
+
+    <div class="chips">
+      <div class="chip">🎵 Musicians</div>
+      <div class="chip">🎬 Filmmakers</div>
+      <div class="chip">💃 Dancers</div>
+      <div class="chip">📷 Photographers</div>
+      <div class="chip">✂️ Editors</div>
+      <div class="chip">🤖 AI Creators</div>
+    </div>
+
+    <button class="btn-primary" onclick="createProfile()">CREATE MY PROFILE</button>
+    <button class="btn-secondary" onclick="exploreStage()">EXPLORE THE STAGE</button>
+
+    <div class="free-note">Free to start · <em>No card needed</em> · Worldwide</div>
+  </div>
+
+</div>
+
+<script>
+// Telegram Web App setup
+const tg = window.Telegram?.WebApp;
+if(tg){
+  tg.ready();
+  tg.expand();
+  // Apply Telegram theme colors if available
+  document.body.style.background = '#07050f';
+}
+
+function createProfile(){
+  if(tg){
+    tg.showAlert('🎭 Profile creation coming soon!\n\nWelcome to STAGERZ, ' + (tg.initDataUnsafe?.user?.first_name || 'Artist') + '!');
+  } else {
+    alert('🎭 Profile creation coming soon!\nWelcome to STAGERZ!');
+  }
+}
+
+function exploreStage(){
+  if(tg){
+    tg.showAlert('🌍 The World Stage is being built!\n\nStay tuned, ' + (tg.initDataUnsafe?.user?.first_name || 'Artist') + '!');
+  } else {
+    alert('🌍 The World Stage is being built!\nStay tuned!');
+  }
+}
+</script>
+</body>
+</html>
