@@ -1,366 +1,941 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang='en'>
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta charset='UTF-8'>
+<meta name='viewport' content='width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no'>
 <title>STAGERZ</title>
-<script src="https://telegram.org/js/telegram-web-app.js"></script>
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,700&family=Bebas+Neue&family=Cormorant+Garamond:wght@300;400;600&display=swap" rel="stylesheet">
+<script src='https://telegram.org/js/telegram-web-app.js'></script>
+<link href='https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900&family=Bebas+Neue&family=Inter:wght@300;400;500;600&display=swap' rel='stylesheet'>
 <style>
-*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
-html,body{
-  width:100%;height:100%;
-  background:#07050f;
-  font-family:'Cormorant Garamond',serif;
-  overflow:hidden;
-  user-select:none;
-}
-
-/* ── STAGE HERO ── */
-.stage{
-  position:fixed;inset:0;
-  background:#07050f;
-  display:flex;flex-direction:column;
-  align-items:center;justify-content:space-between;
-  padding:0 0 32px;
-}
-
-/* Concert background */
-.stage-bg{
-  position:absolute;inset:0;
-  background:
-    radial-gradient(ellipse at 50% 35%,rgba(40,20,100,0.5) 0%,transparent 65%),
-    radial-gradient(ellipse at 20% 80%,rgba(20,10,80,0.3) 0%,transparent 50%),
-    radial-gradient(ellipse at 80% 80%,rgba(20,10,80,0.3) 0%,transparent 50%),
-    #07050f;
-}
-
-/* Stage lights */
-.lights{position:absolute;inset:0;overflow:hidden;}
-.beam{
-  position:absolute;top:-10px;
-  width:1.5px;height:55%;
-  transform-origin:top center;
-  opacity:0.6;
-}
-.beam:nth-child(1){left:12%;background:linear-gradient(180deg,rgba(80,60,255,0.8),transparent);transform:rotate(-18deg);}
-.beam:nth-child(2){left:28%;background:linear-gradient(180deg,rgba(255,255,255,0.6),transparent);transform:rotate(-8deg);}
-.beam:nth-child(3){left:50%;background:linear-gradient(180deg,rgba(255,220,100,0.7),transparent);width:2px;}
-.beam:nth-child(4){left:72%;background:linear-gradient(180deg,rgba(255,255,255,0.6),transparent);transform:rotate(8deg);}
-.beam:nth-child(5){left:88%;background:linear-gradient(180deg,rgba(80,60,255,0.8),transparent);transform:rotate(18deg);}
-
-/* Bulb row */
-.bulb-row{
-  position:absolute;top:0;left:0;right:0;
-  height:14px;
-  background:rgba(5,3,14,0.9);
-  border-bottom:1px solid rgba(255,255,255,0.04);
-  display:flex;align-items:center;
-  justify-content:space-around;
-  padding:0 12px;
-  z-index:2;
-}
-.bulb{
-  width:6px;height:6px;border-radius:50%;
-  animation:bflick var(--d,1.8s) ease-in-out infinite alternate;
-}
-.bulb.blue{background:radial-gradient(circle,#a090ff,#6050e0);box-shadow:0 0 5px 2px rgba(100,80,255,0.5);}
-.bulb.gold{background:radial-gradient(circle,#ffe080,#d4a840);box-shadow:0 0 5px 2px rgba(212,168,64,0.5);}
-.bulb.white{background:radial-gradient(circle,#fff,#c0c0e0);box-shadow:0 0 4px 2px rgba(255,255,255,0.4);}
-@keyframes bflick{from{opacity:0.6;}to{opacity:1;}}
-
-/* Silhouettes */
-.silhouettes{
-  position:absolute;
-  bottom:38%;left:0;right:0;
-  height:38%;
-  display:flex;align-items:flex-end;
-  justify-content:center;
-  gap:0;padding:0 10px;
-  z-index:1;
-}
-.sil{
-  opacity:0.75;
-  filter:blur(0.3px);
-}
-
-/* Stage floor */
-.floor{
-  position:absolute;
-  bottom:0;left:0;right:0;height:38%;
-  background:linear-gradient(180deg,
-    rgba(20,10,60,0.0) 0%,
-    rgba(10,5,30,0.4) 40%,
-    rgba(5,2,15,0.85) 100%
-  );
-  z-index:1;
-}
-
-/* Floor reflection line */
-.floor-line{
-  position:absolute;
-  bottom:38%;left:8%;right:8%;
-  height:1px;
-  background:linear-gradient(90deg,
-    transparent,
-    rgba(100,80,255,0.25),
-    rgba(150,120,255,0.4),
-    rgba(100,80,255,0.25),
-    transparent
-  );
-  z-index:2;
-}
-
-/* ── CONTENT ── */
-.content{
-  position:relative;z-index:10;
-  display:flex;flex-direction:column;
-  align-items:center;
-  padding:0 24px;
-  margin-top:auto;
-  width:100%;
-}
-
-/* Logo */
-.logo{
-  font-family:'Playfair Display',serif;
-  font-weight:900;
-  font-size:clamp(44px,13vw,64px);
-  letter-spacing:6px;
-  text-align:center;
-  background:linear-gradient(135deg,#c0b0ff 0%,#e8e0ff 25%,#ffffff 45%,#d4a840 65%,#f0c860 80%,#d4a840 100%);
-  -webkit-background-clip:text;
-  -webkit-text-fill-color:transparent;
-  background-clip:text;
-  filter:drop-shadow(0 0 12px rgba(120,100,255,0.3));
-  margin-bottom:6px;
-  line-height:1;
-}
-
-/* Deco rule */
-.deco{
-  display:flex;align-items:center;gap:10px;
-  margin-bottom:8px;
-}
-.dl{height:1px;width:40px;}
-.dl.l{background:linear-gradient(90deg,transparent,#b89040);}
-.dl.r{background:linear-gradient(90deg,#b89040,transparent);}
-.dd{width:6px;height:6px;background:#c8a040;transform:rotate(45deg);}
-
-/* Tagline */
-.tagline{
-  font-family:'Cormorant Garamond',serif;
-  font-size:11px;font-weight:300;
-  letter-spacing:6px;text-transform:uppercase;
-  color:rgba(180,160,255,0.6);
-  margin-bottom:4px;
-}
-.globe{font-size:14px;margin-bottom:6px;opacity:0.8;}
-
-/* Philosophy */
-.philosophy{
-  font-family:'Cormorant Garamond',serif;
-  font-size:10px;font-weight:300;
-  font-style:italic;
-  letter-spacing:1.5px;
-  color:rgba(212,168,64,0.45);
-  text-align:center;
-  padding:0 10px;
-  margin-bottom:28px;
-  line-height:1.5;
-}
-
-/* Artist chips */
-.chips{
-  display:flex;flex-wrap:wrap;
-  gap:6px;justify-content:center;
-  margin-bottom:24px;
-  padding:0 8px;
-}
-.chip{
-  padding:4px 11px;
-  border-radius:20px;
-  font-size:9px;letter-spacing:0.5px;
-  background:rgba(100,80,255,0.08);
-  border:1px solid rgba(100,80,255,0.18);
-  color:rgba(180,160,255,0.55);
-  font-family:'Cormorant Garamond',serif;
-}
-
-/* Buttons */
-.btn-primary{
-  width:100%;max-width:320px;
-  padding:15px;
-  background:linear-gradient(135deg,#3020a0,#5040c8,#3020a0);
-  color:#fff;border:none;border-radius:4px;
-  font-family:'Bebas Neue',sans-serif;
-  font-size:16px;letter-spacing:3px;
-  cursor:pointer;margin-bottom:10px;
-  box-shadow:0 6px 20px rgba(60,40,180,0.35),inset 0 1px 0 rgba(255,255,255,0.08);
-  position:relative;overflow:hidden;
-  transition:transform 0.1s,opacity 0.2s;
-}
-.btn-primary::after{
-  content:'';position:absolute;
-  bottom:0;left:0;right:0;height:1px;
-  background:linear-gradient(90deg,transparent,rgba(212,168,64,0.5),transparent);
-}
-.btn-primary:active{transform:scale(0.98);opacity:0.9;}
-
-.btn-secondary{
-  width:100%;max-width:320px;
-  padding:14px;
-  background:rgba(255,255,255,0.03);
-  color:rgba(200,180,255,0.55);
-  border:1px solid rgba(100,80,255,0.18);
-  border-radius:4px;
-  font-family:'Bebas Neue',sans-serif;
-  font-size:16px;letter-spacing:3px;
-  cursor:pointer;
-  transition:border-color 0.2s,color 0.2s,transform 0.1s;
-}
-.btn-secondary:active{transform:scale(0.98);}
-
-.free-note{
-  font-size:9px;letter-spacing:1.5px;
-  text-transform:uppercase;
-  color:rgba(255,255,255,0.14);
-  margin-top:12px;text-align:center;
-}
-.free-note em{color:rgba(212,168,64,0.35);font-style:normal;}
+*{box-sizing:border-box;margin:0;padding:0;}
+html,body{width:100%;height:100%;background:#07050f;font-family:Inter,sans-serif;color:#fff;overflow:hidden;user-select:none;}
+.screen{position:fixed;inset:0;display:none;flex-direction:column;background:#07050f;overflow:hidden;}
+.screen.active{display:flex;}
+.sa{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;}
+.sa::-webkit-scrollbar{display:none;}
+.nb{height:52px;background:rgba(6,4,14,.97);border-top:1px solid rgba(255,255,255,.05);display:flex;align-items:center;justify-content:space-around;flex-shrink:0;z-index:100;}
+.ni{display:flex;flex-direction:column;align-items:center;gap:2px;padding:4px 12px;cursor:pointer;font-size:7px;letter-spacing:1px;color:rgba(255,255,255,.22);-webkit-tap-highlight-color:transparent;}
+.ni.active{color:rgba(212,168,64,.9);}
+.ni-icon{font-size:18px;line-height:1;}
+.tb{padding:14px 16px 10px;background:rgba(7,5,15,.97);border-bottom:1px solid rgba(255,255,255,.04);flex-shrink:0;}
+.logo{font-family:'Playfair Display',serif;font-size:20px;font-weight:900;letter-spacing:2px;color:#fff;}
+.logo em{color:#d4a840;font-style:italic;}
+.tr{display:flex;align-items:center;justify-content:space-between;}
+.bp{width:100%;padding:15px;background:linear-gradient(135deg,#3020a0,#5040c8);color:#fff;border:none;border-radius:4px;font-family:'Bebas Neue',sans-serif;font-size:16px;letter-spacing:3px;cursor:pointer;-webkit-tap-highlight-color:transparent;}
+.bs{width:100%;padding:14px;background:rgba(255,255,255,.03);color:rgba(200,180,255,.6);border:1px solid rgba(100,80,255,.18);border-radius:4px;font-family:'Bebas Neue',sans-serif;font-size:16px;letter-spacing:3px;cursor:pointer;-webkit-tap-highlight-color:transparent;}
+.bg{width:100%;padding:15px;background:linear-gradient(135deg,#8a6018,#d4a840);color:#06040e;border:none;border-radius:4px;font-family:'Bebas Neue',sans-serif;font-size:16px;letter-spacing:3px;cursor:pointer;-webkit-tap-highlight-color:transparent;}
+.pd{padding:0 14px;}
+.pt{padding-top:12px;}
+.gap{height:16px;}
+.st{font-size:8px;letter-spacing:2.5px;text-transform:uppercase;color:rgba(255,255,255,.22);margin-bottom:10px;display:flex;align-items:center;gap:8px;}
+.st::after{content:'';flex:1;height:1px;background:rgba(255,255,255,.06);}
+@keyframes bflick{from{opacity:.6;}to{opacity:1;}}
+@keyframes lp{0%,100%{opacity:1;}50%{opacity:.3;}}
+@keyframes wp{from{transform:scaleY(.4);}to{transform:scaleY(1);}}
+@keyframes bk{0%,100%{opacity:1;}50%{opacity:.3;}}
+.wl{font-family:'Playfair Display',serif;font-weight:900;font-size:clamp(44px,13vw,64px);letter-spacing:6px;text-align:center;line-height:1;background:linear-gradient(135deg,#c0b0ff,#fff 45%,#d4a840 65%,#f0c860 80%,#d4a840);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:6px;}
+.wb{width:6px;height:6px;border-radius:50%;animation:bflick var(--d,1.8s) ease-in-out infinite alternate;}
+.wb.blue{background:radial-gradient(circle,#a090ff,#6050e0);box-shadow:0 0 5px 2px rgba(100,80,255,.5);}
+.wb.gold{background:radial-gradient(circle,#ffe080,#d4a840);box-shadow:0 0 5px 2px rgba(212,168,64,.5);}
+.wb.white{background:radial-gradient(circle,#fff,#c0c0e0);box-shadow:0 0 4px 2px rgba(255,255,255,.4);}
+.sr{display:flex;gap:10px;overflow-x:auto;margin-bottom:14px;padding-bottom:4px;}
+.sr::-webkit-scrollbar{display:none;}
+.si{display:flex;flex-direction:column;align-items:center;gap:4px;flex-shrink:0;cursor:pointer;}
+.sg{width:48px;height:48px;border-radius:50%;padding:2px;}
+.sg.gold{background:linear-gradient(135deg,#d4a840,#f0c860);}
+.sg.blue{background:linear-gradient(135deg,#4030c0,#6050d8);}
+.sg.red{background:linear-gradient(135deg,#ff4040,#ff6030);}
+.sa2{width:100%;height:100%;border-radius:50%;background:linear-gradient(135deg,#1a0840,#280c50);display:flex;align-items:center;justify-content:center;font-size:22px;border:2px solid #07050f;}
+.sn{font-size:7px;color:rgba(255,255,255,.35);text-align:center;max-width:48px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.ld{width:5px;height:5px;border-radius:50%;background:#ff4040;box-shadow:0 0 4px rgba(255,40,40,.7);animation:lp 1s ease-in-out infinite;}
+.ft{display:flex;gap:0;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);border-radius:8px;padding:3px;margin-top:10px;}
+.ftb{flex:1;padding:6px 4px;border-radius:6px;border:none;font-family:'Bebas Neue',sans-serif;font-size:9px;letter-spacing:1.5px;cursor:pointer;text-align:center;-webkit-tap-highlight-color:transparent;}
+.ftb.on{background:linear-gradient(135deg,#3020a0,#5040c8);color:#fff;}
+.ftb.off{background:transparent;color:rgba(255,255,255,.28);}
+.wc{background:rgba(12,8,28,.85);border:1px solid rgba(100,80,255,.1);border-radius:12px;overflow:hidden;margin-bottom:10px;cursor:pointer;-webkit-tap-highlight-color:transparent;}
+.wm{height:90px;display:flex;align-items:center;justify-content:center;font-size:36px;position:relative;overflow:hidden;}
+.wp2{position:absolute;width:34px;height:34px;border-radius:50%;background:rgba(255,255,255,.12);border:1.5px solid rgba(255,255,255,.25);display:flex;align-items:center;justify-content:center;font-size:12px;}
+.wd{position:absolute;bottom:6px;right:8px;font-size:7px;color:rgba(255,255,255,.6);background:rgba(0,0,0,.5);padding:1px 5px;border-radius:3px;}
+.wi{padding:10px 12px;}
+.wt{font-family:'Playfair Display',serif;font-size:13px;font-weight:700;color:#fff;margin-bottom:4px;}
+.wtg{display:flex;gap:4px;margin-bottom:7px;}
+.tg{padding:2px 6px;border-radius:8px;font-size:7px;background:rgba(100,80,255,.07);border:1px solid rgba(100,80,255,.13);color:rgba(180,160,255,.5);}
+.wa{display:flex;align-items:center;gap:12px;}
+.wat{font-size:9px;color:rgba(255,255,255,.25);cursor:pointer;}
+.ws{margin-left:auto;font-family:'Bebas Neue',sans-serif;font-size:8px;letter-spacing:2px;color:rgba(212,168,64,.3);}
+.dr{display:flex;gap:8px;overflow-x:auto;margin-bottom:12px;padding-bottom:4px;}
+.dr::-webkit-scrollbar{display:none;}
+.dc{width:100px;flex-shrink:0;background:rgba(15,10,35,.9);border:1px solid rgba(100,80,255,.1);border-radius:10px;padding:10px 8px;text-align:center;cursor:pointer;-webkit-tap-highlight-color:transparent;}
+.da{width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:20px;margin:0 auto 5px;border:1px solid rgba(100,80,255,.2);}
+.dn{font-size:9px;font-weight:600;color:#fff;margin-bottom:1px;}
+.dt{font-size:7px;color:rgba(180,160,255,.45);margin-bottom:3px;}
+.dl{font-size:7px;color:rgba(255,255,255,.22);margin-bottom:6px;}
+.db{width:100%;padding:4px;background:rgba(100,80,255,.1);border:1px solid rgba(100,80,255,.2);border-radius:4px;font-family:'Bebas Neue',sans-serif;font-size:8px;color:rgba(180,160,255,.7);cursor:pointer;}
+.cr{display:flex;gap:6px;overflow-x:auto;padding-bottom:4px;}
+.cr::-webkit-scrollbar{display:none;}
+.cc{display:flex;flex-direction:column;align-items:center;gap:3px;padding:8px 12px;border-radius:10px;flex-shrink:0;cursor:pointer;-webkit-tap-highlight-color:transparent;}
+.cc.on{background:rgba(100,80,255,.15);border:1px solid rgba(100,80,255,.3);}
+.cc.off{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);}
+.ci{font-size:18px;}
+.cl{font-size:7px;color:rgba(255,255,255,.35);white-space:nowrap;}
+.cc.on .cl{color:rgba(180,160,255,.8);}
+.ai{display:flex;align-items:center;gap:9px;padding:9px 10px;background:rgba(12,8,28,.85);border:1px solid rgba(100,80,255,.08);border-radius:10px;margin-bottom:7px;cursor:pointer;-webkit-tap-highlight-color:transparent;}
+.av{width:42px;height:42px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;}
+.an{font-size:12px;font-weight:600;color:#fff;margin-bottom:1px;}
+.at{font-size:7px;letter-spacing:1px;text-transform:uppercase;color:rgba(180,160,255,.5);margin-bottom:3px;}
+.atg{display:flex;gap:3px;flex-wrap:wrap;}
+.atag{padding:1px 5px;background:rgba(212,168,64,.07);border:1px solid rgba(212,168,64,.12);border-radius:8px;font-size:6px;color:rgba(212,168,64,.55);}
+.ar{display:flex;flex-direction:column;align-items:flex-end;gap:5px;}
+.aloc{font-size:7px;color:rgba(255,255,255,.22);text-align:right;}
+.cb{padding:4px 10px;background:linear-gradient(135deg,rgba(48,32,160,.6),rgba(80,64,200,.6));border:none;border-radius:8px;font-size:8px;color:rgba(255,255,255,.8);cursor:pointer;-webkit-tap-highlight-color:transparent;}
+.tw{display:flex;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);border-radius:8px;padding:3px;margin-bottom:12px;}
+.tb2{flex:1;padding:8px;border-radius:6px;border:none;font-family:'Bebas Neue',sans-serif;font-size:10px;letter-spacing:2px;cursor:pointer;-webkit-tap-highlight-color:transparent;}
+.tb2.on{background:linear-gradient(135deg,#3020a0,#5040c8);color:#fff;}
+.tb2.off{background:transparent;color:rgba(255,255,255,.3);}
+.fc{padding:4px 11px;border-radius:20px;font-size:8px;white-space:nowrap;flex-shrink:0;cursor:pointer;-webkit-tap-highlight-color:transparent;}
+.fc.on{background:rgba(212,168,64,.12);border:1px solid rgba(212,168,64,.3);color:rgba(212,168,64,.85);}
+.fc.off{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);color:rgba(255,255,255,.28);}
+.cd{background:rgba(12,8,28,.85);border:1px solid rgba(100,80,255,.1);border-radius:10px;padding:12px 14px;margin-bottom:9px;cursor:pointer;-webkit-tap-highlight-color:transparent;position:relative;overflow:hidden;}
+.urg{position:absolute;top:0;right:0;padding:3px 8px;border-radius:0 10px 0 8px;font-size:7px;letter-spacing:1px;}
+.urg.match{background:rgba(212,168,64,.12);color:rgba(212,168,64,.85);}
+.urg.new{background:rgba(40,200,80,.1);color:rgba(40,200,80,.8);}
+.urg.hot{background:rgba(255,80,40,.15);color:rgba(255,120,80,.9);}
+.cr2{font-family:'Bebas Neue',sans-serif;font-size:14px;letter-spacing:2px;color:#d4a840;margin-bottom:5px;}
+.cd2{font-size:10px;color:rgba(255,255,255,.4);line-height:1.5;margin-bottom:8px;}
+.ctg{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:8px;}
+.ctag{padding:2px 8px;background:rgba(212,168,64,.07);border:1px solid rgba(212,168,64,.14);border-radius:10px;font-size:7px;color:rgba(212,168,64,.6);}
+.cf{display:flex;align-items:center;justify-content:space-between;}
+.ct{font-size:8px;color:rgba(255,255,255,.2);}
+.ab{padding:5px 12px;background:linear-gradient(135deg,#3020a0,#5040c8);border:none;border-radius:4px;font-family:'Bebas Neue',sans-serif;font-size:10px;letter-spacing:2px;color:#fff;cursor:pointer;-webkit-tap-highlight-color:transparent;}
+.cv{width:100%;height:180px;position:relative;overflow:hidden;flex-shrink:0;background:linear-gradient(135deg,#1a0840,#280c50,#0a1040);}
+.csil{position:absolute;bottom:0;left:50%;transform:translateX(-50%);font-size:64px;opacity:.5;padding-bottom:10px;}
+.cfd{position:absolute;bottom:0;left:0;right:0;height:60%;background:linear-gradient(180deg,transparent,rgba(7,5,15,.95));}
+.bk{position:absolute;top:14px;left:14px;width:30px;height:30px;border-radius:50%;background:rgba(0,0,0,.5);border:1px solid rgba(255,255,255,.1);display:flex;align-items:center;justify-content:center;font-size:16px;cursor:pointer;z-index:5;-webkit-tap-highlight-color:transparent;}
+.pav{width:60px;height:60px;border-radius:50%;background:linear-gradient(135deg,#4030c0,#6050d8);border:3px solid #07050f;display:flex;align-items:center;justify-content:center;font-size:28px;position:relative;}
+.strow{display:flex;border:1px solid rgba(100,80,255,.1);border-radius:6px;overflow:hidden;margin-bottom:14px;}
+.stc{flex:1;text-align:center;padding:10px 4px;border-right:1px solid rgba(100,80,255,.08);}
+.stc:last-child{border-right:none;}
+.stn{font-family:'Playfair Display',serif;font-size:18px;color:#d4a840;display:block;font-weight:700;line-height:1;}
+.stl{font-size:7px;letter-spacing:1.5px;text-transform:uppercase;color:rgba(255,255,255,.2);display:block;margin-top:3px;}
+.skc{padding:4px 11px;border:1px solid rgba(100,80,255,.18);border-radius:20px;font-size:9px;color:rgba(180,160,255,.55);}
+.skc.gold{border-color:rgba(212,168,64,.28);color:rgba(212,168,64,.75);}
+.pg{display:grid;grid-template-columns:1fr 1fr 1fr;gap:3px;}
+.pi{aspect-ratio:1;border-radius:3px;background:linear-gradient(135deg,rgba(30,15,80,.9),rgba(15,8,50,.95));display:flex;align-items:center;justify-content:center;font-size:18px;cursor:pointer;}
+.fmt{display:flex;gap:0;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);border-radius:8px;padding:3px;margin-top:10px;}
+.fmb{flex:1;padding:7px 4px;border-radius:6px;border:none;font-family:'Bebas Neue',sans-serif;font-size:8px;letter-spacing:1px;cursor:pointer;-webkit-tap-highlight-color:transparent;text-align:center;}
+.fmb.q{background:linear-gradient(135deg,#ff4040,#ff6030);color:#fff;}
+.fmb.u{background:linear-gradient(135deg,#3020a0,#5040c8);color:#fff;}
+.fmb.s{background:linear-gradient(135deg,#8a6018,#d4a840);color:#06040e;}
+.fmb.off{background:transparent;color:rgba(255,255,255,.3);}
+.ra{height:180px;background:linear-gradient(135deg,#0a0520,#180840,#0a1040);border-radius:12px;border:1px solid rgba(255,60,30,.2);display:flex;flex-direction:column;align-items:center;justify-content:center;position:relative;overflow:hidden;margin-bottom:12px;}
+.tr2{width:72px;height:72px;border-radius:50%;border:3px solid rgba(255,60,30,.3);display:flex;align-items:center;justify-content:center;flex-direction:column;position:relative;z-index:2;margin-bottom:12px;transition:border-color .3s;}
+.tn{font-family:'Bebas Neue',sans-serif;font-size:26px;color:#fff;line-height:1;}
+.ts{font-size:6px;letter-spacing:2px;color:rgba(255,255,255,.3);}
+.rb{width:48px;height:48px;border-radius:50%;background:linear-gradient(135deg,#ff4040,#ff6030);display:flex;align-items:center;justify-content:center;cursor:pointer;position:relative;z-index:2;box-shadow:0 0 20px rgba(255,60,30,.4);-webkit-tap-highlight-color:transparent;}
+.rd{width:18px;height:18px;border-radius:50%;background:#fff;transition:all .2s;}
+.ri{position:absolute;top:10px;left:10px;display:none;align-items:center;gap:4px;padding:3px 8px;background:rgba(255,40,40,.15);border:1px solid rgba(255,60,60,.3);border-radius:20px;z-index:3;}
+.rdot{width:5px;height:5px;border-radius:50%;background:#ff4040;animation:lp .8s ease-in-out infinite;}
+.rl{font-size:8px;letter-spacing:2px;color:rgba(255,100,100,.9);}
+.wvf{display:flex;align-items:center;gap:2px;height:24px;margin-bottom:6px;}
+.wb2{flex:1;border-radius:2px;background:rgba(100,80,255,.35);animation:wp var(--d,.8s) ease-in-out infinite alternate;}
+.tk{background:rgba(12,8,28,.85);border:1px solid rgba(100,80,255,.1);border-radius:8px;padding:10px 12px;margin-bottom:8px;position:relative;overflow:hidden;}
+.tk.audio{border-left:3px solid rgba(100,80,255,.5);}
+.tk.video{border-left:3px solid rgba(212,168,64,.5);}
+.tkh{display:flex;align-items:center;gap:8px;margin-bottom:8px;}
+.tki{width:28px;height:28px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;}
+.tki.audio{background:rgba(100,80,255,.15);}
+.tki.video{background:rgba(212,168,64,.1);}
+.tkin{flex:1;}
+.tkn{font-size:10px;font-weight:600;color:#fff;margin-bottom:1px;}
+.tkm{font-size:7px;color:rgba(255,255,255,.25);}
+.tka{display:flex;gap:6px;}
+.tb3{width:22px;height:22px;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:10px;cursor:pointer;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);color:rgba(255,255,255,.3);}
+.ttl{height:8px;background:rgba(255,255,255,.04);border-radius:4px;overflow:hidden;position:relative;}
+.tc{position:absolute;top:0;height:100%;border-radius:3px;}
+.tc.audio{background:linear-gradient(90deg,#4030c0,#6050d8);}
+.tc.video{background:linear-gradient(90deg,#8a6018,#d4a840);}
+.ps{background:linear-gradient(160deg,rgba(30,15,80,.5),rgba(15,8,40,.7));border:1px solid rgba(212,168,64,.2);border-radius:12px;padding:14px;margin-bottom:14px;}
+.ptl{font-family:'Playfair Display',serif;font-size:15px;font-weight:900;color:#fff;margin-bottom:4px;}
+.psub{font-size:9px;color:rgba(255,255,255,.3);margin-bottom:12px;}
+.po{display:flex;flex-direction:column;gap:7px;margin-bottom:12px;}
+.popt{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:6px;cursor:pointer;-webkit-tap-highlight-color:transparent;}
+.popt.sel{background:rgba(212,168,64,.08);border:1px solid rgba(212,168,64,.2);}
+.popt.uns{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);}
+.pr{width:14px;height:14px;border-radius:50%;border:1.5px solid rgba(212,168,64,.4);display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.prd{width:6px;height:6px;border-radius:50%;background:#d4a840;}
+.pon{font-size:10px;font-weight:600;color:rgba(255,255,255,.7);}
+.pod{font-size:8px;color:rgba(255,255,255,.25);}
+.pvs{border-radius:10px;overflow:hidden;border:1px solid rgba(100,80,255,.15);margin-bottom:12px;}
+.psc{height:120px;background:linear-gradient(135deg,#0a0520,#180840,#0a1040);display:flex;align-items:center;justify-content:center;}
+.pctl{display:flex;align-items:center;gap:10px;padding:8px 12px;background:rgba(10,6,24,.98);border-top:1px solid rgba(255,255,255,.05);}
+.pcb{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;cursor:pointer;background:rgba(100,80,255,.12);border:1px solid rgba(100,80,255,.2);color:rgba(180,160,255,.8);-webkit-tap-highlight-color:transparent;}
+.pcp{width:32px;height:32px;background:linear-gradient(135deg,#3020a0,#5040c8);border:none;font-size:14px;}
+.ptlb{flex:1;height:3px;background:rgba(255,255,255,.06);border-radius:3px;overflow:hidden;cursor:pointer;}
+.ptf{height:100%;width:0%;background:linear-gradient(90deg,#4030c0,#d4a840);border-radius:3px;}
+.pct{font-size:8px;color:rgba(255,255,255,.25);white-space:nowrap;}
+.toolb{background:rgba(10,6,24,.95);border:1px solid rgba(100,80,255,.12);border-radius:10px;padding:8px 10px;display:flex;align-items:center;justify-content:space-between;gap:4px;margin-bottom:12px;}
+.toolt{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:7px 4px;border-radius:8px;cursor:pointer;-webkit-tap-highlight-color:transparent;}
+.toolt.at{background:rgba(100,80,255,.15);border:1px solid rgba(100,80,255,.3);}
+.toolt.it{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);}
+.tlic{font-size:16px;}
+.tll{font-family:'Bebas Neue',sans-serif;font-size:7px;letter-spacing:1.5px;}
+.toolt.at .tll{color:rgba(180,160,255,.85);}
+.toolt.it .tll{color:rgba(255,255,255,.28);}
+.th{text-align:center;font-size:8px;color:rgba(180,160,255,.45);margin-bottom:10px;}
+.nps{height:140px;background:linear-gradient(135deg,#0a0520,#180840,#0a1040);display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden;}
+.npsil{font-size:52px;position:relative;z-index:1;opacity:.65;}
+.npf{position:absolute;bottom:0;left:0;right:0;height:55%;background:linear-gradient(180deg,transparent,rgba(7,5,15,.95));}
+.npb{position:absolute;top:10px;left:10px;display:flex;align-items:center;gap:4px;padding:3px 8px;background:rgba(100,80,255,.15);border:1px solid rgba(100,80,255,.3);border-radius:20px;z-index:2;}
+.npbd{width:5px;height:5px;border-radius:50%;background:#6050d8;animation:lp 1.5s ease-in-out infinite;}
+.npbt{font-size:7px;letter-spacing:2px;color:rgba(180,160,255,.85);}
+.npp{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:44px;height:44px;border-radius:50%;background:rgba(255,255,255,.12);border:1.5px solid rgba(255,255,255,.25);display:flex;align-items:center;justify-content:center;font-size:16px;z-index:3;cursor:pointer;-webkit-tap-highlight-color:transparent;}
+.npi{padding:10px 14px 12px;background:rgba(10,6,24,.98);}
+.nptl{font-family:'Playfair Display',serif;font-size:14px;font-weight:900;color:#fff;margin-bottom:4px;}
+.npac{display:flex;align-items:center;gap:0;}
+.npa{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;padding:6px 4px;-webkit-tap-highlight-color:transparent;}
+.npai{font-size:18px;}
+.npac2{font-size:8px;color:rgba(255,255,255,.25);}
+.pfc{background:rgba(12,8,28,.85);border:1px solid rgba(100,80,255,.1);border-radius:12px;overflow:hidden;margin-bottom:10px;cursor:pointer;-webkit-tap-highlight-color:transparent;}
+.pfm{height:90px;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden;}
+.pfi{font-size:36px;opacity:.5;position:relative;z-index:1;}
+.pfp{position:absolute;width:32px;height:32px;border-radius:50%;background:rgba(255,255,255,.12);border:1.5px solid rgba(255,255,255,.25);display:flex;align-items:center;justify-content:center;font-size:12px;z-index:2;}
+.pfd{position:absolute;bottom:6px;right:8px;font-size:7px;color:rgba(255,255,255,.6);background:rgba(0,0,0,.5);padding:1px 5px;border-radius:3px;}
+.pfin{padding:10px 12px;}
+.pftl{font-family:'Playfair Display',serif;font-size:13px;font-weight:700;color:#fff;margin-bottom:4px;}
+.pfac{display:flex;align-items:center;gap:12px;}
+.pfa{font-size:9px;color:rgba(255,255,255,.25);cursor:pointer;}
+.pfa.lk{color:rgba(255,80,100,.8);}
+.pfst{margin-left:auto;font-family:'Bebas Neue',sans-serif;font-size:8px;letter-spacing:2px;color:rgba(212,168,64,.3);}
+.jb{display:flex;align-items:center;gap:8px;padding:6px 10px;background:rgba(212,168,64,.07);border:1px solid rgba(212,168,64,.18);border-radius:6px;cursor:pointer;margin-bottom:8px;-webkit-tap-highlight-color:transparent;}
+.jt{font-size:9px;color:rgba(232,212,160,.65);flex:1;}
+.jt strong{color:rgba(212,168,64,.85);}
+.jsb{padding:4px 10px;background:linear-gradient(135deg,#8a6018,#d4a840);color:#06040e;border:none;border-radius:4px;font-family:'Bebas Neue',sans-serif;font-size:9px;cursor:pointer;flex-shrink:0;}
+.jcta{background:linear-gradient(160deg,rgba(30,15,80,.6),rgba(15,8,40,.8));border:1px solid rgba(212,168,64,.2);border-radius:12px;padding:16px;text-align:center;margin-bottom:14px;}
+.jctat{font-family:'Playfair Display',serif;font-size:16px;font-weight:900;color:#fff;margin-bottom:4px;}
+.jctat em{color:#d4a840;font-style:italic;}
+.jctap{font-family:'Playfair Display',serif;font-size:11px;color:rgba(212,168,64,.5);font-style:italic;margin-bottom:8px;}
+.jctasub{font-size:10px;color:rgba(255,255,255,.3);line-height:1.5;margin-bottom:12px;}
+.bsh{padding:28px 20px 20px;text-align:center;position:relative;overflow:hidden;background:linear-gradient(180deg,#0e0820 0%,#07050f 100%);}
+.blt{display:flex;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);border-radius:8px;padding:3px;margin:0 auto;width:fit-content;}
+.blb{padding:6px 16px;border-radius:6px;border:none;font-family:'Bebas Neue',sans-serif;font-size:10px;letter-spacing:2px;cursor:pointer;-webkit-tap-highlight-color:transparent;}
+.blb.on{background:linear-gradient(135deg,#3020a0,#5040c8);color:#fff;}
+.blb.off{background:transparent;color:rgba(255,255,255,.3);}
+.sbg{padding:2px 6px;background:linear-gradient(135deg,#d4a840,#f0c860);color:#06040e;font-family:'Bebas Neue',sans-serif;font-size:8px;border-radius:10px;margin-left:8px;}
+.pf{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:16px;margin-bottom:12px;}
+.pbs{background:linear-gradient(160deg,rgba(30,15,80,.6),rgba(15,8,40,.8));border:1px solid rgba(212,168,64,.25);border-radius:12px;padding:16px;margin-bottom:12px;position:relative;}
+.pfn{font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:3px;color:rgba(255,255,255,.6);}
+.pbsn{font-family:'Playfair Display',serif;font-size:20px;font-weight:900;background:linear-gradient(135deg,#d4a840,#f0c860);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+.pamt{font-family:'Playfair Display',serif;font-size:22px;font-weight:900;display:block;line-height:1;}
+.pamt.free{color:rgba(255,255,255,.5);}
+.pamt.bs{color:#d4a840;}
+.pper{font-size:8px;display:block;}
+.pper.free{color:rgba(255,255,255,.2);}
+.pper.bs{color:rgba(212,168,64,.5);}
+.ft2{display:flex;align-items:center;gap:8px;font-size:10px;margin-bottom:6px;}
+.ft2.yes{color:rgba(255,255,255,.4);}
+.ft2.no{color:rgba(255,255,255,.2);}
+.ft2.gold{color:rgba(255,255,255,.7);}
+.fck{width:16px;height:16px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:8px;flex-shrink:0;}
+.fck.yes{background:rgba(100,80,255,.15);border:1px solid rgba(100,80,255,.25);color:rgba(180,160,255,.8);}
+.fck.no{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);color:rgba(255,255,255,.2);}
+.fck.gold{background:rgba(212,168,64,.12);border:1px solid rgba(212,168,64,.25);color:rgba(212,168,64,.85);}
+.tr3{display:flex;justify-content:center;gap:16px;flex-wrap:wrap;margin-bottom:10px;}
+.tri{display:flex;align-items:center;gap:4px;font-size:8px;color:rgba(255,255,255,.18);}
+.payr{display:flex;justify-content:center;gap:6px;flex-wrap:wrap;padding-bottom:8px;}
+.pyb{padding:3px 10px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:4px;font-size:8px;color:rgba(255,255,255,.2);}
+.pyb.cr{border-color:rgba(212,168,64,.15);color:rgba(212,168,64,.4);}
+.ptab{flex:1;text-align:center;padding:8px 3px;font-family:'Bebas Neue',sans-serif;font-size:9px;letter-spacing:1.5px;color:rgba(255,255,255,.25);cursor:pointer;position:relative;-webkit-tap-highlight-color:transparent;}
+.ptab.act{color:rgba(180,160,255,.85);}
+.ptab.act::after{content:'';position:absolute;bottom:0;left:15%;right:15%;height:1.5px;background:#6050d8;border-radius:2px;}
 </style>
 </head>
 <body>
-
-<div class="stage">
-
-  <!-- Background -->
-  <div class="stage-bg"></div>
-
-  <!-- Bulbs -->
-  <div class="bulb-row">
-    <div class="bulb blue" style="--d:1.6s"></div>
-    <div class="bulb white" style="--d:2.0s"></div>
-    <div class="bulb blue" style="--d:1.4s"></div>
-    <div class="bulb gold" style="--d:1.8s"></div>
-    <div class="bulb white" style="--d:1.5s"></div>
-    <div class="bulb blue" style="--d:2.2s"></div>
-    <div class="bulb gold" style="--d:1.7s"></div>
-    <div class="bulb white" style="--d:1.9s"></div>
-    <div class="bulb blue" style="--d:1.3s"></div>
-    <div class="bulb gold" style="--d:2.1s"></div>
-    <div class="bulb white" style="--d:1.6s"></div>
-    <div class="bulb blue" style="--d:1.8s"></div>
-  </div>
-
-  <!-- Stage lights -->
-  <div class="lights">
-    <div class="beam"></div>
-    <div class="beam"></div>
-    <div class="beam"></div>
-    <div class="beam"></div>
-    <div class="beam"></div>
-  </div>
-
-  <!-- Silhouettes -->
-  <div class="silhouettes">
-    <!-- Guitarist -->
-    <svg class="sil" width="52" height="90" viewBox="0 0 52 90" fill="rgba(0,0,0,0.85)">
-      <ellipse cx="26" cy="9" rx="7" ry="8"/>
-      <path d="M19,17 Q26,20 33,17 L36,45 Q26,50 16,45 Z"/>
-      <path d="M19,22 Q12,16 7,10" stroke="rgba(0,0,0,0.85)" stroke-width="5" stroke-linecap="round" fill="none"/>
-      <path d="M33,24 Q40,20 44,28 Q46,32 42,34 Q38,36 36,30" stroke="rgba(0,0,0,0.85)" stroke-width="4" stroke-linecap="round" fill="none"/>
-      <path d="M20,45 Q18,65 15,90" stroke="rgba(0,0,0,0.85)" stroke-width="7" stroke-linecap="round" fill="none"/>
-      <path d="M32,45 Q34,65 37,90" stroke="rgba(0,0,0,0.85)" stroke-width="7" stroke-linecap="round" fill="none"/>
-    </svg>
-
-    <!-- Dancer -->
-    <svg class="sil" width="44" height="95" viewBox="0 0 44 95" fill="rgba(0,0,0,0.85)">
-      <ellipse cx="22" cy="8" rx="7" ry="8"/>
-      <path d="M15,16 Q22,19 29,16 L31,42 Q22,47 13,42 Z"/>
-      <path d="M15,20 Q8,14 3,8" stroke="rgba(0,0,0,0.85)" stroke-width="5" stroke-linecap="round" fill="none"/>
-      <path d="M29,22 Q36,26 40,34" stroke="rgba(0,0,0,0.85)" stroke-width="5" stroke-linecap="round" fill="none"/>
-      <path d="M17,42 Q14,62 9,90" stroke="rgba(0,0,0,0.85)" stroke-width="7" stroke-linecap="round" fill="none"/>
-      <path d="M27,42 Q32,58 40,72" stroke="rgba(0,0,0,0.85)" stroke-width="7" stroke-linecap="round" fill="none"/>
-    </svg>
-
-    <!-- Singer with mic -->
-    <svg class="sil" width="48" height="100" viewBox="0 0 48 100" fill="rgba(0,0,0,0.85)">
-      <ellipse cx="24" cy="9" rx="8" ry="9"/>
-      <path d="M16,18 Q24,22 32,18 L34,48 Q24,53 14,48 Z"/>
-      <path d="M32,20 Q38,18 40,22 Q42,26 40,32 Q36,38 32,32" stroke="rgba(0,0,0,0.85)" stroke-width="4" stroke-linecap="round" fill="none"/>
-      <line x1="38" y1="26" x2="44" y2="20" stroke="rgba(0,0,0,0.85)" stroke-width="3"/>
-      <path d="M16,22 Q10,28 8,36" stroke="rgba(0,0,0,0.85)" stroke-width="5" stroke-linecap="round" fill="none"/>
-      <path d="M18,48 Q16,68 13,100" stroke="rgba(0,0,0,0.85)" stroke-width="7" stroke-linecap="round" fill="none"/>
-      <path d="M30,48 Q32,68 35,100" stroke="rgba(0,0,0,0.85)" stroke-width="7" stroke-linecap="round" fill="none"/>
-    </svg>
-
-    <!-- Camera operator -->
-    <svg class="sil" width="50" height="85" viewBox="0 0 50 85" fill="rgba(0,0,0,0.85)">
-      <ellipse cx="25" cy="9" rx="7" ry="8"/>
-      <path d="M18,17 Q25,20 32,17 L34,44 Q25,49 16,44 Z"/>
-      <path d="M32,22 Q40,20 46,22 Q48,26 46,32 Q40,34 32,30" stroke="rgba(0,0,0,0.85)" stroke-width="4" stroke-linecap="round" fill="none"/>
-      <path d="M18,20 Q12,24 10,30" stroke="rgba(0,0,0,0.85)" stroke-width="5" stroke-linecap="round" fill="none"/>
-      <path d="M19,44 Q17,64 14,85" stroke="rgba(0,0,0,0.85)" stroke-width="7" stroke-linecap="round" fill="none"/>
-      <path d="M31,44 Q33,64 36,85" stroke="rgba(0,0,0,0.85)" stroke-width="7" stroke-linecap="round" fill="none"/>
-    </svg>
-  </div>
-
-  <!-- Floor -->
-  <div class="floor"></div>
-  <div class="floor-line"></div>
-
-  <!-- Content -->
-  <div class="content">
-    <div class="logo">STAGERZ</div>
-    <div class="deco">
-      <div class="dl l"></div><div class="dd"></div><div class="dl r"></div>
+<!-- SCREEN 1: WELCOME -->
+<div class="screen active" id="screen-welcome">
+  <div style="position:relative;flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;padding-bottom:32px;overflow:hidden;">
+    <div style="position:absolute;inset:0;background:radial-gradient(ellipse at 50% 35%,rgba(40,20,100,.5) 0%,transparent 65%),#07050f;"></div>
+    <div style="position:absolute;top:-10px;left:12%;width:1.5px;height:55%;background:linear-gradient(180deg,rgba(80,60,255,.8),transparent);transform-origin:top center;transform:rotate(-18deg);opacity:.6;"></div>
+    <div style="position:absolute;top:-10px;left:28%;width:1.5px;height:55%;background:linear-gradient(180deg,rgba(255,255,255,.5),transparent);transform-origin:top center;transform:rotate(-8deg);opacity:.6;"></div>
+    <div style="position:absolute;top:-10px;left:50%;width:2px;height:55%;background:linear-gradient(180deg,rgba(255,220,100,.7),transparent);transform-origin:top center;opacity:.6;"></div>
+    <div style="position:absolute;top:-10px;left:72%;width:1.5px;height:55%;background:linear-gradient(180deg,rgba(255,255,255,.5),transparent);transform-origin:top center;transform:rotate(8deg);opacity:.6;"></div>
+    <div style="position:absolute;top:-10px;left:88%;width:1.5px;height:55%;background:linear-gradient(180deg,rgba(80,60,255,.8),transparent);transform-origin:top center;transform:rotate(18deg);opacity:.6;"></div>
+    <div style="position:absolute;top:0;left:0;right:0;height:14px;background:rgba(5,3,14,.9);display:flex;align-items:center;justify-content:space-around;padding:0 12px;">
+      <div class="wb blue" style="--d:1.6s"></div><div class="wb white" style="--d:2.0s"></div>
+      <div class="wb blue" style="--d:1.4s"></div><div class="wb gold" style="--d:1.8s"></div>
+      <div class="wb white" style="--d:1.5s"></div><div class="wb blue" style="--d:2.2s"></div>
+      <div class="wb gold" style="--d:1.7s"></div><div class="wb white" style="--d:1.9s"></div>
+      <div class="wb blue" style="--d:1.3s"></div><div class="wb gold" style="--d:2.1s"></div>
+      <div class="wb white" style="--d:1.6s"></div><div class="wb blue" style="--d:1.8s"></div>
     </div>
-    <div class="tagline">Your World Stage</div>
-    <div class="globe">🌍</div>
-    <div class="philosophy">Every great work needs more than one kind of artist.</div>
-
-    <div class="chips">
-      <div class="chip">🎵 Musicians</div>
-      <div class="chip">🎬 Filmmakers</div>
-      <div class="chip">💃 Dancers</div>
-      <div class="chip">📷 Photographers</div>
-      <div class="chip">✂️ Editors</div>
-      <div class="chip">🤖 AI Creators</div>
+    <div style="position:absolute;bottom:38%;left:0;right:0;height:38%;display:flex;align-items:flex-end;justify-content:center;padding:0 10px;">
+      <svg width="52" height="90" viewBox="0 0 52 90" fill="rgba(0,0,0,.85)" opacity=".75"><ellipse cx="26" cy="9" rx="7" ry="8"/><path d="M19,17 Q26,20 33,17 L36,45 Q26,50 16,45 Z"/><path d="M19,22 Q12,16 7,10" stroke="rgba(0,0,0,.85)" stroke-width="5" stroke-linecap="round" fill="none"/><path d="M33,24 Q40,20 44,28 Q46,32 42,34 Q38,36 36,30" stroke="rgba(0,0,0,.85)" stroke-width="4" stroke-linecap="round" fill="none"/><path d="M20,45 Q18,65 15,90" stroke="rgba(0,0,0,.85)" stroke-width="7" stroke-linecap="round" fill="none"/><path d="M32,45 Q34,65 37,90" stroke="rgba(0,0,0,.85)" stroke-width="7" stroke-linecap="round" fill="none"/></svg>
+      <svg width="44" height="95" viewBox="0 0 44 95" fill="rgba(0,0,0,.85)" opacity=".75"><ellipse cx="22" cy="8" rx="7" ry="8"/><path d="M15,16 Q22,19 29,16 L31,42 Q22,47 13,42 Z"/><path d="M15,20 Q8,14 3,8" stroke="rgba(0,0,0,.85)" stroke-width="5" stroke-linecap="round" fill="none"/><path d="M29,22 Q36,26 40,34" stroke="rgba(0,0,0,.85)" stroke-width="5" stroke-linecap="round" fill="none"/><path d="M17,42 Q14,62 9,90" stroke="rgba(0,0,0,.85)" stroke-width="7" stroke-linecap="round" fill="none"/><path d="M27,42 Q32,58 40,72" stroke="rgba(0,0,0,.85)" stroke-width="7" stroke-linecap="round" fill="none"/></svg>
+      <svg width="48" height="100" viewBox="0 0 48 100" fill="rgba(0,0,0,.85)" opacity=".75"><ellipse cx="24" cy="9" rx="8" ry="9"/><path d="M16,18 Q24,22 32,18 L34,48 Q24,53 14,48 Z"/><path d="M32,20 Q38,18 40,22 Q42,26 40,32 Q36,38 32,32" stroke="rgba(0,0,0,.85)" stroke-width="4" stroke-linecap="round" fill="none"/><line x1="38" y1="26" x2="44" y2="20" stroke="rgba(0,0,0,.85)" stroke-width="3"/><path d="M16,22 Q10,28 8,36" stroke="rgba(0,0,0,.85)" stroke-width="5" stroke-linecap="round" fill="none"/><path d="M18,48 Q16,68 13,100" stroke="rgba(0,0,0,.85)" stroke-width="7" stroke-linecap="round" fill="none"/><path d="M30,48 Q32,68 35,100" stroke="rgba(0,0,0,.85)" stroke-width="7" stroke-linecap="round" fill="none"/></svg>
+      <svg width="50" height="85" viewBox="0 0 50 85" fill="rgba(0,0,0,.85)" opacity=".75"><ellipse cx="25" cy="9" rx="7" ry="8"/><path d="M18,17 Q25,20 32,17 L34,44 Q25,49 16,44 Z"/><path d="M32,22 Q40,20 46,22 Q48,26 46,32 Q40,34 32,30" stroke="rgba(0,0,0,.85)" stroke-width="4" stroke-linecap="round" fill="none"/><path d="M18,20 Q12,24 10,30" stroke="rgba(0,0,0,.85)" stroke-width="5" stroke-linecap="round" fill="none"/><path d="M19,44 Q17,64 14,85" stroke="rgba(0,0,0,.85)" stroke-width="7" stroke-linecap="round" fill="none"/><path d="M31,44 Q33,64 36,85" stroke="rgba(0,0,0,.85)" stroke-width="7" stroke-linecap="round" fill="none"/></svg>
     </div>
-
-    <button class="btn-primary" onclick="createProfile()">CREATE MY PROFILE</button>
-    <button class="btn-secondary" onclick="exploreStage()">EXPLORE THE STAGE</button>
-
-    <div class="free-note">Free to start · <em>No card needed</em> · Worldwide</div>
+    <div style="position:absolute;bottom:38%;left:8%;right:8%;height:1px;background:linear-gradient(90deg,transparent,rgba(100,80,255,.3),rgba(150,120,255,.4),rgba(100,80,255,.3),transparent);"></div>
+    <div style="position:absolute;bottom:0;left:0;right:0;height:38%;background:linear-gradient(180deg,rgba(20,10,60,0),rgba(5,2,15,.85));"></div>
+    <div style="position:relative;z-index:10;display:flex;flex-direction:column;align-items:center;width:100%;padding:0 24px;">
+      <div class="wl">STAGERZ</div>
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;"><div style="height:1px;width:40px;background:linear-gradient(90deg,transparent,#b89040);"></div><div style="width:6px;height:6px;background:#c8a040;transform:rotate(45deg);"></div><div style="height:1px;width:40px;background:linear-gradient(90deg,#b89040,transparent);"></div></div>
+      <div style="font-size:11px;font-weight:300;letter-spacing:6px;text-transform:uppercase;color:rgba(180,160,255,.6);margin-bottom:4px;">Your World Stage</div>
+      <div style="font-size:14px;margin-bottom:5px;opacity:.8;">&#127757;</div>
+      <div style="font-family:'Playfair Display',serif;font-size:10px;font-style:italic;letter-spacing:1.5px;color:rgba(212,168,64,.45);text-align:center;padding:0 10px;margin-bottom:22px;line-height:1.5;">Every great work needs more than one kind of artist.</div>
+      <div style="display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin-bottom:20px;padding:0 8px;">
+        <div style="padding:4px 11px;border-radius:20px;font-size:9px;background:rgba(100,80,255,.08);border:1px solid rgba(100,80,255,.18);color:rgba(180,160,255,.55);">&#127925; Musicians</div>
+        <div style="padding:4px 11px;border-radius:20px;font-size:9px;background:rgba(100,80,255,.08);border:1px solid rgba(100,80,255,.18);color:rgba(180,160,255,.55);">&#127916; Filmmakers</div>
+        <div style="padding:4px 11px;border-radius:20px;font-size:9px;background:rgba(100,80,255,.08);border:1px solid rgba(100,80,255,.18);color:rgba(180,160,255,.55);">&#128131; Dancers</div>
+        <div style="padding:4px 11px;border-radius:20px;font-size:9px;background:rgba(100,80,255,.08);border:1px solid rgba(100,80,255,.18);color:rgba(180,160,255,.55);">&#128247; Photographers</div>
+        <div style="padding:4px 11px;border-radius:20px;font-size:9px;background:rgba(100,80,255,.08);border:1px solid rgba(100,80,255,.18);color:rgba(180,160,255,.55);">&#9986; Editors</div>
+        <div style="padding:4px 11px;border-radius:20px;font-size:9px;background:rgba(100,80,255,.08);border:1px solid rgba(100,80,255,.18);color:rgba(180,160,255,.55);">&#129302; AI Creators</div>
+      </div>
+      <button class="bp" onclick="goTo(this,'home')" style="margin-bottom:10px;">CREATE MY PROFILE</button>
+      <button class="bs" onclick="goTo(this,'public')">EXPLORE THE STAGE</button>
+      <div style="font-size:9px;letter-spacing:1.5px;text-transform:uppercase;color:rgba(255,255,255,.14);margin-top:10px;text-align:center;">Free to start &middot; No card needed &middot; Worldwide</div>
+    </div>
   </div>
+</div>
 
+<!-- SCREEN 2: HOME -->
+<div class="screen" id="screen-home">
+  <div class="tb">
+    <div class="tr">
+      <div class="logo">STA<em>G</em>ERZ</div>
+      <div style="display:flex;align-items:center;gap:10px;">
+        <div style="position:relative;width:32px;height:32px;border-radius:50%;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);display:flex;align-items:center;justify-content:center;font-size:14px;cursor:pointer;">&#128276;<div style="position:absolute;top:4px;right:4px;width:7px;height:7px;border-radius:50%;background:#d4a840;border:1.5px solid #07050f;"></div></div>
+        <div onclick="goTo(this,'profile')" style="width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#4030c0,#6050d8);display:flex;align-items:center;justify-content:center;font-size:16px;border:1.5px solid rgba(100,80,255,.3);cursor:pointer;">&#127928;</div>
+      </div>
+    </div>
+    <div class="ft">
+      <div class="ftb on" onclick="sFT(this)">&#127757; For You</div>
+      <div class="ftb off" onclick="sFT(this)">&#128101; Following</div>
+      <div class="ftb off" onclick="sFT(this)">&#127919; Wanted</div>
+      <div class="ftb off" onclick="sFT(this)">&#128293; Trending</div>
+    </div>
+  </div>
+  <div class="sa">
+    <div class="pd pt">
+      <div class="st">On Stage Now</div>
+      <div class="sr">
+        <div class="si"><div style="width:48px;height:48px;border-radius:50%;background:rgba(100,80,255,.1);border:1.5px dashed rgba(100,80,255,.3);display:flex;align-items:center;justify-content:center;font-size:20px;">+</div><div class="sn">Your Story</div></div>
+        <div class="si" onclick="goTo(this,'profile')"><div class="sg gold"><div class="sa2">&#127928;</div></div><div class="sn">Maya</div></div>
+        <div class="si"><div class="sg blue"><div class="sa2" style="background:linear-gradient(135deg,#0a1840,#142850);">&#127916;</div></div><div class="sn">James</div></div>
+        <div class="si"><div class="sg red"><div class="sa2" style="background:linear-gradient(135deg,#1a0830,#2a0840);">&#128131;</div></div><div class="sn">Sofia</div></div>
+        <div class="si"><div class="sg gold"><div class="sa2" style="background:linear-gradient(135deg,#201018,#301820);">&#127908;</div></div><div class="sn">Leila</div></div>
+        <div class="si"><div class="sg blue"><div class="sa2" style="background:linear-gradient(135deg,#0a2018,#102818);">&#127927;</div></div><div class="sn">Amir</div></div>
+      </div>
+      <div class="st">Featured Performance</div>
+      <div style="background:linear-gradient(160deg,rgba(30,15,80,.8),rgba(15,8,40,.9));border:1px solid rgba(100,80,255,.2);border-radius:12px;overflow:hidden;margin-bottom:12px;cursor:pointer;" onclick="goTo(this,'public')">
+        <div style="height:110px;position:relative;overflow:hidden;background:linear-gradient(135deg,#0a0520,#180840,#0a1040);display:flex;align-items:center;justify-content:center;">
+          <div style="position:absolute;top:10px;left:10px;display:flex;align-items:center;gap:4px;padding:3px 8px;background:rgba(255,40,40,.15);border:1px solid rgba(255,60,60,.3);border-radius:20px;z-index:2;"><div class="ld"></div><div style="font-size:7px;letter-spacing:2px;color:rgba(255,100,100,.9);">LIVE</div></div>
+          <div style="font-size:48px;opacity:.65;position:relative;z-index:1;">&#127928;</div>
+          <div style="position:absolute;bottom:0;left:0;right:0;height:55%;background:linear-gradient(180deg,transparent,rgba(15,8,40,.95));"></div>
+        </div>
+        <div style="padding:10px 12px;">
+          <div style="font-family:'Playfair Display',serif;font-size:14px;font-weight:900;color:#fff;margin-bottom:2px;">Maya Rivera &mdash; Golden Hours</div>
+          <div style="font-size:8px;letter-spacing:2px;text-transform:uppercase;color:rgba(180,160,255,.55);margin-bottom:8px;">&#127925; Singer-Songwriter &middot; Berlin</div>
+          <div style="display:flex;align-items:center;gap:8px;"><button style="padding:6px 16px;background:linear-gradient(135deg,#3020a0,#5040c8);color:#fff;border:none;border-radius:4px;font-family:'Bebas Neue',sans-serif;font-size:11px;letter-spacing:2px;cursor:pointer;" onclick="event.stopPropagation();goTo(this,'public')">&#9654; WATCH LIVE</button><div style="display:flex;gap:10px;margin-left:auto;"><div style="font-size:8px;color:rgba(255,255,255,.25);">&#128065; <span style="color:rgba(212,168,64,.7);">1.2k</span></div><div style="font-size:8px;color:rgba(255,255,255,.25);">&#10084; <span style="color:rgba(212,168,64,.7);">340</span></div></div></div>
+        </div>
+      </div>
+      <div style="background:rgba(212,168,64,.05);border:1px solid rgba(212,168,64,.18);border-radius:10px;padding:10px 12px;margin-bottom:12px;display:flex;align-items:center;gap:10px;cursor:pointer;" onclick="goTo(this,'wanted')">
+        <div style="font-size:20px;">&#127919;</div>
+        <div style="flex:1;"><div style="font-family:'Bebas Neue',sans-serif;font-size:12px;letter-spacing:2px;color:rgba(212,168,64,.85);margin-bottom:2px;">New WANTED posts match your skills</div><div style="font-size:9px;color:rgba(255,255,255,.35);">Guitarist needed Berlin &middot; Producer needed remote</div></div>
+        <div style="font-size:14px;color:rgba(212,168,64,.4);">&#8250;</div>
+      </div>
+      <div class="wc" onclick="goTo(this,'public')">
+        <div class="wm" style="background:linear-gradient(135deg,#1a0840,#0a1040);"><div class="wp2">&#9654;</div><div class="wd">3:42</div></div>
+        <div class="wi">
+          <div style="display:flex;align-items:center;gap:7px;margin-bottom:5px;"><div style="width:22px;height:22px;border-radius:50%;background:linear-gradient(135deg,#201018,#301820);display:flex;align-items:center;justify-content:center;font-size:11px;">&#127908;</div><div style="font-size:10px;font-weight:600;color:#fff;">Leila Mensah</div><div style="font-size:7px;color:rgba(255,255,255,.25);margin-left:auto;">Lagos &#127475;&#127468;</div></div>
+          <div class="wt">Midnight in Lagos</div>
+          <div class="wtg"><div class="tg">Afrobeat</div><div class="tg">Soul</div><div class="tg">Original</div></div>
+          <div class="wa"><div class="wat">&#10084; 2.4k</div><div class="wat">&#128172; 138</div><div class="wat">&#8599; Share</div><div class="ws">STAGERZ &#10022;</div></div>
+        </div>
+      </div>
+      <div style="background:rgba(12,8,28,.7);border:1px solid rgba(255,255,255,.05);border-radius:10px;padding:10px 12px;margin-bottom:12px;display:flex;align-items:flex-start;gap:8px;cursor:pointer;" onclick="goTo(this,'profile')">
+        <div style="width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#0a1840,#142850);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;border:1px solid rgba(100,80,255,.2);">&#127916;</div>
+        <div style="flex:1;"><div style="font-size:10px;color:rgba(255,255,255,.45);line-height:1.4;margin-bottom:3px;"><strong style="color:rgba(255,255,255,.75);">James Kofi</strong> wants to collaborate on <em style="color:rgba(212,168,64,.7);font-style:normal;">Short Film Soundtrack</em></div><div style="font-size:7px;color:rgba(255,255,255,.18);">15 min ago &middot; New York</div></div>
+        <div style="padding:4px 10px;background:rgba(100,80,255,.1);border:1px solid rgba(100,80,255,.2);border-radius:10px;font-size:8px;color:rgba(180,160,255,.7);cursor:pointer;flex-shrink:0;">View</div>
+      </div>
+      <div class="st">Discover Artists</div>
+      <div class="dr">
+        <div class="dc" onclick="goTo(this,'search')"><div class="da" style="background:linear-gradient(135deg,#101828,#182030);">&#128247;</div><div class="dn">Chen Wei</div><div class="dt">Photo</div><div class="dl">Shanghai</div><div class="db">+ Follow</div></div>
+        <div class="dc" onclick="goTo(this,'search')"><div class="da" style="background:linear-gradient(135deg,#0a2018,#102818);">&#127927;</div><div class="dn">Amir H.</div><div class="dt">Musician</div><div class="dl">Tokyo</div><div class="db">+ Follow</div></div>
+        <div class="dc" onclick="goTo(this,'search')"><div class="da" style="background:linear-gradient(135deg,#201018,#281020);">&#129302;</div><div class="dn">Zara AI</div><div class="dt">AI Creator</div><div class="dl">London</div><div class="db">+ Follow</div></div>
+        <div class="dc" onclick="goTo(this,'search')"><div class="da" style="background:linear-gradient(135deg,#181020,#201828);">&#9986;</div><div class="dn">Marco R.</div><div class="dt">Editor</div><div class="dl">Milan</div><div class="db">+ Follow</div></div>
+      </div>
+      <div class="gap"></div>
+    </div>
+  </div>
+  <div class="nb"><div class="ni active" onclick="goTo(this,'home')"><div class="ni-icon">&#127968;</div><span>Home</span></div><div class="ni" onclick="goTo(this,'search')"><div class="ni-icon">&#128269;</div><span>Search</span></div><div class="ni" onclick="goTo(this,'wanted')"><div class="ni-icon">&#127919;</div><span>Wanted</span></div><div class="ni" onclick="goTo(this,'profile')"><div class="ni-icon">&#128100;</div><span>Profile</span></div><div class="ni" onclick="goTo(this,'famemaker')"><div class="ni-icon">&#127916;</div><span>Create</span></div></div>
+</div>
+
+<!-- SCREEN 3: SEARCH -->
+<div class="screen" id="screen-search">
+  <div class="tb">
+    <div class="tr" style="margin-bottom:10px;"><div class="logo">STA<em>G</em>ERZ</div><div style="font-size:9px;letter-spacing:2px;color:rgba(255,255,255,.2);">&#128269; SEARCH</div></div>
+    <div style="display:flex;align-items:center;gap:6px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);border-radius:8px;padding:8px 12px;margin-bottom:10px;"><span style="font-size:14px;opacity:.4;">&#128269;</span><input style="flex:1;background:transparent;border:none;outline:none;font-size:13px;color:#fff;" type="text" placeholder="Search artists, skills, locations..."></div>
+    <div class="cr">
+      <div class="cc on"><div class="ci">&#127757;</div><div class="cl">All</div></div>
+      <div class="cc off"><div class="ci">&#127925;</div><div class="cl">Music</div></div>
+      <div class="cc off"><div class="ci">&#127916;</div><div class="cl">Film</div></div>
+      <div class="cc off"><div class="ci">&#128131;</div><div class="cl">Dance</div></div>
+      <div class="cc off"><div class="ci">&#129302;</div><div class="cl">AI</div></div>
+      <div class="cc off"><div class="ci">&#127912;</div><div class="cl">Art</div></div>
+      <div class="cc off"><div class="ci">&#128247;</div><div class="cl">Photo</div></div>
+    </div>
+  </div>
+  <div class="sa">
+    <div class="pd pt">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;"><div style="font-size:9px;color:rgba(255,255,255,.25);"><span style="color:rgba(180,160,255,.6);">247</span> ARTISTS WORLDWIDE</div><div style="font-size:8px;color:rgba(180,160,255,.5);cursor:pointer;">Sort &#8595;</div></div>
+      <div class="ai" onclick="goTo(this,'profile')"><div class="av" style="background:linear-gradient(135deg,#1a0840,#280c50);">&#127928;</div><div class="an"><div style="font-size:12px;font-weight:600;color:#fff;margin-bottom:1px;">Maya Rivera</div><div class="at">Musician &middot; Singer</div><div class="atg"><div class="atag">Guitar</div><div class="atag">Vocals</div><div class="atag">Songwriting</div></div></div><div class="ar"><div class="aloc">Berlin<br><span style="color:rgba(40,200,80,.7);">&#9679; Online</span></div><button class="cb">Collab</button></div></div>
+      <div class="ai" onclick="goTo(this,'profile')"><div class="av" style="background:linear-gradient(135deg,#0a1840,#142850);">&#127916;</div><div class="an"><div style="font-size:12px;font-weight:600;color:#fff;margin-bottom:1px;">James Kofi</div><div class="at">Filmmaker &middot; Director</div><div class="atg"><div class="atag">Directing</div><div class="atag">Editing</div><div class="atag">DOP</div></div></div><div class="ar"><div class="aloc">New York<br><span style="color:rgba(40,200,80,.7);">&#9679; Online</span></div><button class="cb">Collab</button></div></div>
+      <div class="ai" onclick="goTo(this,'profile')"><div class="av" style="background:linear-gradient(135deg,#1a0830,#2a0840);">&#128131;</div><div class="an"><div style="font-size:12px;font-weight:600;color:#fff;margin-bottom:1px;">Sofia Lima</div><div class="at">Dancer &middot; Choreographer</div><div class="atg"><div class="atag">Ballet</div><div class="atag">Hip-Hop</div><div class="atag">Latin</div></div></div><div class="ar"><div class="aloc">Sao Paulo<br><span style="color:rgba(255,160,40,.7);">&#9679; Away</span></div><button class="cb">Collab</button></div></div>
+      <div class="ai" onclick="goTo(this,'profile')"><div class="av" style="background:linear-gradient(135deg,#201018,#301820);">&#127908;</div><div class="an"><div style="font-size:12px;font-weight:600;color:#fff;margin-bottom:1px;">Leila Mensah</div><div class="at">Singer &middot; Songwriter</div><div class="atg"><div class="atag">Afrobeat</div><div class="atag">RnB</div><div class="atag">Soul</div></div></div><div class="ar"><div class="aloc">Lagos<br><span style="color:rgba(40,200,80,.7);">&#9679; Online</span></div><button class="cb">Collab</button></div></div>
+      <div class="ai" onclick="goTo(this,'profile')"><div class="av" style="background:linear-gradient(135deg,#0a2018,#102818);">&#127927;</div><div class="an"><div style="font-size:12px;font-weight:600;color:#fff;margin-bottom:1px;">Amir Hashim</div><div class="at">Musician &middot; Producer</div><div class="atg"><div class="atag">Jazz</div><div class="atag">Prod.</div><div class="atag">Sax</div></div></div><div class="ar"><div class="aloc">Tokyo<br><span style="color:rgba(255,255,255,.2);">&#9679; Offline</span></div><button class="cb">Collab</button></div></div>
+      <div class="ai" onclick="goTo(this,'profile')"><div class="av" style="background:linear-gradient(135deg,#101828,#182030);">&#128247;</div><div class="an"><div style="font-size:12px;font-weight:600;color:#fff;margin-bottom:1px;">Chen Wei</div><div class="at">Photographer</div><div class="atg"><div class="atag">Portrait</div><div class="atag">Concert</div><div class="atag">Editorial</div></div></div><div class="ar"><div class="aloc">Shanghai<br><span style="color:rgba(40,200,80,.7);">&#9679; Online</span></div><button class="cb">Collab</button></div></div>
+      <div class="gap"></div>
+    </div>
+  </div>
+  <div class="nb"><div class="ni" onclick="goTo(this,'home')"><div class="ni-icon">&#127968;</div><span>Home</span></div><div class="ni active" onclick="goTo(this,'search')"><div class="ni-icon">&#128269;</div><span>Search</span></div><div class="ni" onclick="goTo(this,'wanted')"><div class="ni-icon">&#127919;</div><span>Wanted</span></div><div class="ni" onclick="goTo(this,'profile')"><div class="ni-icon">&#128100;</div><span>Profile</span></div><div class="ni" onclick="goTo(this,'famemaker')"><div class="ni-icon">&#127916;</div><span>Create</span></div></div>
+</div>
+
+<!-- SCREEN 4: WANTED -->
+<div class="screen" id="screen-wanted">
+  <div class="tb">
+    <div class="tr" style="margin-bottom:10px;"><div class="logo" style="font-size:18px;">WANT<span style="color:#d4a840;">ED</span> &#127919;</div><button class="bp" style="width:auto;padding:7px 14px;font-size:11px;letter-spacing:2px;" onclick="sA('Post WANTED coming soon!')">+ POST</button></div>
+    <div class="tw"><button class="tb2 on" id="myBtn" onclick="sW('my')">&#128100; MY WANTED</button><button class="tb2 off" id="commBtn" onclick="sW('comm')">&#127757; COMMUNITY</button></div>
+    <div style="display:flex;gap:5px;overflow-x:auto;margin-bottom:12px;padding-bottom:4px;"><div class="fc on" onclick="sFC(this)">All</div><div class="fc off" onclick="sFC(this)">&#127925; Music</div><div class="fc off" onclick="sFC(this)">&#127916; Film</div><div class="fc off" onclick="sFC(this)">&#128131; Dance</div><div class="fc off" onclick="sFC(this)">&#9986; Edit</div><div class="fc off" onclick="sFC(this)">&#129302; AI</div></div>
+  </div>
+  <div class="sa">
+    <div class="pd pt">
+      <div id="myV">
+        <div style="background:rgba(212,168,64,.05);border:1px solid rgba(212,168,64,.18);border-radius:10px;padding:12px 14px;margin-bottom:10px;position:relative;overflow:hidden;">
+          <div style="position:absolute;top:0;left:0;width:3px;height:100%;background:linear-gradient(180deg,#d4a840,rgba(212,168,64,.3));"></div>
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;"><div style="font-family:'Bebas Neue',sans-serif;font-size:13px;letter-spacing:2px;color:#d4a840;">&#129345; Drummer Wanted</div><div style="font-size:8px;color:rgba(40,200,80,.8);">&#9679; Active</div></div>
+          <div style="font-size:10px;color:rgba(255,255,255,.4);line-height:1.5;margin-bottom:8px;">Looking for experienced drummer for EP recording sessions in Berlin. Genre: Indie/Alternative.</div>
+          <div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:8px;"><div style="padding:2px 8px;background:rgba(100,80,255,.08);border:1px solid rgba(100,80,255,.15);border-radius:10px;font-size:7px;color:rgba(180,160,255,.6);">Berlin</div><div style="padding:2px 8px;background:rgba(100,80,255,.08);border:1px solid rgba(100,80,255,.15);border-radius:10px;font-size:7px;color:rgba(180,160,255,.6);">Indie</div><div style="padding:2px 8px;background:rgba(100,80,255,.08);border:1px solid rgba(100,80,255,.15);border-radius:10px;font-size:7px;color:rgba(180,160,255,.6);">Paid</div></div>
+          <div style="display:flex;align-items:center;justify-content:space-between;"><div style="font-size:9px;color:rgba(255,255,255,.25);"><span style="color:rgba(212,168,64,.7);font-weight:600;">8</span> responses</div><div style="display:flex;gap:6px;"><button style="padding:4px 10px;border-radius:4px;font-family:'Bebas Neue',sans-serif;font-size:9px;cursor:pointer;background:transparent;color:rgba(180,160,255,.6);border:1px solid rgba(100,80,255,.2);">Edit</button><button style="padding:4px 10px;border-radius:4px;font-family:'Bebas Neue',sans-serif;font-size:9px;cursor:pointer;background:rgba(255,60,60,.08);color:rgba(255,100,100,.6);border:1px solid rgba(255,60,60,.15);">Close</button></div></div>
+        </div>
+        <div style="border:1px dashed rgba(212,168,64,.2);border-radius:10px;padding:16px;text-align:center;cursor:pointer;margin-bottom:10px;" onclick="sA('Post WANTED coming soon!')">
+          <div style="font-size:20px;margin-bottom:6px;">&#127919;</div>
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:13px;letter-spacing:2px;color:rgba(212,168,64,.6);margin-bottom:3px;">Post New Wanted</div>
+          <div style="font-size:9px;color:rgba(255,255,255,.2);">Free &middot; 1 active post</div>
+        </div>
+      </div>
+      <div id="commV" style="display:none;">
+        <div style="background:rgba(100,80,255,.07);border:1px solid rgba(100,80,255,.15);border-radius:8px;padding:8px 12px;margin-bottom:10px;display:flex;align-items:center;gap:8px;"><div style="font-size:14px;">&#10024;</div><div style="font-size:9px;color:rgba(180,160,255,.6);">Showing posts matching your skills as a <strong style="color:rgba(212,168,64,.8);">Musician &middot; Guitarist</strong> in <strong style="color:rgba(212,168,64,.8);">Berlin.</strong></div></div>
+        <div class="cd" onclick="sA('Apply coming soon!')">
+          <div class="urg match">&#11088; 98% Match</div>
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;"><div style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#0a1840,#142850);display:flex;align-items:center;justify-content:center;font-size:18px;border:1px solid rgba(100,80,255,.2);">&#127916;</div><div><div style="font-size:11px;font-weight:600;color:#fff;margin-bottom:1px;">James Kofi</div><div style="font-size:8px;color:rgba(255,255,255,.28);">Filmmaker &middot; New York &middot; &#11088; 4.7</div></div></div>
+          <div class="cr2">&#127928; Guitarist Wanted</div>
+          <div class="cd2">Need guitarist for short film soundtrack. Acoustic + Electric. Remote OK. Full credit + paid.</div>
+          <div class="ctg"><div class="ctag">Acoustic</div><div class="ctag">Electric</div><div class="ctag">Remote</div><div class="ctag">Paid</div></div>
+          <div class="cf"><div class="ct">2h ago &middot; <span style="color:rgba(180,160,255,.5);">4 applied</span></div><button class="ab">APPLY NOW</button></div>
+        </div>
+        <div class="cd" onclick="sA('Apply coming soon!')">
+          <div class="urg new">&#9679; New</div>
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;"><div style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#201018,#301820);display:flex;align-items:center;justify-content:center;font-size:18px;border:1px solid rgba(100,80,255,.2);">&#127908;</div><div><div style="font-size:11px;font-weight:600;color:#fff;margin-bottom:1px;">Leila Mensah</div><div style="font-size:8px;color:rgba(255,255,255,.28);">Singer &middot; Lagos &middot; &#11088; 4.8</div></div></div>
+          <div class="cr2">&#127928; Guitarist Wanted</div>
+          <div class="cd2">Working on Afrobeat/Soul EP. Looking for warm groovy guitarist. Remote sessions via Zoom.</div>
+          <div class="ctg"><div class="ctag">Afrobeat</div><div class="ctag">Soul</div><div class="ctag">Remote</div><div class="ctag">EP</div></div>
+          <div class="cf"><div class="ct">30m ago &middot; <span style="color:rgba(180,160,255,.5);">1 applied</span></div><button class="ab">APPLY NOW</button></div>
+        </div>
+        <div class="cd" onclick="sA('Apply coming soon!')">
+          <div class="urg hot">&#128293; Urgent</div>
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;"><div style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#1a0830,#2a0840);display:flex;align-items:center;justify-content:center;font-size:18px;border:1px solid rgba(100,80,255,.2);">&#128131;</div><div><div style="font-size:11px;font-weight:600;color:#fff;margin-bottom:1px;">Sofia Lima</div><div style="font-size:8px;color:rgba(255,255,255,.28);">Dancer &middot; Sao Paulo &middot; &#11088; 5.0</div></div></div>
+          <div class="cr2">&#127925; Live Musician Wanted</div>
+          <div class="cd2">Dance show this Saturday in Berlin! Need live musician. 2h show. Good pay. URGENT.</div>
+          <div class="ctg"><div class="ctag">Berlin</div><div class="ctag">Live</div><div class="ctag">This Weekend</div><div class="ctag">Paid</div></div>
+          <div class="cf"><div class="ct">1h ago &middot; <span style="color:rgba(180,160,255,.5);">12 applied</span></div><button class="ab">APPLY NOW</button></div>
+        </div>
+      </div>
+      <div class="gap"></div>
+    </div>
+  </div>
+  <div class="nb"><div class="ni" onclick="goTo(this,'home')"><div class="ni-icon">&#127968;</div><span>Home</span></div><div class="ni" onclick="goTo(this,'search')"><div class="ni-icon">&#128269;</div><span>Search</span></div><div class="ni active" onclick="goTo(this,'wanted')"><div class="ni-icon">&#127919;</div><span>Wanted</span></div><div class="ni" onclick="goTo(this,'profile')"><div class="ni-icon">&#128100;</div><span>Profile</span></div><div class="ni" onclick="goTo(this,'famemaker')"><div class="ni-icon">&#127916;</div><span>Create</span></div></div>
+</div>
+
+<!-- SCREEN 5: PROFILE -->
+<div class="screen" id="screen-profile">
+  <div class="sa">
+    <div class="cv">
+      <div style="position:absolute;top:-5px;left:20%;width:1px;height:100%;background:linear-gradient(180deg,rgba(80,60,255,.5),transparent);transform:rotate(-12deg);transform-origin:top center;"></div>
+      <div style="position:absolute;top:-5px;left:50%;width:1.5px;height:100%;background:linear-gradient(180deg,rgba(255,220,100,.4),transparent);transform-origin:top center;"></div>
+      <div style="position:absolute;top:-5px;left:80%;width:1px;height:100%;background:linear-gradient(180deg,rgba(80,60,255,.5),transparent);transform:rotate(12deg);transform-origin:top center;"></div>
+      <div class="csil">&#127928;</div>
+      <div class="cfd"></div>
+      <div class="bk" onclick="goTo(this,'home')">&#8249;</div>
+    </div>
+    <div class="pd">
+      <div style="margin-top:-26px;margin-bottom:10px;">
+        <div style="display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:10px;">
+          <div class="pav">&#127928;<div style="position:absolute;bottom:-1px;right:-1px;width:18px;height:18px;border-radius:50%;background:linear-gradient(135deg,#4030c0,#6050d8);border:2px solid #07050f;display:flex;align-items:center;justify-content:center;font-size:8px;">&#10022;</div></div>
+          <div style="display:flex;gap:8px;padding-top:8px;">
+            <button style="padding:8px 14px;border-radius:4px;font-family:'Bebas Neue',sans-serif;font-size:11px;letter-spacing:2px;cursor:pointer;background:rgba(255,255,255,.05);color:rgba(200,180,255,.7);border:1px solid rgba(100,80,255,.2);" onclick="sA('Messaging coming soon!')">&#128172; MSG</button>
+            <button style="padding:8px 14px;border-radius:4px;font-family:'Bebas Neue',sans-serif;font-size:11px;letter-spacing:2px;cursor:pointer;background:linear-gradient(135deg,#3020a0,#5040c8);color:#fff;border:none;" onclick="sA('Follow coming soon!')">+ FOLLOW</button>
+          </div>
+        </div>
+        <div style="font-family:'Playfair Display',serif;font-weight:900;font-size:22px;color:#fff;margin-bottom:2px;">Maya Rivera</div>
+        <div style="font-size:11px;color:rgba(255,255,255,.3);margin-bottom:5px;">@mayarivera &middot; #2847</div>
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;flex-wrap:wrap;">
+          <div style="display:inline-flex;align-items:center;gap:5px;padding:3px 10px;background:rgba(100,80,255,.12);border:1px solid rgba(100,80,255,.2);border-radius:20px;font-size:9px;letter-spacing:2px;text-transform:uppercase;color:rgba(180,160,255,.8);">&#127925; Musician</div>
+          <div style="display:inline-flex;align-items:center;gap:4px;padding:2px 9px;background:rgba(40,200,80,.08);border:1px solid rgba(40,200,80,.2);border-radius:20px;"><div style="width:6px;height:6px;border-radius:50%;background:#40c850;animation:bk 2s ease-in-out infinite;"></div><span style="font-size:8px;color:rgba(40,200,80,.85);">Available</span></div>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;flex-wrap:wrap;">
+          <div style="font-size:9px;color:rgba(255,255,255,.35);">&#128205; Berlin, Germany</div>
+          <div style="font-size:9px;color:rgba(255,255,255,.35);">&#11088; 4.9</div>
+        </div>
+        <div style="font-size:11px;color:rgba(255,255,255,.45);line-height:1.6;margin-bottom:12px;">Singer-songwriter and guitarist with 8 years experience. Open to collaborations worldwide. &#127757;</div>
+      </div>
+      <div class="strow">
+        <div class="stc"><span class="stn">12</span><span class="stl">Projects</span></div>
+        <div class="stc"><span class="stn">840</span><span class="stl">Followers</span></div>
+        <div class="stc"><span class="stn">34</span><span class="stl">Collabs</span></div>
+        <div class="stc"><span class="stn">4.9</span><span class="stl">Rating</span></div>
+      </div>
+      <button class="bp" style="margin-bottom:10px;" onclick="sA('Collab request coming soon!')">&#129309; REQUEST COLLABORATION</button>
+      <button class="bs" style="margin-bottom:14px;" onclick="sA('Messaging coming soon!')">&#128172; SEND MESSAGE</button>
+      <div class="st">Skills</div>
+      <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px;">
+        <div class="skc gold">&#127925; Guitar</div><div class="skc gold">&#127908; Vocals</div><div class="skc gold">&#127932; Songwriting</div>
+        <div class="skc">&#127929; Piano</div><div class="skc">&#127911; Production</div><div class="skc">&#127916; Music Video</div>
+      </div>
+      <div class="st">Looking For</div>
+      <div style="background:rgba(212,168,64,.05);border:1px solid rgba(212,168,64,.2);border-radius:6px;padding:10px 12px;margin-bottom:14px;">
+        <div style="display:flex;flex-wrap:wrap;gap:5px;">
+          <div style="padding:3px 10px;background:rgba(212,168,64,.08);border:1px solid rgba(212,168,64,.18);border-radius:20px;font-size:9px;color:rgba(232,212,160,.65);">&#129345; Drummer</div>
+          <div style="padding:3px 10px;background:rgba(212,168,64,.08);border:1px solid rgba(212,168,64,.18);border-radius:20px;font-size:9px;color:rgba(232,212,160,.65);">&#127903; Producer</div>
+          <div style="padding:3px 10px;background:rgba(212,168,64,.08);border:1px solid rgba(212,168,64,.18);border-radius:20px;font-size:9px;color:rgba(232,212,160,.65);">&#9986; Video Editor</div>
+          <div style="padding:3px 10px;background:rgba(212,168,64,.08);border:1px solid rgba(212,168,64,.18);border-radius:20px;font-size:9px;color:rgba(232,212,160,.65);">&#128247; Photographer</div>
+        </div>
+      </div>
+      <div class="st">Active Project</div>
+      <div style="background:rgba(100,80,255,.06);border:1px solid rgba(100,80,255,.15);border-radius:6px;padding:10px 12px;position:relative;overflow:hidden;cursor:pointer;margin-bottom:14px;" onclick="goTo(this,'project')">
+        <div style="position:absolute;top:0;left:0;width:3px;height:100%;background:linear-gradient(180deg,#6050d8,#d4a840);"></div>
+        <div style="font-size:7px;letter-spacing:2px;text-transform:uppercase;color:rgba(180,160,255,.5);margin-bottom:4px;">&#128293; In Progress</div>
+        <div style="font-family:'Playfair Display',serif;font-size:14px;font-weight:700;color:#fff;margin-bottom:3px;">Summer EP &mdash; Golden Hours</div>
+        <div style="font-size:9px;color:rgba(255,255,255,.3);margin-bottom:8px;">5 tracks &middot; Singer-Songwriter &middot; Berlin</div>
+        <div style="height:2px;background:rgba(255,255,255,.06);border-radius:2px;overflow:hidden;margin-bottom:4px;"><div style="height:100%;width:45%;background:linear-gradient(90deg,#4030c0,#d4a840);border-radius:2px;"></div></div>
+        <div style="font-size:7px;color:rgba(255,255,255,.2);text-align:right;">45% complete</div>
+      </div>
+      <div class="st">Portfolio</div>
+      <div class="pg" style="margin-bottom:16px;">
+        <div class="pi" onclick="goTo(this,'public')">&#127925;</div><div class="pi" onclick="goTo(this,'public')">&#127916;</div>
+        <div class="pi" onclick="goTo(this,'public')">&#127908;</div><div class="pi" onclick="goTo(this,'public')">&#127932;</div>
+        <div class="pi" onclick="goTo(this,'public')">&#128247;</div><div class="pi" onclick="goTo(this,'public')">&#127911;</div>
+      </div>
+      <div class="gap"></div>
+    </div>
+  </div>
+  <div class="nb"><div class="ni" onclick="goTo(this,'home')"><div class="ni-icon">&#127968;</div><span>Home</span></div><div class="ni" onclick="goTo(this,'search')"><div class="ni-icon">&#128269;</div><span>Search</span></div><div class="ni" onclick="goTo(this,'wanted')"><div class="ni-icon">&#127919;</div><span>Wanted</span></div><div class="ni active" onclick="goTo(this,'profile')"><div class="ni-icon">&#128100;</div><span>Profile</span></div><div class="ni" onclick="goTo(this,'famemaker')"><div class="ni-icon">&#127916;</div><span>Create</span></div></div>
+</div>
+
+<!-- SCREEN 6: PROJECT -->
+<div class="screen" id="screen-project">
+  <div class="tb">
+    <div class="tr" style="margin-bottom:4px;">
+      <div class="bk" style="position:relative;top:auto;left:auto;margin-right:10px;" onclick="goTo(this,'profile')">&#8249;</div>
+      <div style="flex:1;"><div style="font-family:'Playfair Display',serif;font-size:16px;font-weight:900;color:#fff;">Golden Hours EP</div><div style="font-size:7px;letter-spacing:2px;text-transform:uppercase;color:rgba(180,160,255,.5);margin-top:2px;">&#127925; EP &middot; 5 Tracks</div></div>
+    </div>
+    <div style="margin-bottom:8px;"><div style="display:flex;justify-content:space-between;margin-bottom:4px;"><div style="font-size:8px;color:rgba(255,255,255,.25);">Progress</div><div style="font-size:8px;color:rgba(212,168,64,.6);">45% &middot; Due Jul 30</div></div><div style="height:3px;background:rgba(255,255,255,.06);border-radius:3px;overflow:hidden;"><div style="height:100%;width:45%;background:linear-gradient(90deg,#4030c0,#d4a840);border-radius:3px;"></div></div></div>
+    <div style="display:flex;border-bottom:1px solid rgba(255,255,255,.05);" id="ptbar">
+      <div class="ptab act" onclick="sPT(this,'crew')">Crew</div>
+      <div class="ptab" onclick="sPT(this,'files')">Files</div>
+      <div class="ptab" onclick="sPT(this,'chat')">Chat</div>
+      <div class="ptab" onclick="sPT(this,'wanted')">Wanted</div>
+    </div>
+  </div>
+  <div class="sa"><div class="pd pt" id="pjc">
+    <div style="display:flex;align-items:center;gap:8px;padding:10px 0;border-bottom:1px solid rgba(255,255,255,.04);"><div style="width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg,#1a0840,#280c50);display:flex;align-items:center;justify-content:center;font-size:20px;">&#127928;</div><div style="flex:1;"><div style="font-size:11px;font-weight:600;color:#fff;">Maya Rivera</div><div style="font-size:8px;text-transform:uppercase;color:rgba(180,160,255,.45);">Lead Artist &middot; Guitar</div></div><div style="font-size:8px;color:rgba(212,168,64,.7);">&#9679; Owner</div></div>
+    <div style="display:flex;align-items:center;gap:8px;padding:10px 0;border-bottom:1px solid rgba(255,255,255,.04);"><div style="width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg,#0a1840,#142850);display:flex;align-items:center;justify-content:center;font-size:20px;">&#127903;</div><div style="flex:1;"><div style="font-size:11px;font-weight:600;color:#fff;">Tom Fischer</div><div style="font-size:8px;text-transform:uppercase;color:rgba(180,160,255,.45);">Producer &middot; Sound</div></div><div style="font-size:8px;color:rgba(40,200,80,.7);">&#9679; Online</div></div>
+    <div style="display:flex;align-items:center;gap:8px;padding:10px 0;"><div style="width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg,#1a0830,#2a0840);display:flex;align-items:center;justify-content:center;font-size:20px;">&#128247;</div><div style="flex:1;"><div style="font-size:11px;font-weight:600;color:#fff;">Anna Muller</div><div style="font-size:8px;text-transform:uppercase;color:rgba(180,160,255,.45);">Photographer</div></div><div style="font-size:8px;color:rgba(255,160,40,.7);">&#9679; Away</div></div>
+    <div style="margin-top:14px;"><button class="bs" onclick="goTo(this,'famemaker')">&#127916; Open FameMaker</button></div>
+  </div></div>
+  <div class="nb"><div class="ni" onclick="goTo(this,'home')"><div class="ni-icon">&#127968;</div><span>Home</span></div><div class="ni" onclick="goTo(this,'search')"><div class="ni-icon">&#128269;</div><span>Search</span></div><div class="ni" onclick="goTo(this,'wanted')"><div class="ni-icon">&#127919;</div><span>Wanted</span></div><div class="ni" onclick="goTo(this,'profile')"><div class="ni-icon">&#128100;</div><span>Profile</span></div><div class="ni active" onclick="goTo(this,'famemaker')"><div class="ni-icon">&#127916;</div><span>Create</span></div></div>
+</div>
+
+<!-- SCREEN 7: FAMEMAKER -->
+<div class="screen" id="screen-famemaker">
+  <div class="tb">
+    <div class="tr" style="margin-bottom:4px;">
+      <div class="bk" style="position:relative;top:auto;left:auto;margin-right:10px;" onclick="goTo(this,'project')">&#8249;</div>
+      <div style="font-family:'Playfair Display',serif;font-size:18px;font-weight:900;color:#fff;">Fame<em style="color:#d4a840;font-style:italic;">Maker</em></div>
+      <div style="width:18px;"></div>
+    </div>
+    <div style="font-size:8px;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.22);text-align:center;margin-bottom:8px;">Golden Hours EP &middot; Track 01</div>
+    <div class="fmt">
+      <button class="fmb q" id="fmQ" onclick="sFM('quick')">&#9889; QUICK</button>
+      <button class="fmb off" id="fmU" onclick="sFM('upload')">&#128193; UPLOAD</button>
+      <button class="fmb off" id="fmS" onclick="sFM('showcase')">&#128444; SHOWCASE</button>
+    </div>
+  </div>
+  <div class="sa">
+    <div id="fmQV" class="pd pt">
+      <div class="ra">
+        <div style="position:absolute;top:-5px;left:25%;width:1px;height:100%;background:linear-gradient(180deg,rgba(255,60,30,.4),transparent);transform:rotate(-10deg);transform-origin:top center;"></div>
+        <div style="position:absolute;top:-5px;left:50%;width:1.5px;height:100%;background:linear-gradient(180deg,rgba(255,160,80,.5),transparent);transform-origin:top center;"></div>
+        <div style="position:absolute;top:-5px;left:75%;width:1px;height:100%;background:linear-gradient(180deg,rgba(255,60,30,.4),transparent);transform:rotate(10deg);transform-origin:top center;"></div>
+        <div class="tr2" id="tR"><div class="tn" id="tC">30</div><div class="ts">SEC</div></div>
+        <div class="rb" onclick="tRec()"><div class="rd" id="rD"></div></div>
+        <div class="ri" id="rI"><div class="rdot"></div><div class="rl">REC</div></div>
+      </div>
+      <div id="rH" style="text-align:center;margin-bottom:12px;">
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:13px;letter-spacing:2px;color:rgba(255,255,255,.4);margin-bottom:3px;">TAP TO RECORD</div>
+        <div style="font-size:9px;color:rgba(255,255,255,.18);">Max 30 seconds &middot; Tap again to stop</div>
+      </div>
+      <div id="rA" style="display:none;flex-direction:column;gap:8px;margin-bottom:12px;">
+        <div style="display:flex;gap:8px;">
+          <button class="bs" style="flex:1;" onclick="retRec()">&#8617; RETAKE</button>
+          <button class="bg" style="flex:1;" onclick="sA('Publishing to World Stage!')">&#127757; PUBLISH</button>
+        </div>
+        <div style="text-align:center;font-size:8px;color:rgba(255,255,255,.15);">Published with STAGERZ &#10022; credit automatically</div>
+      </div>
+      <div style="background:rgba(255,60,30,.04);border:1px solid rgba(255,60,30,.1);border-radius:8px;padding:10px 12px;margin-bottom:14px;">
+        <div style="font-size:7px;letter-spacing:2px;text-transform:uppercase;color:rgba(255,100,60,.45);margin-bottom:6px;">Quick Stage Tips</div>
+        <div style="font-size:9px;color:rgba(255,255,255,.25);margin-bottom:4px;">&#9889; Record anything &mdash; music, dance, art, ideas</div>
+        <div style="font-size:9px;color:rgba(255,255,255,.25);margin-bottom:4px;">&#127757; Published instantly to your World Stage</div>
+        <div style="font-size:9px;color:rgba(255,255,255,.25);">&#128101; Fans discover you &middot; Artists find you</div>
+      </div>
+    </div>
+    <div id="fmUV" class="pd pt" style="display:none;">
+      <div class="pvs">
+        <div class="psc"><div style="text-align:center;"><div style="font-size:28px;opacity:.4;">&#127916;</div><div style="font-size:9px;color:rgba(255,255,255,.2);margin-top:4px;">Preview appears here</div></div></div>
+        <div class="pctl">
+          <div class="pcb">&#9194;</div>
+          <div class="pcb pcp" id="pB" onclick="tPlay()">&#9654;</div>
+          <div class="pcb">&#9193;</div>
+          <div class="ptlb" onclick="sTimeline(event)"><div class="ptf" id="tF"></div></div>
+          <div class="pct" id="pT">0:00 / 3:42</div>
+        </div>
+      </div>
+      <div class="toolb">
+        <div class="toolt at" id="tlCut" onclick="sTL('Cut','Cut - tap timeline to split clip')"><div class="tlic">&#9986;</div><div class="tll">CUT</div></div>
+        <div class="toolt it" id="tlTrim" onclick="sTL('Trim','Trim - drag edges to shorten')"><div class="tlic">&#128207;</div><div class="tll">TRIM</div></div>
+        <div class="toolt it" id="tlVol" onclick="sTL('Volume','Volume - adjust track level')"><div class="tlic">&#128266;</div><div class="tll">VOL</div></div>
+        <div class="toolt it" id="tlLoop" onclick="sTL('Loop','Loop - repeat a section')"><div class="tlic">&#128257;</div><div class="tll">LOOP</div></div>
+        <div class="toolt it" id="tlUndo" onclick="sTL('Undo','Undo - step back')"><div class="tlic">&#8617;</div><div class="tll">UNDO</div></div>
+      </div>
+      <div class="th" id="tH">&#9986; Cut &mdash; tap the timeline to split clip at that point</div>
+      <div class="tk audio">
+        <div class="tkh"><div class="tki audio">&#127925;</div><div class="tkin"><div class="tkn">Main_Guitar_Take3.wav</div><div class="tkm">Audio &middot; 3:42 &middot; 24MB</div></div><div class="tka"><div class="tb3">&#128263;</div><div class="tb3">&#10005;</div></div></div>
+        <div class="wvf"><div class="wb2" style="height:40%;--d:.7s"></div><div class="wb2" style="height:70%;--d:.9s"></div><div class="wb2" style="height:55%;--d:.6s"></div><div class="wb2" style="height:90%;--d:1.1s"></div><div class="wb2" style="height:65%;--d:.8s"></div><div class="wb2" style="height:100%;--d:.7s"></div><div class="wb2" style="height:80%;--d:.9s"></div><div class="wb2" style="height:60%;--d:1s"></div><div class="wb2" style="height:75%;--d:.6s"></div><div class="wb2" style="height:50%;--d:.8s"></div><div class="wb2" style="height:85%;--d:.7s"></div><div class="wb2" style="height:70%;--d:.9s"></div><div class="wb2" style="height:45%;--d:1.1s"></div><div class="wb2" style="height:90%;--d:.7s"></div><div class="wb2" style="height:60%;--d:.8s"></div><div class="wb2" style="height:35%;--d:.6s"></div><div class="wb2" style="height:75%;--d:.9s"></div><div class="wb2" style="height:55%;--d:.7s"></div><div class="wb2" style="height:80%;--d:1s"></div><div class="wb2" style="height:65%;--d:.8s"></div></div>
+        <div class="ttl" style="position:relative;"><div class="tc audio" style="left:0%;width:100%;"></div></div>
+      </div>
+      <div class="tk video">
+        <div class="tkh"><div class="tki video">&#127916;</div><div class="tkin"><div class="tkn">Performance_Clip.mp4</div><div class="tkm">Video &middot; 2:15 &middot; 142MB &middot; Anna Muller</div></div><div class="tka"><div class="tb3">&#128065;</div><div class="tb3">&#10005;</div></div></div>
+        <div class="wvf" style="height:20px;"><div class="wb2" style="height:100%;--d:99s;background:rgba(212,168,64,.2);"></div><div class="wb2" style="height:100%;--d:99s;background:rgba(212,168,64,.15);"></div><div class="wb2" style="height:100%;--d:99s;background:rgba(212,168,64,.25);"></div><div class="wb2" style="height:100%;--d:99s;background:rgba(212,168,64,.18);"></div><div class="wb2" style="height:100%;--d:99s;background:rgba(212,168,64,.22);"></div><div class="wb2" style="height:100%;--d:99s;background:rgba(212,168,64,.16);"></div><div class="wb2" style="height:100%;--d:99s;background:rgba(212,168,64,.28);"></div><div class="wb2" style="height:100%;--d:99s;background:rgba(212,168,64,.2);"></div><div class="wb2" style="height:100%;--d:99s;background:rgba(212,168,64,.14);"></div><div class="wb2" style="height:100%;--d:99s;background:rgba(212,168,64,.24);"></div><div class="wb2" style="height:100%;--d:99s;background:rgba(212,168,64,.19);"></div><div class="wb2" style="height:100%;--d:99s;background:rgba(212,168,64,.21);"></div><div class="wb2" style="height:100%;--d:99s;background:rgba(212,168,64,.17);"></div><div class="wb2" style="height:100%;--d:99s;background:rgba(212,168,64,.26);"></div><div class="wb2" style="height:100%;--d:99s;background:rgba(212,168,64,.2);"></div><div class="wb2" style="height:100%;--d:99s;background:rgba(212,168,64,.15);"></div><div class="wb2" style="height:100%;--d:99s;background:rgba(212,168,64,.23);"></div><div class="wb2" style="height:100%;--d:99s;background:rgba(212,168,64,.18);"></div><div class="wb2" style="height:100%;--d:99s;background:rgba(212,168,64,.27);"></div><div class="wb2" style="height:100%;--d:99s;background:rgba(212,168,64,.2);"></div></div>
+        <div class="ttl" style="position:relative;"><div class="tc video" style="left:0%;width:60%;"></div></div>
+      </div>
+      <div class="ps">
+        <div class="ptl">Ready to Perform? &#127917;</div>
+        <div class="psub">Publish your work to the World Stage.</div>
+        <div class="po">
+          <div class="popt sel" onclick="sPub(this)"><div class="pr"><div class="prd"></div></div><div style="font-size:14px;">&#127757;</div><div><div class="pon">Public Stage</div><div class="pod">Everyone can watch</div></div></div>
+          <div class="popt uns" onclick="sPub(this)"><div class="pr"></div><div style="font-size:14px;">&#128101;</div><div><div class="pon">Followers Only</div><div class="pod">Only your followers</div></div></div>
+          <div class="popt uns" onclick="sPub(this)"><div class="pr"></div><div style="font-size:14px;">&#128274;</div><div><div class="pon">Team Only</div><div class="pod">Private &mdash; crew only</div></div></div>
+        </div>
+        <button class="bg" onclick="sA('Publishing to World Stage!')">&#127917; PUBLISH TO WORLD STAGE</button>
+        <div style="display:flex;align-items:center;gap:6px;padding:8px 10px;background:rgba(100,80,255,.05);border:1px solid rgba(100,80,255,.12);border-radius:6px;margin-top:8px;"><div style="font-size:12px;">&#128101;</div><div style="font-size:8px;color:rgba(180,160,255,.5);">Tom Fischer and Anna Muller will be credited automatically.</div></div>
+      </div>
+    </div>
+    <div id="fmSV" class="pd pt" style="display:none;">
+      <div style="height:150px;background:linear-gradient(135deg,#1a0840,#0a1040);border-radius:12px;border:1.5px dashed rgba(212,168,64,.25);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;cursor:pointer;margin-bottom:12px;" onclick="sA('Upload cover coming soon!')">
+        <div style="font-size:28px;opacity:.4;">&#128444;</div>
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:13px;letter-spacing:2px;color:rgba(212,168,64,.5);">ADD COVER IMAGE</div>
+        <div style="font-size:8px;color:rgba(255,255,255,.18);">Tap to upload &middot; JPG or PNG</div>
+      </div>
+      <div style="background:rgba(12,8,28,.85);border:1px solid rgba(100,80,255,.12);border-radius:10px;padding:12px;margin-bottom:10px;display:flex;align-items:center;gap:10px;cursor:pointer;" onclick="sA('Attach audio coming soon!')">
+        <div style="width:36px;height:36px;border-radius:8px;background:rgba(100,80,255,.12);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;">&#127925;</div>
+        <div style="flex:1;"><div style="font-size:10px;font-weight:600;color:#fff;margin-bottom:2px;">Attach Audio Track</div><div style="font-size:8px;color:rgba(255,255,255,.25);">MP3, WAV &middot; Max 10MB</div></div>
+        <div style="font-size:14px;color:rgba(100,80,255,.4);">+</div>
+      </div>
+      <div style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:8px;padding:10px 12px;margin-bottom:10px;"><div style="font-size:7px;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.2);margin-bottom:5px;">Title</div><div style="font-size:11px;color:rgba(255,255,255,.25);">Add a title...</div></div>
+      <div style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:8px;padding:10px 12px;margin-bottom:14px;height:60px;"><div style="font-size:7px;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.2);margin-bottom:5px;">Description</div><div style="font-size:10px;color:rgba(255,255,255,.18);">Tell your story...</div></div>
+      <button class="bg" onclick="sA('Publishing Showcase!')" style="margin-bottom:14px;">&#128444; PUBLISH SHOWCASE</button>
+    </div>
+  </div>
+  <div class="nb"><div class="ni" onclick="goTo(this,'home')"><div class="ni-icon">&#127968;</div><span>Home</span></div><div class="ni" onclick="goTo(this,'search')"><div class="ni-icon">&#128269;</div><span>Search</span></div><div class="ni" onclick="goTo(this,'wanted')"><div class="ni-icon">&#127919;</div><span>Wanted</span></div><div class="ni" onclick="goTo(this,'profile')"><div class="ni-icon">&#128100;</div><span>Profile</span></div><div class="ni active" onclick="goTo(this,'famemaker')"><div class="ni-icon">&#127916;</div><span>Create</span></div></div>
+</div>
+
+<!-- SCREEN 8: PUBLIC STAGE -->
+<div class="screen" id="screen-public">
+  <div class="tb">
+    <div class="tr" style="margin-bottom:8px;"><div class="logo">STA<em>G</em>ERZ</div><div style="font-size:9px;letter-spacing:2px;color:rgba(255,255,255,.2);">PUBLIC STAGE</div></div>
+    <div class="jb" onclick="goTo(this,'home')"><div class="jt"><strong>Are you an artist?</strong> Join the World Stage free.</div><button class="jsb">JOIN FREE</button></div>
+    <div class="cr" style="margin-top:8px;">
+      <div class="cc on"><div class="ci">&#127757;</div><div class="cl">All</div></div>
+      <div class="cc off"><div class="ci">&#127925;</div><div class="cl">Music</div></div>
+      <div class="cc off"><div class="ci">&#127916;</div><div class="cl">Film</div></div>
+      <div class="cc off"><div class="ci">&#128131;</div><div class="cl">Dance</div></div>
+      <div class="cc off"><div class="ci">&#127912;</div><div class="cl">Art</div></div>
+      <div class="cc off"><div class="ci">&#129302;</div><div class="cl">AI</div></div>
+    </div>
+  </div>
+  <div class="sa">
+    <div class="pd pt">
+      <div class="st">Now Playing</div>
+      <div style="border-radius:14px;overflow:hidden;border:1px solid rgba(100,80,255,.15);margin-bottom:14px;">
+        <div class="nps">
+          <div class="npb"><div class="npbd"></div><div class="npbt">NOW PLAYING</div></div>
+          <div class="npsil">&#127928;</div>
+          <div class="npp" id="npP" onclick="this.textContent=this.textContent=='&#9654;'?'&#9646;&#9646;':'&#9654;'">&#9654;</div>
+          <div class="npf"></div>
+        </div>
+        <div class="npi">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;"><div style="width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,#1a0840,#280c50);display:flex;align-items:center;justify-content:center;font-size:14px;">&#127928;</div><div style="font-size:11px;font-weight:600;color:#fff;">Maya Rivera</div><div style="font-size:8px;color:rgba(255,255,255,.3);margin-left:auto;">Berlin</div></div>
+          <div class="nptl">Golden Hours &mdash; Track 01</div>
+          <div style="display:flex;gap:4px;margin-bottom:8px;"><div style="padding:2px 7px;border-radius:10px;font-size:7px;background:rgba(100,80,255,.08);border:1px solid rgba(100,80,255,.15);color:rgba(180,160,255,.55);">Singer-Songwriter</div></div>
+          <div style="height:2px;background:rgba(255,255,255,.06);border-radius:2px;margin-bottom:8px;overflow:hidden;"><div id="nF" style="height:100%;width:35%;background:linear-gradient(90deg,#4030c0,#d4a840);border-radius:2px;"></div></div>
+          <div class="npac">
+            <div class="npa" onclick="tLike(this)"><div class="npai">&#129293;</div><div class="npac2" id="nL">2.4k</div></div>
+            <div class="npa"><div class="npai">&#128172;</div><div class="npac2">138</div></div>
+            <div class="npa"><div class="npai">&#8599;</div><div class="npac2">Share</div></div>
+            <div class="npa" onclick="goTo(this,'profile')"><div class="npai">&#128100;</div><div class="npac2">Profile</div></div>
+          </div>
+        </div>
+      </div>
+      <div class="st">On Stage Now</div>
+      <div class="sr" style="margin-bottom:14px;">
+        <div class="si"><div class="sg gold"><div class="sa2" style="background:linear-gradient(135deg,#201018,#301820);">&#127908;</div></div><div class="sn">Leila</div></div>
+        <div class="si"><div class="sg blue"><div class="sa2" style="background:linear-gradient(135deg,#0a1840,#142850);">&#127916;</div></div><div class="sn">James</div></div>
+        <div class="si"><div class="sg red"><div class="sa2" style="background:linear-gradient(135deg,#1a0830,#2a0840);">&#128131;</div></div><div class="sn">Sofia</div></div>
+        <div class="si"><div class="sg gold"><div class="sa2" style="background:linear-gradient(135deg,#0a2018,#102818);">&#127927;</div></div><div class="sn">Amir</div></div>
+        <div class="si"><div class="sg blue"><div class="sa2" style="background:linear-gradient(135deg,#201018,#281020);">&#129302;</div></div><div class="sn">Zara AI</div></div>
+      </div>
+      <div class="st">Recent Performances</div>
+      <div class="pfc">
+        <div class="pfm" style="background:linear-gradient(135deg,#1a0840,#0a1040);"><div style="position:absolute;top:6px;left:8px;font-size:7px;padding:2px 6px;border-radius:10px;background:rgba(0,0,0,.5);color:rgba(255,255,255,.5);">Music</div><div class="pfi">&#127908;</div><div class="pfp">&#9654;</div><div class="pfd">4:18</div></div>
+        <div class="pfin">
+          <div style="display:flex;align-items:center;gap:7px;margin-bottom:5px;"><div style="width:22px;height:22px;border-radius:50%;background:linear-gradient(135deg,#201018,#301820);display:flex;align-items:center;justify-content:center;font-size:11px;">&#127908;</div><div style="font-size:10px;font-weight:600;color:#fff;">Leila Mensah</div><div style="font-size:7px;color:rgba(255,255,255,.25);margin-left:auto;">Lagos</div></div>
+          <div class="pftl">Midnight in Lagos</div>
+          <div style="display:flex;gap:4px;margin-bottom:7px;"><div style="padding:2px 6px;border-radius:8px;font-size:7px;background:rgba(100,80,255,.07);border:1px solid rgba(100,80,255,.13);color:rgba(180,160,255,.5);">Afrobeat</div><div style="padding:2px 6px;border-radius:8px;font-size:7px;background:rgba(100,80,255,.07);border:1px solid rgba(100,80,255,.13);color:rgba(180,160,255,.5);">Soul</div></div>
+          <div class="pfac"><div class="pfa lk">&#10084; 2.1k</div><div class="pfa">&#128172; 94</div><div class="pfa">&#8599; Share</div><div class="pfst">STAGERZ &#10022;</div></div>
+        </div>
+      </div>
+      <div class="pfc">
+        <div class="pfm" style="background:linear-gradient(135deg,#1a0830,#0a0840);"><div style="position:absolute;top:6px;left:8px;font-size:7px;padding:2px 6px;border-radius:10px;background:rgba(0,0,0,.5);color:rgba(255,255,255,.5);">Video</div><div class="pfi">&#128131;</div><div class="pfp">&#9654;</div><div class="pfd">0:28</div></div>
+        <div class="pfin">
+          <div style="display:flex;align-items:center;gap:7px;margin-bottom:5px;"><div style="width:22px;height:22px;border-radius:50%;background:linear-gradient(135deg,#1a0830,#2a0840);display:flex;align-items:center;justify-content:center;font-size:11px;">&#128131;</div><div style="font-size:10px;font-weight:600;color:#fff;">Sofia Lima</div><div style="font-size:7px;color:rgba(255,255,255,.25);margin-left:auto;">Sao Paulo</div></div>
+          <div class="pftl">Rhythm of the City</div>
+          <div style="display:flex;gap:4px;margin-bottom:7px;"><div style="padding:2px 6px;border-radius:8px;font-size:7px;background:rgba(100,80,255,.07);border:1px solid rgba(100,80,255,.13);color:rgba(180,160,255,.5);">Quick Stage</div><div style="padding:2px 6px;border-radius:8px;font-size:7px;background:rgba(100,80,255,.07);border:1px solid rgba(100,80,255,.13);color:rgba(180,160,255,.5);">Dance</div></div>
+          <div class="pfac"><div class="pfa">&#129293; 890</div><div class="pfa">&#128172; 64</div><div class="pfa">&#8599; Share</div><div class="pfst">STAGERZ &#10022;</div></div>
+        </div>
+      </div>
+      <div class="jcta" onclick="goTo(this,'home')">
+        <div class="jctat">Step onto the <em>World Stage</em></div>
+        <div class="jctap">Every great work needs more than one kind of artist.</div>
+        <div class="jctasub">Join 247 artists from 48 countries. Free to start.</div>
+        <button class="bg" onclick="event.stopPropagation();goTo(this,'home')" style="margin-bottom:8px;">JOIN STAGERZ FREE</button>
+        <div style="font-size:9px;color:rgba(255,255,255,.2);">Already an artist? Sign in</div>
+      </div>
+      <div class="gap"></div>
+    </div>
+  </div>
+  <div class="nb"><div class="ni active"><div class="ni-icon">&#127917;</div><span>Stage</span></div><div class="ni" onclick="goTo(this,'search')"><div class="ni-icon">&#128269;</div><span>Search</span></div><div class="ni"><div class="ni-icon">&#10084;</div><span>Liked</span></div><div class="ni" onclick="goTo(this,'home')"><div class="ni-icon">&#127917;</div><span>Join</span></div></div>
+</div>
+
+<!-- SCREEN 9: BACKSTAGE -->
+<div class="screen" id="screen-backstage">
+  <div class="sa">
+    <div class="bsh">
+      <div class="bk" style="position:absolute;top:14px;left:14px;" onclick="goTo(this,'home')">&#8249;</div>
+      <div style="position:absolute;top:-5px;left:20%;width:1px;height:100%;background:linear-gradient(180deg,rgba(80,60,255,.6),transparent);transform:rotate(-15deg);transform-origin:top center;opacity:.4;"></div>
+      <div style="position:absolute;top:-5px;left:50%;width:1.5px;height:100%;background:linear-gradient(180deg,rgba(255,220,100,.5),transparent);transform-origin:top center;opacity:.4;"></div>
+      <div style="position:absolute;top:-5px;left:80%;width:1px;height:100%;background:linear-gradient(180deg,rgba(80,60,255,.6),transparent);transform:rotate(15deg);transform-origin:top center;opacity:.4;"></div>
+      <div style="font-size:9px;letter-spacing:4px;text-transform:uppercase;color:rgba(212,168,64,.6);margin-bottom:8px;position:relative;z-index:1;">Unlock Your Potential</div>
+      <div style="font-family:'Playfair Display',serif;font-size:28px;font-weight:900;color:#fff;position:relative;z-index:1;margin-bottom:4px;line-height:1;">Go <em style="font-style:italic;background:linear-gradient(135deg,#d4a840,#f0c860,#d4a840);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">Backstage</em></div>
+      <div style="font-size:11px;color:rgba(255,255,255,.35);position:relative;z-index:1;margin-bottom:18px;">Unlimited. Professional. World class.</div>
+      <div class="blt">
+        <button class="blb off" id="mB" onclick="sBill('monthly')">Monthly</button>
+        <button class="blb on" id="yB" onclick="sBill('yearly')">Yearly <span class="sbg">-40%</span></button>
+      </div>
+    </div>
+    <div class="pd" style="padding-top:16px;">
+      <div class="pf">
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:12px;"><div class="pfn">STAGERZ</div><div style="text-align:right;"><span class="pamt free">0 EUR</span><span class="pper free">Forever free</span></div></div>
+        <div class="ft2 yes"><div class="fck yes">&#10003;</div>Artist Profile</div>
+        <div class="ft2 yes"><div class="fck yes">&#10003;</div>1 Active Project</div>
+        <div class="ft2 yes"><div class="fck yes">&#10003;</div>Search Artists Worldwide</div>
+        <div class="ft2 yes"><div class="fck yes">&#10003;</div>1 WANTED Post</div>
+        <div class="ft2 no"><div class="fck no">&#10007;</div>Unlimited Projects</div>
+        <div class="ft2 no"><div class="fck no">&#10007;</div>Team Chat and Files</div>
+        <div class="ft2 no"><div class="fck no">&#10007;</div>NACKL Mining</div>
+      </div>
+      <div class="pbs">
+        <div style="position:absolute;top:14px;right:14px;background:linear-gradient(135deg,#d4a840,#f0c860);color:#06040e;font-family:'Bebas Neue',sans-serif;font-size:9px;letter-spacing:1.5px;padding:3px 10px;border-radius:20px;">Most Popular</div>
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:12px;"><div class="pbsn">Backstage</div><div style="text-align:right;"><span class="pamt bs" id="bP">5.99 EUR</span><span class="pper bs" id="bPer" style="display:block;">per month billed yearly</span></div></div>
+        <div style="font-size:7px;letter-spacing:2px;text-transform:uppercase;color:rgba(212,168,64,.5);margin-bottom:6px;">Everything in Free, plus:</div>
+        <div class="ft2 gold"><div class="fck gold">&#10003;</div>Unlimited Projects</div>
+        <div class="ft2 gold"><div class="fck gold">&#10003;</div>Unlimited WANTED Posts</div>
+        <div class="ft2 gold"><div class="fck gold">&#10003;</div>Team Chat and File Sharing</div>
+        <div class="ft2 gold"><div class="fck gold">&#10003;</div>Featured in Search Results</div>
+        <div class="ft2 gold"><div class="fck gold">&#10003;</div>Profile Analytics</div>
+        <div class="ft2 gold"><div class="fck gold">&#10003;</div>Priority Support</div>
+        <div class="ft2 gold"><div class="fck gold">&#10003;</div>Early Access New Features</div>
+        <div style="display:flex;align-items:center;gap:8px;padding:8px 10px;background:rgba(212,168,64,.06);border:1px solid rgba(212,168,64,.15);border-radius:6px;margin-top:8px;">
+          <div style="font-size:14px;">&#9935;</div>
+          <div><div style="font-size:10px;font-weight:600;color:rgba(212,168,64,.85);margin-bottom:1px;">Mine NACKL While You Create</div><div style="font-size:8px;color:rgba(212,168,64,.45);">Powered by Acki Nacki Bee Engine</div></div>
+        </div>
+      </div>
+      <button class="bg" style="margin-bottom:10px;" onclick="sA('Welcome to Backstage! Payment coming soon.')">GO BACKSTAGE NOW</button>
+      <button class="bs" style="margin-bottom:14px;" onclick="goTo(this,'home')">Continue with Free</button>
+      <div class="tr3"><div class="tri">Secure</div><div class="tri">Cancel Anytime</div><div class="tri">Worldwide</div></div>
+      <div class="payr">
+        <div class="pyb">Card</div><div class="pyb">Telegram Stars</div><div class="pyb">Bitcoin</div>
+        <div class="pyb">Ethereum</div><div class="pyb">USDT</div><div class="pyb cr">NACKL</div><div class="pyb cr">SHELL</div>
+      </div>
+      <div class="gap"></div>
+    </div>
+  </div>
 </div>
 
 <script>
-// Telegram Web App setup
-const tg = window.Telegram?.WebApp;
-if(tg){
-  tg.ready();
-  tg.expand();
-  // Apply Telegram theme colors if available
-  document.body.style.background = '#07050f';
-}
+var tg=window.Telegram&&window.Telegram.WebApp;
+if(tg){tg.ready();tg.expand();}
+var uN=tg&&tg.initDataUnsafe&&tg.initDataUnsafe.user?tg.initDataUnsafe.user.first_name:"Artist";
 
-function createProfile(){
-  if(tg){
-    tg.showAlert('🎭 Profile creation coming soon!\n\nWelcome to STAGERZ, ' + (tg.initDataUnsafe?.user?.first_name || 'Artist') + '!');
-  } else {
-    alert('🎭 Profile creation coming soon!\nWelcome to STAGERZ!');
-  }
+function goTo(el,id){
+  document.querySelectorAll(".screen").forEach(function(s){s.classList.remove("active");});
+  var t=document.getElementById("screen-"+id);
+  if(t){t.classList.add("active");var sa=t.querySelector(".sa");if(sa)sa.scrollTop=0;}
+  if(tg&&tg.HapticFeedback)tg.HapticFeedback.impactOccurred("light");
 }
-
-function exploreStage(){
-  if(tg){
-    tg.showAlert('🌍 The World Stage is being built!\n\nStay tuned, ' + (tg.initDataUnsafe?.user?.first_name || 'Artist') + '!');
+function sA(msg){
+  if(tg)tg.showAlert(msg);else alert(msg);
+}
+function sFT(el){
+  document.querySelectorAll(".ftb").forEach(function(t){t.className="ftb off";});
+  el.className="ftb on";
+}
+function sW(v){
+  document.getElementById("myV").style.display=v==="my"?"block":"none";
+  document.getElementById("commV").style.display=v==="comm"?"block":"none";
+  document.getElementById("myBtn").className="tb2 "+(v==="my"?"on":"off");
+  document.getElementById("commBtn").className="tb2 "+(v==="comm"?"on":"off");
+}
+function sFC(el){
+  document.querySelectorAll(".fc").forEach(function(c){c.className="fc off";});
+  el.className="fc on";
+}
+document.querySelectorAll(".cr").forEach(function(row){
+  row.querySelectorAll(".cc").forEach(function(c){
+    c.addEventListener("click",function(){
+      row.querySelectorAll(".cc").forEach(function(x){x.className="cc off";});
+      c.className="cc on";
+    });
+  });
+});
+function sPT(el,tab){
+  document.querySelectorAll(".ptab").forEach(function(t){t.className="ptab";});
+  el.className="ptab act";
+  var tabs={
+    crew:"<div style='display:flex;align-items:center;gap:8px;padding:10px 0;border-bottom:1px solid rgba(255,255,255,.04);'><div style='width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg,#1a0840,#280c50);display:flex;align-items:center;justify-content:center;font-size:20px;'>&#127928;</div><div style='flex:1;'><div style='font-size:11px;font-weight:600;color:#fff;'>Maya Rivera</div><div style='font-size:8px;text-transform:uppercase;color:rgba(180,160,255,.45);'>Lead Artist</div></div><div style='font-size:8px;color:rgba(212,168,64,.7);'>Owner</div></div><div style='display:flex;align-items:center;gap:8px;padding:10px 0;border-bottom:1px solid rgba(255,255,255,.04);'><div style='width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg,#0a1840,#142850);display:flex;align-items:center;justify-content:center;font-size:20px;'>&#127903;</div><div style='flex:1;'><div style='font-size:11px;font-weight:600;color:#fff;'>Tom Fischer</div><div style='font-size:8px;text-transform:uppercase;color:rgba(180,160,255,.45);'>Producer</div></div><div style='font-size:8px;color:rgba(40,200,80,.7);'>Online</div></div><div style='display:flex;align-items:center;gap:8px;padding:10px 0;'><div style='width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg,#1a0830,#2a0840);display:flex;align-items:center;justify-content:center;font-size:20px;'>&#128247;</div><div style='flex:1;'><div style='font-size:11px;font-weight:600;color:#fff;'>Anna Muller</div><div style='font-size:8px;text-transform:uppercase;color:rgba(180,160,255,.45);'>Photographer</div></div><div style='font-size:8px;color:rgba(255,160,40,.7);'>Away</div></div><div style='margin-top:14px;'><button style='width:100%;padding:14px;background:rgba(255,255,255,.03);color:rgba(200,180,255,.6);border:1px solid rgba(100,80,255,.18);border-radius:4px;font-family:Bebas Neue,sans-serif;font-size:14px;letter-spacing:3px;cursor:pointer;' onclick="goTo(this,'famemaker')">Open FameMaker</button></div>",
+    files:"<div style='font-size:8px;letter-spacing:2.5px;text-transform:uppercase;color:rgba(255,255,255,.22);margin-bottom:10px;'>Files</div><div style='display:flex;align-items:center;gap:8px;padding:8px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);border-radius:6px;margin-bottom:5px;'><div style='font-size:16px;'>&#127925;</div><div style='flex:1;'><div style='font-size:9px;color:#fff;'>Track_01_Demo.wav</div><div style='font-size:7px;color:rgba(255,255,255,.25);'>24MB 2h ago</div></div><div>download</div></div><div style='margin-top:10px;'><button style='width:100%;padding:14px;background:linear-gradient(135deg,#8a6018,#d4a840);color:#06040e;border:none;border-radius:4px;font-family:Bebas Neue,sans-serif;font-size:14px;letter-spacing:3px;cursor:pointer;' onclick="goTo(this,'famemaker')">Open FameMaker</button></div>",
+    chat:"<div style='margin-bottom:14px;'><div style='display:flex;gap:8px;margin-bottom:8px;'><div style='width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,#0a1840,#142850);display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;'>&#127903;</div><div style='background:rgba(100,80,255,.1);border:1px solid rgba(100,80,255,.15);border-radius:0 10px 10px 10px;padding:8px 12px;max-width:75%;'><div style='font-size:10px;font-weight:600;color:rgba(180,160,255,.8);margin-bottom:3px;'>Tom Fischer</div><div style='font-size:10px;color:rgba(255,255,255,.6);'>Guitar track is amazing!</div></div></div><div style='display:flex;justify-content:flex-end;'><div style='background:linear-gradient(135deg,#3020a0,#5040c8);border-radius:10px 0 10px 10px;padding:8px 12px;max-width:75%;'><div style='font-size:10px;color:#fff;'>Finalizing track 1 this week!</div></div></div></div><div style='display:flex;gap:8px;align-items:center;'><input style='flex:1;background:rgba(255,255,255,.05);border:1px solid rgba(100,80,255,.18);border-radius:20px;padding:10px 14px;color:#fff;font-size:12px;outline:none;' placeholder='Message your crew...' onclick="sA('Team chat coming soon!')"><div style='width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#3020a0,#5040c8);display:flex;align-items:center;justify-content:center;font-size:16px;cursor:pointer;flex-shrink:0;'>up</div></div>",
+    wanted:"<div style='font-size:8px;letter-spacing:2.5px;text-transform:uppercase;color:rgba(255,255,255,.22);margin-bottom:10px;'>Open Roles</div><div style='background:rgba(212,168,64,.05);border:1px solid rgba(212,168,64,.18);border-radius:10px;padding:12px 14px;margin-bottom:14px;'><div style='font-family:Bebas Neue,sans-serif;font-size:13px;letter-spacing:2px;color:#d4a840;margin-bottom:5px;'>Drummer Wanted</div><div style='font-size:10px;color:rgba(255,255,255,.4);margin-bottom:8px;'>Looking for drummer for EP sessions.</div><div style='font-size:9px;color:rgba(255,255,255,.25);'><span style='color:rgba(212,168,64,.7);font-weight:600;'>8</span> responses</div></div><button style='width:100%;padding:14px;background:rgba(255,255,255,.03);color:rgba(200,180,255,.6);border:1px solid rgba(100,80,255,.18);border-radius:4px;font-family:Bebas Neue,sans-serif;font-size:14px;letter-spacing:3px;cursor:pointer;' onclick="goTo(this,'wanted')">Add More Roles</button>"
+  };
+  document.getElementById("pjc").innerHTML="<div style='padding-top:12px;'>"+(tabs[tab]||"")+"</div>";
+}
+function sFM(tab){
+  document.getElementById("fmQV").style.display="none";
+  document.getElementById("fmUV").style.display="none";
+  document.getElementById("fmSV").style.display="none";
+  document.getElementById("fm"+tab.charAt(0).toUpperCase()+"V").style.display="block";
+  document.getElementById("fmQ").className="fmb "+(tab==="quick"?"q":"off");
+  document.getElementById("fmU").className="fmb "+(tab==="upload"?"u":"off");
+  document.getElementById("fmS").className="fmb "+(tab==="showcase"?"s":"off");
+}
+var rec=false,rTimer=null,rSec=30;
+function tRec(){rec?stpRec():strRec();}
+function strRec(){
+  rec=true;rSec=30;
+  var d=document.getElementById("rD");
+  d.style.borderRadius="4px";d.style.width="16px";d.style.height="16px";
+  document.getElementById("rI").style.display="flex";
+  document.getElementById("tR").style.borderColor="rgba(255,60,30,.8)";
+  document.getElementById("rH").innerHTML="<div style='font-family:Bebas Neue,sans-serif;font-size:13px;letter-spacing:2px;color:rgba(255,100,80,.8);margin-bottom:3px;'>RECORDING...</div><div style='font-size:9px;color:rgba(255,255,255,.18);'>Tap again to stop</div>";
+  rTimer=setInterval(function(){rSec--;document.getElementById("tC").textContent=rSec;if(rSec<=0)stpRec();},1000);
+  if(tg&&tg.HapticFeedback)tg.HapticFeedback.impactOccurred("heavy");
+}
+function stpRec(){
+  rec=false;clearInterval(rTimer);
+  var d=document.getElementById("rD");
+  d.style.borderRadius="50%";d.style.width="18px";d.style.height="18px";
+  document.getElementById("rI").style.display="none";
+  document.getElementById("tR").style.borderColor="rgba(40,200,80,.5)";
+  document.getElementById("tC").textContent="OK";
+  document.getElementById("tC").style.fontSize="18px";
+  document.getElementById("rH").style.display="none";
+  document.getElementById("rA").style.display="flex";
+  if(tg&&tg.HapticFeedback)tg.HapticFeedback.notificationOccurred("success");
+}
+function retRec(){
+  rec=false;clearInterval(rTimer);rSec=30;
+  var d=document.getElementById("rD");
+  d.style.borderRadius="50%";d.style.width="18px";d.style.height="18px";
+  document.getElementById("rI").style.display="none";
+  document.getElementById("tR").style.borderColor="rgba(255,60,30,.3)";
+  document.getElementById("tC").textContent="30";
+  document.getElementById("tC").style.fontSize="26px";
+  document.getElementById("rH").style.display="block";
+  document.getElementById("rH").innerHTML="<div style='font-family:Bebas Neue,sans-serif;font-size:13px;letter-spacing:2px;color:rgba(255,255,255,.4);margin-bottom:3px;'>TAP TO RECORD</div><div style='font-size:9px;color:rgba(255,255,255,.18);'>Max 30 seconds</div>";
+  document.getElementById("rA").style.display="none";
+}
+var playing=false,pProg=0,pInt=null;
+function tPlay(){
+  playing=!playing;
+  document.getElementById("pB").textContent=playing?"||":">";
+  if(playing){
+    pInt=setInterval(function(){
+      pProg=Math.min(100,pProg+0.4);
+      document.getElementById("tF").style.width=pProg+"%";
+      var s=Math.round(pProg*2.22),m=Math.floor(s/60),sec=s%60;
+      document.getElementById("pT").textContent=m+":"+(sec<10?"0":"")+sec+" / 3:42";
+      if(pProg>=100){clearInterval(pInt);playing=false;document.getElementById("pB").textContent=">";pProg=0;}
+    },80);
+  } else clearInterval(pInt);
+}
+function sTimeline(e){
+  var b=e.currentTarget,r=b.getBoundingClientRect();
+  pProg=((e.clientX-r.left)/r.width)*100;
+  document.getElementById("tF").style.width=pProg+"%";
+}
+function sTL(name,hint){
+  ["Cut","Trim","Volume","Loop","Undo"].forEach(function(t){
+    var el=document.getElementById("tl"+t);
+    if(el)el.className=t===name?"toolt at":"toolt it";
+  });
+  document.getElementById("tH").textContent=hint;
+}
+function sPub(el){
+  document.querySelectorAll(".popt").forEach(function(o){
+    o.className="popt uns";
+    o.querySelector(".pr").innerHTML="";
+  });
+  el.className="popt sel";
+  el.querySelector(".pr").innerHTML="<div class='prd'></div>";
+}
+function sBill(type){
+  var m=type==="monthly";
+  document.getElementById("mB").className="blb "+(m?"on":"off");
+  document.getElementById("yB").className="blb "+(m?"off":"on");
+  document.getElementById("bP").textContent=m?"9.99 EUR":"5.99 EUR";
+  document.getElementById("bPer").textContent=m?"per month billed monthly":"per month billed yearly";
+}
+var npProg=35;
+setInterval(function(){
+  npProg=Math.min(100,npProg+0.08);
+  var el=document.getElementById("nF");
+  if(el)el.style.width=npProg+"%";
+},200);
+function tLike(el){
+  var ic=el.querySelector(".npai"),ct=document.getElementById("nL");
+  if(ic.textContent.indexOf("129293")>-1||ic.innerHTML.indexOf("129293")>-1||ic.textContent==="&#129293;"){
+    ic.innerHTML="&#10084;";ct.textContent="2.5k";ct.style.color="rgba(255,80,100,.8)";
   } else {
-    alert('🌍 The World Stage is being built!\nStay tuned!');
+    ic.innerHTML="&#129293;";ct.textContent="2.4k";ct.style.color="rgba(255,255,255,.25)";
   }
+  if(tg&&tg.HapticFeedback)tg.HapticFeedback.impactOccurred("light");
 }
 </script>
 </body>
