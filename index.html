@@ -817,29 +817,84 @@ html,body{width:100%;height:100%;background:#07050f;font-family:Inter,sans-serif
       </div>
       <div class="st">On Stage Now</div>
       <div class="sr" style="margin-bottom:14px;">
-        <div class="si"><div class="sg gold"><div class="sa2" style="background:linear-gradient(135deg,#201018,#301820);">&#127908;</div></div><div class="sn">Leila</div></div>
-        <div class="si"><div class="sg blue"><div class="sa2" style="background:linear-gradient(135deg,#0a1840,#142850);">&#127916;</div></div><div class="sn">James</div></div>
-        <div class="si"><div class="sg red"><div class="sa2" style="background:linear-gradient(135deg,#1a0830,#2a0840);">&#128131;</div></div><div class="sn">Sofia</div></div>
-        <div class="si"><div class="sg gold"><div class="sa2" style="background:linear-gradient(135deg,#0a2018,#102818);">&#127927;</div></div><div class="sn">Amir</div></div>
-        <div class="si"><div class="sg blue"><div class="sa2" style="background:linear-gradient(135deg,#201018,#281020);">&#129302;</div></div><div class="sn">Zara AI</div></div>
+        <div class="si" onclick="goTo(this,'profile')"><div class="sg gold"><div class="sa2" style="background:linear-gradient(135deg,#1a0840,#280c50);">&#127928;</div></div><div class="sn">Maya</div></div>
+        <div class="si" onclick="goTo(this,'profile')"><div class="sg red"><div class="sa2" style="background:linear-gradient(135deg,#201018,#301820);">&#127908;</div></div><div class="sn">Leila</div></div>
+        <div class="si" onclick="goTo(this,'search')"><div class="sg blue"><div class="sa2" style="background:linear-gradient(135deg,#0a1840,#142850);">&#127916;</div></div><div class="sn">James</div></div>
+        <div class="si" onclick="goTo(this,'search')"><div class="sg red"><div class="sa2" style="background:linear-gradient(135deg,#1a0830,#2a0840);">&#128131;</div></div><div class="sn">Sofia</div></div>
+        <div class="si" onclick="goTo(this,'search')"><div class="sg gold"><div class="sa2" style="background:linear-gradient(135deg,#0a2018,#102818);">&#127927;</div></div><div class="sn">Amir</div></div>
+        <div class="si" onclick="goTo(this,'search')"><div class="sg blue"><div class="sa2" style="background:linear-gradient(135deg,#101828,#182030);">&#128247;</div></div><div class="sn">Chen</div></div>
+        <div class="si" onclick="goTo(this,'search')"><div class="sg gold"><div class="sa2" style="background:linear-gradient(135deg,#201018,#281020);">&#129302;</div></div><div class="sn">Zara AI</div></div>
       </div>
       <div class="st">Recent Performances</div>
+
+      <!-- Performance 1 - Music -->
       <div class="pfc">
-        <div class="pfm" style="background:linear-gradient(135deg,#1a0840,#0a1040);"><div style="position:absolute;top:6px;left:8px;font-size:7px;padding:2px 6px;border-radius:10px;background:rgba(0,0,0,.5);color:rgba(255,255,255,.5);">Music</div><div class="pfi">&#127908;</div><div class="pfp">&#9654;</div><div class="pfd">4:18</div></div>
+        <div class="pfm" style="background:linear-gradient(135deg,#1a0840,#0a1040);"><div style="position:absolute;top:6px;left:8px;font-size:7px;padding:2px 6px;border-radius:10px;background:rgba(0,0,0,.5);color:rgba(255,255,255,.5);">&#127925; Music</div><div class="pfi">&#127908;</div><div class="pfp">&#9654;</div><div class="pfd">4:18</div></div>
         <div class="pfin">
-          <div style="display:flex;align-items:center;gap:7px;margin-bottom:5px;"><div style="width:22px;height:22px;border-radius:50%;background:linear-gradient(135deg,#201018,#301820);display:flex;align-items:center;justify-content:center;font-size:11px;">&#127908;</div><div style="font-size:10px;font-weight:600;color:#fff;">Leila Mensah</div><div style="font-size:7px;color:rgba(255,255,255,.25);margin-left:auto;">Lagos</div></div>
+          <div style="display:flex;align-items:center;gap:7px;margin-bottom:5px;"><div style="width:22px;height:22px;border-radius:50%;background:linear-gradient(135deg,#201018,#301820);display:flex;align-items:center;justify-content:center;font-size:11px;">&#127908;</div><div style="font-size:10px;font-weight:600;color:#fff;">Leila Mensah</div><div style="font-size:7px;color:rgba(255,255,255,.25);margin-left:auto;">&#127475;&#127468; Lagos</div></div>
           <div class="pftl">Midnight in Lagos</div>
-          <div style="display:flex;gap:4px;margin-bottom:7px;"><div style="padding:2px 6px;border-radius:8px;font-size:7px;background:rgba(100,80,255,.07);border:1px solid rgba(100,80,255,.13);color:rgba(180,160,255,.5);">Afrobeat</div><div style="padding:2px 6px;border-radius:8px;font-size:7px;background:rgba(100,80,255,.07);border:1px solid rgba(100,80,255,.13);color:rgba(180,160,255,.5);">Soul</div></div>
+          <div style="display:flex;gap:4px;margin-bottom:7px;flex-wrap:wrap;"><div style="padding:2px 6px;border-radius:8px;font-size:7px;background:rgba(100,80,255,.07);border:1px solid rgba(100,80,255,.13);color:rgba(180,160,255,.5);">Afrobeat</div><div style="padding:2px 6px;border-radius:8px;font-size:7px;background:rgba(100,80,255,.07);border:1px solid rgba(100,80,255,.13);color:rgba(180,160,255,.5);">Soul</div><div style="padding:2px 6px;border-radius:8px;font-size:7px;background:rgba(100,80,255,.07);border:1px solid rgba(100,80,255,.13);color:rgba(180,160,255,.5);">Original</div></div>
           <div class="pfac"><div class="pfa lk">&#10084; 2.1k</div><div class="pfa">&#128172; 94</div><div class="pfa" onclick="shareStagerz()">&#8599; Share</div><div class="pfst">STAGERZ &#10022;</div></div>
         </div>
       </div>
+
+      <!-- Performance 2 - Quick Stage Dance -->
       <div class="pfc">
-        <div class="pfm" style="background:linear-gradient(135deg,#1a0830,#0a0840);"><div style="position:absolute;top:6px;left:8px;font-size:7px;padding:2px 6px;border-radius:10px;background:rgba(0,0,0,.5);color:rgba(255,255,255,.5);">Video</div><div class="pfi">&#128131;</div><div class="pfp">&#9654;</div><div class="pfd">0:28</div></div>
+        <div class="pfm" style="background:linear-gradient(135deg,#1a0830,#0a0840);"><div style="position:absolute;top:6px;left:8px;font-size:7px;padding:2px 6px;border-radius:10px;background:rgba(255,60,30,.2);color:rgba(255,120,80,.9);">&#9889; Quick Stage</div><div class="pfi">&#128131;</div><div class="pfp">&#9654;</div><div class="pfd">0:28</div></div>
         <div class="pfin">
-          <div style="display:flex;align-items:center;gap:7px;margin-bottom:5px;"><div style="width:22px;height:22px;border-radius:50%;background:linear-gradient(135deg,#1a0830,#2a0840);display:flex;align-items:center;justify-content:center;font-size:11px;">&#128131;</div><div style="font-size:10px;font-weight:600;color:#fff;">Sofia Lima</div><div style="font-size:7px;color:rgba(255,255,255,.25);margin-left:auto;">Sao Paulo</div></div>
+          <div style="display:flex;align-items:center;gap:7px;margin-bottom:5px;"><div style="width:22px;height:22px;border-radius:50%;background:linear-gradient(135deg,#1a0830,#2a0840);display:flex;align-items:center;justify-content:center;font-size:11px;">&#128131;</div><div style="font-size:10px;font-weight:600;color:#fff;">Sofia Lima</div><div style="font-size:7px;color:rgba(255,255,255,.25);margin-left:auto;">&#127463;&#127479; Sao Paulo</div></div>
           <div class="pftl">Rhythm of the City</div>
-          <div style="display:flex;gap:4px;margin-bottom:7px;"><div style="padding:2px 6px;border-radius:8px;font-size:7px;background:rgba(100,80,255,.07);border:1px solid rgba(100,80,255,.13);color:rgba(180,160,255,.5);">Quick Stage</div><div style="padding:2px 6px;border-radius:8px;font-size:7px;background:rgba(100,80,255,.07);border:1px solid rgba(100,80,255,.13);color:rgba(180,160,255,.5);">Dance</div></div>
+          <div style="display:flex;gap:4px;margin-bottom:7px;"><div style="padding:2px 6px;border-radius:8px;font-size:7px;background:rgba(100,80,255,.07);border:1px solid rgba(100,80,255,.13);color:rgba(180,160,255,.5);">Hip-Hop</div><div style="padding:2px 6px;border-radius:8px;font-size:7px;background:rgba(100,80,255,.07);border:1px solid rgba(100,80,255,.13);color:rgba(180,160,255,.5);">Dance</div></div>
           <div class="pfac"><div class="pfa">&#129293; 890</div><div class="pfa">&#128172; 64</div><div class="pfa" onclick="shareStagerz()">&#8599; Share</div><div class="pfst">STAGERZ &#10022;</div></div>
+        </div>
+      </div>
+
+      <!-- Performance 3 - Short Film -->
+      <div class="pfc">
+        <div class="pfm" style="background:linear-gradient(135deg,#0a1040,#0a1828);"><div style="position:absolute;top:6px;left:8px;font-size:7px;padding:2px 6px;border-radius:10px;background:rgba(0,0,0,.5);color:rgba(255,255,255,.5);">&#127916; Short Film</div><div class="pfi">&#127916;</div><div class="pfp">&#9654;</div><div class="pfd">8:42</div></div>
+        <div class="pfin">
+          <div style="display:flex;align-items:center;gap:7px;margin-bottom:5px;"><div style="width:22px;height:22px;border-radius:50%;background:linear-gradient(135deg,#0a1840,#142850);display:flex;align-items:center;justify-content:center;font-size:11px;">&#127916;</div><div style="font-size:10px;font-weight:600;color:#fff;">James Kofi</div><div style="font-size:7px;color:rgba(255,255,255,.25);margin-left:auto;">&#127482;&#127480; New York</div></div>
+          <div class="pftl">The Last Take</div>
+          <div style="display:flex;gap:4px;margin-bottom:7px;"><div style="padding:2px 6px;border-radius:8px;font-size:7px;background:rgba(100,80,255,.07);border:1px solid rgba(100,80,255,.13);color:rgba(180,160,255,.5);">Drama</div><div style="padding:2px 6px;border-radius:8px;font-size:7px;background:rgba(100,80,255,.07);border:1px solid rgba(100,80,255,.13);color:rgba(180,160,255,.5);">Short Film</div><div style="padding:2px 6px;border-radius:8px;font-size:7px;background:rgba(212,168,64,.07);border:1px solid rgba(212,168,64,.15);color:rgba(212,168,64,.6);">Award Entry</div></div>
+          <div class="pfac"><div class="pfa">&#129293; 1.8k</div><div class="pfa">&#128172; 210</div><div class="pfa" onclick="shareStagerz()">&#8599; Share</div><div class="pfst">STAGERZ &#10022;</div></div>
+        </div>
+      </div>
+
+      <!-- Performance 4 - AI Art -->
+      <div class="pfc">
+        <div class="pfm" style="background:linear-gradient(135deg,#0a1828,#101830);"><div style="position:absolute;top:6px;left:8px;font-size:7px;padding:2px 6px;border-radius:10px;background:rgba(0,0,0,.5);color:rgba(255,255,255,.5);">&#129302; AI Art</div><div class="pfi">&#129302;</div><div class="pfp">&#9654;</div><div class="pfd">1:05</div></div>
+        <div class="pfin">
+          <div style="display:flex;align-items:center;gap:7px;margin-bottom:5px;"><div style="width:22px;height:22px;border-radius:50%;background:linear-gradient(135deg,#201018,#281020);display:flex;align-items:center;justify-content:center;font-size:11px;">&#129302;</div><div style="font-size:10px;font-weight:600;color:#fff;">Zara AI</div><div style="font-size:7px;color:rgba(255,255,255,.25);margin-left:auto;">&#127468;&#127463; London</div></div>
+          <div class="pftl">Digital Soul — Vol. 3</div>
+          <div style="display:flex;gap:4px;margin-bottom:7px;"><div style="padding:2px 6px;border-radius:8px;font-size:7px;background:rgba(100,80,255,.07);border:1px solid rgba(100,80,255,.13);color:rgba(180,160,255,.5);">AI Generated</div><div style="padding:2px 6px;border-radius:8px;font-size:7px;background:rgba(100,80,255,.07);border:1px solid rgba(100,80,255,.13);color:rgba(180,160,255,.5);">Ambient</div><div style="padding:2px 6px;border-radius:8px;font-size:7px;background:rgba(100,80,255,.07);border:1px solid rgba(100,80,255,.13);color:rgba(180,160,255,.5);">Visual</div></div>
+          <div class="pfac"><div class="pfa">&#129293; 445</div><div class="pfa">&#128172; 28</div><div class="pfa" onclick="shareStagerz()">&#8599; Share</div><div class="pfst">STAGERZ &#10022;</div></div>
+        </div>
+      </div>
+
+      <!-- Performance 5 - Photography -->
+      <div class="pfc">
+        <div class="pfm" style="background:linear-gradient(135deg,#101828,#0a1020);"><div style="position:absolute;top:6px;left:8px;font-size:7px;padding:2px 6px;border-radius:10px;background:rgba(0,0,0,.5);color:rgba(255,255,255,.5);">&#128247; Photo Series</div><div class="pfi">&#128247;</div><div class="pfp">&#9654;</div><div class="pfd">24 photos</div></div>
+        <div class="pfin">
+          <div style="display:flex;align-items:center;gap:7px;margin-bottom:5px;"><div style="width:22px;height:22px;border-radius:50%;background:linear-gradient(135deg,#101828,#182030);display:flex;align-items:center;justify-content:center;font-size:11px;">&#128247;</div><div style="font-size:10px;font-weight:600;color:#fff;">Chen Wei</div><div style="font-size:7px;color:rgba(255,255,255,.25);margin-left:auto;">&#127464;&#127475; Shanghai</div></div>
+          <div class="pftl">Faces of the Underground</div>
+          <div style="display:flex;gap:4px;margin-bottom:7px;"><div style="padding:2px 6px;border-radius:8px;font-size:7px;background:rgba(100,80,255,.07);border:1px solid rgba(100,80,255,.13);color:rgba(180,160,255,.5);">Concert</div><div style="padding:2px 6px;border-radius:8px;font-size:7px;background:rgba(100,80,255,.07);border:1px solid rgba(100,80,255,.13);color:rgba(180,160,255,.5);">Portrait</div><div style="padding:2px 6px;border-radius:8px;font-size:7px;background:rgba(100,80,255,.07);border:1px solid rgba(100,80,255,.13);color:rgba(180,160,255,.5);">Documentary</div></div>
+          <div class="pfac"><div class="pfa">&#129293; 672</div><div class="pfa">&#128172; 45</div><div class="pfa" onclick="shareStagerz()">&#8599; Share</div><div class="pfst">STAGERZ &#10022;</div></div>
+        </div>
+      </div>
+
+      <!-- Performance 6 - Collaboration Music+Film -->
+      <div class="pfc" style="border-color:rgba(212,168,64,.2);">
+        <div style="position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(212,168,64,.4),transparent);"></div>
+        <div class="pfm" style="background:linear-gradient(135deg,#1a0840,#180820);"><div style="position:absolute;top:6px;left:8px;font-size:7px;padding:2px 6px;border-radius:10px;background:rgba(212,168,64,.15);color:rgba(212,168,64,.9);">&#127917; Collaboration</div><div style="font-size:32px;opacity:.6;position:relative;z-index:1;">&#127928;&#127916;</div><div class="pfp">&#9654;</div><div class="pfd">5:33</div></div>
+        <div class="pfin">
+          <div style="display:flex;align-items:center;gap:7px;margin-bottom:5px;">
+            <div style="width:22px;height:22px;border-radius:50%;background:linear-gradient(135deg,#1a0840,#280c50);display:flex;align-items:center;justify-content:center;font-size:11px;">&#127928;</div>
+            <div style="width:22px;height:22px;border-radius:50%;background:linear-gradient(135deg,#0a1840,#142850);display:flex;align-items:center;justify-content:center;font-size:11px;margin-left:-8px;">&#127916;</div>
+            <div style="font-size:10px;font-weight:600;color:#fff;">Maya Rivera + James Kofi</div>
+          </div>
+          <div class="pftl">Golden Hours — Music Video</div>
+          <div style="display:flex;gap:4px;margin-bottom:7px;"><div style="padding:2px 6px;border-radius:8px;font-size:7px;background:rgba(212,168,64,.07);border:1px solid rgba(212,168,64,.15);color:rgba(212,168,64,.6);">Collab</div><div style="padding:2px 6px;border-radius:8px;font-size:7px;background:rgba(100,80,255,.07);border:1px solid rgba(100,80,255,.13);color:rgba(180,160,255,.5);">Music Video</div><div style="padding:2px 6px;border-radius:8px;font-size:7px;background:rgba(100,80,255,.07);border:1px solid rgba(100,80,255,.13);color:rgba(180,160,255,.5);">Indie</div></div>
+          <div class="pfac"><div class="pfa lk">&#10084; 3.4k</div><div class="pfa">&#128172; 287</div><div class="pfa" onclick="shareStagerz()">&#8599; Share</div><div class="pfst">STAGERZ &#10022;</div></div>
         </div>
       </div>
       <div class="jcta" onclick="goTo(this,'home')">
