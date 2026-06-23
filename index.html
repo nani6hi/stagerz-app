@@ -32,6 +32,15 @@ html,body{width:100%;height:100%;background:#07050f;font-family:Inter,sans-serif
 @keyframes bflick{from{opacity:.6;}to{opacity:1;}}
 @keyframes lp{0%,100%{opacity:1;}50%{opacity:.3;}}
 @keyframes wp{from{transform:scaleY(.4);}to{transform:scaleY(1);}}
+@keyframes ringPulse{0%{box-shadow:0 0 0 0 rgba(255,60,30,.6);}70%{box-shadow:0 0 0 16px rgba(255,60,30,0);}100%{box-shadow:0 0 0 0 rgba(255,60,30,0);}}
+@keyframes waveRec{0%,100%{height:20%;transform:scaleY(.3);}50%{height:100%;transform:scaleY(1);}}
+@keyframes celebrate{0%{transform:scale(0);opacity:0;}50%{transform:scale(1.1);}100%{transform:scale(1);opacity:1;}}
+@keyframes countUp{0%{opacity:0;transform:translateY(10px);}100%{opacity:1;transform:translateY(0);}}
+@keyframes starFloat{0%{transform:translateY(0) rotate(0deg);opacity:1;}100%{transform:translateY(-80px) rotate(360deg);opacity:0;}}
+.ring-pulse{animation:ringPulse 1s ease-out infinite!important;}
+.wave-rec{animation:waveRec var(--d,.6s) ease-in-out infinite alternate!important;background:rgba(255,60,30,.7)!important;}
+.celebrate-screen{position:fixed;inset:0;background:rgba(7,5,15,.97);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:999;animation:celebrate .4s ease-out;}
+.star-float{position:absolute;font-size:24px;animation:starFloat 1.5s ease-out forwards;}
 @keyframes bk{0%,100%{opacity:1;}50%{opacity:.3;}}
 .wl{font-family:'Playfair Display',serif;font-weight:900;font-size:clamp(44px,13vw,64px);letter-spacing:6px;text-align:center;line-height:1;background:linear-gradient(135deg,#c0b0ff,#fff 45%,#d4a840 65%,#f0c860 80%,#d4a840);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:6px;}
 .wb{width:6px;height:6px;border-radius:50%;animation:bflick var(--d,1.8s) ease-in-out infinite alternate;}
@@ -572,7 +581,21 @@ html,body{width:100%;height:100%;background:#07050f;font-family:Inter,sans-serif
   </div>
   <div class="sa">
     <div id="fmQV" class="pd pt">
-      <div class="ra">
+      <div class="ra" id="recArea">
+        <div id="recWave" style="position:absolute;bottom:0;left:0;right:0;height:40px;display:none;align-items:flex-end;justify-content:center;gap:3px;padding:0 20px 8px;">
+          <div class="wb2 wave-rec" style="--d:.4s;height:30%;"></div>
+          <div class="wb2 wave-rec" style="--d:.6s;height:50%;"></div>
+          <div class="wb2 wave-rec" style="--d:.3s;height:80%;"></div>
+          <div class="wb2 wave-rec" style="--d:.7s;height:60%;"></div>
+          <div class="wb2 wave-rec" style="--d:.5s;height:100%;"></div>
+          <div class="wb2 wave-rec" style="--d:.4s;height:70%;"></div>
+          <div class="wb2 wave-rec" style="--d:.6s;height:90%;"></div>
+          <div class="wb2 wave-rec" style="--d:.3s;height:50%;"></div>
+          <div class="wb2 wave-rec" style="--d:.5s;height:80%;"></div>
+          <div class="wb2 wave-rec" style="--d:.7s;height:40%;"></div>
+          <div class="wb2 wave-rec" style="--d:.4s;height:70%;"></div>
+          <div class="wb2 wave-rec" style="--d:.6s;height:55%;"></div>
+        </div>
         <div style="position:absolute;top:-5px;left:25%;width:1px;height:100%;background:linear-gradient(180deg,rgba(255,60,30,.4),transparent);transform:rotate(-10deg);transform-origin:top center;"></div>
         <div style="position:absolute;top:-5px;left:50%;width:1.5px;height:100%;background:linear-gradient(180deg,rgba(255,160,80,.5),transparent);transform-origin:top center;"></div>
         <div style="position:absolute;top:-5px;left:75%;width:1px;height:100%;background:linear-gradient(180deg,rgba(255,60,30,.4),transparent);transform:rotate(10deg);transform-origin:top center;"></div>
@@ -790,6 +813,21 @@ html,body{width:100%;height:100%;background:#07050f;font-family:Inter,sans-serif
   </div>
 </div>
 
+<!-- CELEBRATION SCREEN -->
+<div id="celebScreen" style="display:none;position:fixed;inset:0;background:linear-gradient(160deg,#07050f,#1a0840,#07050f);z-index:999;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:32px;">
+  <div id="celebStars"></div>
+  <div style="font-size:56px;margin-bottom:16px;animation:celebrate .5s ease-out;">&#127917;</div>
+  <div style="font-family:'Playfair Display',serif;font-size:28px;font-weight:900;color:#fff;margin-bottom:8px;line-height:1.2;">You are on the<br><em style="color:#d4a840;font-style:italic;">World Stage!</em></div>
+  <div style="font-size:11px;font-weight:300;letter-spacing:4px;text-transform:uppercase;color:rgba(180,160,255,.6);margin-bottom:24px;">STAGERZ &#10022;</div>
+  <div style="background:rgba(255,255,255,.05);border:1px solid rgba(100,80,255,.2);border-radius:12px;padding:16px 24px;margin-bottom:24px;min-width:200px;">
+    <div id="viewCount" style="font-family:'Playfair Display',serif;font-size:36px;font-weight:900;color:#d4a840;line-height:1;">1</div>
+    <div style="font-size:9px;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.3);margin-top:4px;">Artists watching</div>
+  </div>
+  <div style="font-size:10px;color:rgba(255,255,255,.3);line-height:1.6;margin-bottom:28px;">Your Quick Stage is live.<br>Artists and fans worldwide can see it.</div>
+  <button style="width:100%;max-width:280px;padding:14px;background:linear-gradient(135deg,#8a6018,#d4a840);color:#06040e;border:none;border-radius:4px;font-family:'Bebas Neue',sans-serif;font-size:15px;letter-spacing:3px;cursor:pointer;margin-bottom:10px;" onclick="goTo(this,'public');hideCelebration()">&#127757; SEE YOUR PERFORMANCE</button>
+  <button style="width:100%;max-width:280px;padding:13px;background:rgba(255,255,255,.03);color:rgba(200,180,255,.6);border:1px solid rgba(100,80,255,.18);border-radius:4px;font-family:'Bebas Neue',sans-serif;font-size:15px;letter-spacing:3px;cursor:pointer;" onclick="hideCelebration()">&#8617; RECORD ANOTHER</button>
+</div>
+
 <script>
 var tg=window.Telegram&&window.Telegram.WebApp;
 
@@ -875,8 +913,16 @@ function strRec(){
   d.style.borderRadius="4px";d.style.width="16px";d.style.height="16px";
   document.getElementById("rI").style.display="flex";
   document.getElementById("tR").style.borderColor="rgba(255,60,30,.8)";
+  document.getElementById("tR").classList.add("ring-pulse");
+  var rw=document.getElementById("recWave");
+  if(rw)rw.style.display="flex";
   document.getElementById("rH").innerHTML="<div style='font-size:13px;color:rgba(255,100,80,.8);margin-bottom:3px;'>RECORDING...</div><div style='font-size:9px;color:rgba(255,255,255,.18);'>Tap again to stop</div>";
-  rTimer=setInterval(function(){rSec--;document.getElementById("tC").textContent=rSec;if(rSec<=0)stpRec();},1000);
+  rTimer=setInterval(function(){
+    rSec--;
+    document.getElementById("tC").textContent=rSec;
+    document.getElementById("tC").style.color=rSec<=5?"rgba(255,80,80,.9)":"#fff";
+    if(rSec<=0)stpRec();
+  },1000);
   if(tg&&tg.HapticFeedback)tg.HapticFeedback.impactOccurred("heavy");
 }
 function stpRec(){
@@ -885,8 +931,12 @@ function stpRec(){
   d.style.borderRadius="50%";d.style.width="18px";d.style.height="18px";
   document.getElementById("rI").style.display="none";
   document.getElementById("tR").style.borderColor="rgba(40,200,80,.5)";
-  document.getElementById("tC").textContent="OK";
-  document.getElementById("tC").style.fontSize="18px";
+  document.getElementById("tR").classList.remove("ring-pulse");
+  var rw=document.getElementById("recWave");
+  if(rw)rw.style.display="none";
+  document.getElementById("tC").textContent="&#10003;";
+  document.getElementById("tC").style.fontSize="22px";
+  document.getElementById("tC").style.color="rgba(40,200,80,.9)";
   document.getElementById("rH").style.display="none";
   document.getElementById("rA").style.display="flex";
   if(tg&&tg.HapticFeedback)tg.HapticFeedback.notificationOccurred("success");
@@ -956,6 +1006,42 @@ setInterval(function(){
   var el=document.getElementById("nF");
   if(el)el.style.width=npProg+"%";
 },200);
+
+function showCelebration(){
+  var s=document.getElementById("celebScreen");
+  s.style.display="flex";
+  retRec();
+  // Animate view count climbing
+  var count=1;
+  var maxCount=Math.floor(Math.random()*80)+20;
+  var ct=setInterval(function(){
+    count+=Math.floor(Math.random()*3)+1;
+    if(count>=maxCount){count=maxCount;clearInterval(ct);}
+    document.getElementById("viewCount").textContent=count;
+  },80);
+  // Float stars
+  var stars=["&#11088;","&#127775;","&#127917;","&#10024;","&#127928;","&#127757;"];
+  var container=document.getElementById("celebStars");
+  container.innerHTML="";
+  for(var i=0;i<8;i++){
+    (function(i){
+      setTimeout(function(){
+        var star=document.createElement("div");
+        star.className="star-float";
+        star.innerHTML=stars[Math.floor(Math.random()*stars.length)];
+        star.style.left=(10+Math.random()*80)+"%";
+        star.style.top=(20+Math.random()*60)+"%";
+        container.appendChild(star);
+        setTimeout(function(){star.remove();},1500);
+      },i*200);
+    })(i);
+  }
+  if(tg&&tg.HapticFeedback)tg.HapticFeedback.notificationOccurred("success");
+}
+
+function hideCelebration(){
+  document.getElementById("celebScreen").style.display="none";
+}
 
 function tLike(el){
   var ic=document.getElementById("heartIcon");
