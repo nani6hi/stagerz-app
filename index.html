@@ -41,6 +41,13 @@ html,body{width:100%;height:100%;background:#07050f;font-family:Inter,sans-serif
 .wave-rec{animation:waveRec var(--d,.6s) ease-in-out infinite alternate!important;background:rgba(255,60,30,.7)!important;}
 .celebrate-screen{position:fixed;inset:0;background:rgba(7,5,15,.97);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:999;animation:celebrate .4s ease-out;}
 .star-float{position:absolute;font-size:24px;animation:starFloat 1.5s ease-out forwards;}
+@keyframes slideIn{from{transform:translateX(100%);opacity:0;}to{transform:translateX(0);opacity:1;}}
+@keyframes slideOut{from{transform:translateX(0);opacity:1;}to{transform:translateX(-100%);opacity:0;}}
+@keyframes fadeUp{from{transform:translateY(30px);opacity:0;}to{transform:translateY(0);opacity:1;}}
+.onboard-slide{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 32px;text-align:center;transition:all .4s ease;}
+.onboard-dot{width:8px;height:8px;border-radius:50%;transition:all .3s;}
+.onboard-dot.active{background:#d4a840;width:24px;border-radius:4px;}
+.onboard-dot.inactive{background:rgba(255,255,255,.15);}
 @keyframes bk{0%,100%{opacity:1;}50%{opacity:.3;}}
 .wl{font-family:'Playfair Display',serif;font-weight:900;font-size:clamp(44px,13vw,64px);letter-spacing:6px;text-align:center;line-height:1;background:linear-gradient(135deg,#c0b0ff,#fff 45%,#d4a840 65%,#f0c860 80%,#d4a840);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:6px;}
 .wb{width:6px;height:6px;border-radius:50%;animation:bflick var(--d,1.8s) ease-in-out infinite alternate;}
@@ -259,6 +266,95 @@ html,body{width:100%;height:100%;background:#07050f;font-family:Inter,sans-serif
 </style>
 </head>
 <body>
+<!-- ONBOARDING SCREEN -->
+<div id="onboardScreen" style="position:fixed;inset:0;background:#07050f;z-index:9999;display:flex;flex-direction:column;">
+  
+  <!-- Skip button -->
+  <div style="position:absolute;top:16px;right:16px;z-index:10;">
+    <button onclick="skipOnboard()" style="padding:6px 14px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:20px;font-family:'Bebas Neue',sans-serif;font-size:10px;letter-spacing:2px;color:rgba(255,255,255,.35);cursor:pointer;">SKIP</button>
+  </div>
+
+  <!-- Slides container -->
+  <div style="flex:1;position:relative;overflow:hidden;">
+
+    <!-- Slide 1 -->
+    <div id="slide1" class="onboard-slide">
+      <div style="position:absolute;inset:0;overflow:hidden;pointer-events:none;">
+        <div style="position:absolute;top:20%;left:50%;transform:translateX(-50%);width:300px;height:300px;background:radial-gradient(circle,rgba(100,80,255,.15),transparent 70%);"></div>
+      </div>
+      <div style="font-size:64px;margin-bottom:24px;animation:fadeUp .6s ease-out .2s both;">&#127925;</div>
+      <div style="font-family:'Playfair Display',serif;font-size:26px;font-weight:900;color:#fff;line-height:1.3;margin-bottom:16px;animation:fadeUp .6s ease-out .3s both;">A musician without a<br>filmmaker is just<br><em style="color:#d4a840;font-style:italic;">sound.</em></div>
+      <div style="font-size:13px;font-weight:300;color:rgba(255,255,255,.4);line-height:1.7;animation:fadeUp .6s ease-out .4s both;">A dancer without a photographer<br>is just movement.<br>A story without a composer<br>is just words.</div>
+    </div>
+
+    <!-- Slide 2 -->
+    <div id="slide2" class="onboard-slide" style="transform:translateX(100%);opacity:0;">
+      <div style="position:absolute;inset:0;overflow:hidden;pointer-events:none;">
+        <div style="position:absolute;top:20%;left:50%;transform:translateX(-50%);width:300px;height:300px;background:radial-gradient(circle,rgba(212,168,64,.1),transparent 70%);"></div>
+      </div>
+      <div style="font-size:64px;margin-bottom:24px;">&#127757;</div>
+      <div style="font-family:'Playfair Display',serif;font-size:26px;font-weight:900;color:#fff;line-height:1.3;margin-bottom:16px;">Every great work needs more than<br><em style="color:#d4a840;font-style:italic;">one kind of artist.</em></div>
+      <div style="font-size:13px;font-weight:300;color:rgba(255,255,255,.4);line-height:1.7;">Find your crew worldwide.<br>Collaborate across disciplines.<br>Create something the world<br>has never seen.</div>
+      <!-- Artist icons row -->
+      <div style="display:flex;gap:12px;margin-top:28px;flex-wrap:wrap;justify-content:center;">
+        <div style="display:flex;flex-direction:column;align-items:center;gap:4px;">
+          <div style="width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,#1a0840,#280c50);border:1px solid rgba(100,80,255,.3);display:flex;align-items:center;justify-content:center;font-size:20px;">&#127928;</div>
+          <div style="font-size:7px;color:rgba(255,255,255,.3);">Musician</div>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:center;gap:4px;">
+          <div style="width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,#0a1840,#142850);border:1px solid rgba(100,80,255,.3);display:flex;align-items:center;justify-content:center;font-size:20px;">&#127916;</div>
+          <div style="font-size:7px;color:rgba(255,255,255,.3);">Filmmaker</div>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:center;gap:4px;">
+          <div style="width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,#1a0830,#2a0840);border:1px solid rgba(100,80,255,.3);display:flex;align-items:center;justify-content:center;font-size:20px;">&#128131;</div>
+          <div style="font-size:7px;color:rgba(255,255,255,.3);">Dancer</div>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:center;gap:4px;">
+          <div style="width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,#101828,#182030);border:1px solid rgba(100,80,255,.3);display:flex;align-items:center;justify-content:center;font-size:20px;">&#128247;</div>
+          <div style="font-size:7px;color:rgba(255,255,255,.3);">Photographer</div>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:center;gap:4px;">
+          <div style="width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,#201018,#281020);border:1px solid rgba(100,80,255,.3);display:flex;align-items:center;justify-content:center;font-size:20px;">&#129302;</div>
+          <div style="font-size:7px;color:rgba(255,255,255,.3);">AI Creator</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Slide 3 -->
+    <div id="slide3" class="onboard-slide" style="transform:translateX(100%);opacity:0;">
+      <div style="position:absolute;inset:0;overflow:hidden;pointer-events:none;">
+        <div style="position:absolute;top:-10px;left:25%;width:1.5px;height:55%;background:linear-gradient(180deg,rgba(80,60,255,.6),transparent);transform:rotate(-15deg);transform-origin:top center;"></div>
+        <div style="position:absolute;top:-10px;left:50%;width:2px;height:55%;background:linear-gradient(180deg,rgba(255,220,100,.5),transparent);transform-origin:top center;"></div>
+        <div style="position:absolute;top:-10px;left:75%;width:1.5px;height:55%;background:linear-gradient(180deg,rgba(80,60,255,.6),transparent);transform:rotate(15deg);transform-origin:top center;"></div>
+        <div style="position:absolute;top:20%;left:50%;transform:translateX(-50%);width:300px;height:300px;background:radial-gradient(circle,rgba(212,168,64,.12),transparent 70%);"></div>
+      </div>
+      <div style="font-family:'Playfair Display',serif;font-size:48px;font-weight:900;letter-spacing:4px;background:linear-gradient(135deg,#c0b0ff,#fff 45%,#d4a840 65%,#f0c860 80%,#d4a840);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:8px;">STAGERZ</div>
+      <div style="font-size:10px;letter-spacing:6px;text-transform:uppercase;color:rgba(180,160,255,.6);margin-bottom:6px;">Your World Stage</div>
+      <div style="font-size:14px;font-weight:300;color:rgba(255,255,255,.25);margin-bottom:8px;">&#127757;</div>
+      <div style="font-family:'Playfair Display',serif;font-size:11px;font-style:italic;color:rgba(212,168,64,.5);margin-bottom:40px;letter-spacing:1px;">Every great work needs more than one kind of artist.</div>
+      <button onclick="skipOnboard()" style="width:100%;max-width:280px;padding:16px;background:linear-gradient(135deg,#3020a0,#5040c8);color:#fff;border:none;border-radius:4px;font-family:'Bebas Neue',sans-serif;font-size:17px;letter-spacing:3px;cursor:pointer;box-shadow:0 8px 24px rgba(60,40,180,.4);margin-bottom:12px;position:relative;overflow:hidden;">
+        <div style="position:absolute;bottom:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(212,168,64,.4),transparent);"></div>
+        &#127917; STEP ON STAGE
+      </button>
+      <div style="font-size:9px;letter-spacing:1.5px;text-transform:uppercase;color:rgba(255,255,255,.15);">Free to start &middot; No card needed</div>
+    </div>
+
+  </div>
+
+  <!-- Bottom controls -->
+  <div style="padding:24px 32px 40px;display:flex;align-items:center;justify-content:space-between;">
+    <!-- Dots -->
+    <div style="display:flex;gap:6px;align-items:center;">
+      <div class="onboard-dot active" id="dot1"></div>
+      <div class="onboard-dot inactive" id="dot2"></div>
+      <div class="onboard-dot inactive" id="dot3"></div>
+    </div>
+    <!-- Next button -->
+    <button id="nextBtn" onclick="nextSlide()" style="padding:12px 24px;background:linear-gradient(135deg,#3020a0,#5040c8);color:#fff;border:none;border-radius:4px;font-family:'Bebas Neue',sans-serif;font-size:13px;letter-spacing:2px;cursor:pointer;box-shadow:0 4px 14px rgba(60,40,180,.35);">NEXT &#8250;</button>
+  </div>
+
+</div>
+
 <!-- SCREEN 1: WELCOME -->
 <div class="screen active" id="screen-welcome">
   <div style="position:relative;flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;padding-bottom:32px;">
@@ -846,6 +942,43 @@ function shareStagerz(){
 }
 if(tg){tg.ready();tg.expand();}
 var uN=tg&&tg.initDataUnsafe&&tg.initDataUnsafe.user?tg.initDataUnsafe.user.first_name:"Artist";
+
+var currentSlide=1;
+var onboardDone=false;
+
+function nextSlide(){
+  if(currentSlide===3){skipOnboard();return;}
+  var cur=document.getElementById("slide"+currentSlide);
+  var nxt=document.getElementById("slide"+(currentSlide+1));
+  cur.style.transition="all .4s ease";
+  cur.style.transform="translateX(-100%)";
+  cur.style.opacity="0";
+  nxt.style.transition="all .4s ease";
+  nxt.style.transform="translateX(0)";
+  nxt.style.opacity="1";
+  currentSlide++;
+  // Update dots
+  for(var i=1;i<=3;i++){
+    var d=document.getElementById("dot"+i);
+    if(d){
+      d.className="onboard-dot "+(i===currentSlide?"active":"inactive");
+    }
+  }
+  // Update next button text
+  if(currentSlide===3){
+    document.getElementById("nextBtn").style.display="none";
+  }
+  if(tg&&tg.HapticFeedback)tg.HapticFeedback.impactOccurred("light");
+}
+
+function skipOnboard(){
+  var ob=document.getElementById("onboardScreen");
+  ob.style.transition="opacity .4s ease";
+  ob.style.opacity="0";
+  setTimeout(function(){ob.style.display="none";},400);
+  onboardDone=true;
+  if(tg&&tg.HapticFeedback)tg.HapticFeedback.impactOccurred("medium");
+}
 
 function goTo(el,id){
   document.querySelectorAll(".screen").forEach(function(s){s.classList.remove("active");});
