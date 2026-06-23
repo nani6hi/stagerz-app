@@ -483,13 +483,13 @@ html,body{width:100%;height:100%;background:#07050f;font-family:Inter,sans-serif
       <input id="searchInput" style="flex:1;background:transparent;border:none;outline:none;font-size:13px;color:#fff;" type="text" placeholder="Search artists, skills, locations...">
     </div>
     <div id="catChips" style="display:flex;gap:6px;overflow-x:auto;padding-bottom:4px;">
-      <div class="cc on" data-cat="all"><div class="ci">&#127757;</div><div class="cl">All</div></div>
-      <div class="cc off" data-cat="music"><div class="ci">&#127925;</div><div class="cl">Music</div></div>
-      <div class="cc off" data-cat="film"><div class="ci">&#127916;</div><div class="cl">Film</div></div>
-      <div class="cc off" data-cat="dance"><div class="ci">&#128131;</div><div class="cl">Dance</div></div>
-      <div class="cc off" data-cat="ai"><div class="ci">&#129302;</div><div class="cl">AI</div></div>
-      <div class="cc off" data-cat="art"><div class="ci">&#127912;</div><div class="cl">Art</div></div>
-      <div class="cc off" data-cat="photo"><div class="ci">&#128247;</div><div class="cl">Photo</div></div>
+      <div class="cc on" data-cat="all" onclick="setSearchCat('all')"><div class="ci">&#127757;</div><div class="cl">All</div></div>
+      <div class="cc off" data-cat="music" onclick="setSearchCat('music')"><div class="ci">&#127925;</div><div class="cl">Music</div></div>
+      <div class="cc off" data-cat="film" onclick="setSearchCat('film')"><div class="ci">&#127916;</div><div class="cl">Film</div></div>
+      <div class="cc off" data-cat="dance" onclick="setSearchCat('dance')"><div class="ci">&#128131;</div><div class="cl">Dance</div></div>
+      <div class="cc off" data-cat="ai" onclick="setSearchCat('ai')"><div class="ci">&#129302;</div><div class="cl">AI</div></div>
+      <div class="cc off" data-cat="art" onclick="setSearchCat('art')"><div class="ci">&#127912;</div><div class="cl">Art</div></div>
+      <div class="cc off" data-cat="photo" onclick="setSearchCat('photo')"><div class="ci">&#128247;</div><div class="cl">Photo</div></div>
     </div>
   </div>
   <div class="sa">
@@ -1072,18 +1072,20 @@ function initSearch(){
     input.value="";
     input.oninput=function(){doSearch(this.value);};
   }
-  var chips=document.querySelectorAll("#catChips .cc");
-  chips.forEach(function(chip){
-    chip.onclick=function(){
-      chips.forEach(function(c){c.className="cc off";});
-      chip.className="cc on";
-      currentCat=chip.getAttribute("data-cat")||"all";
-      var inp=document.getElementById("searchInput");
-      if(inp)inp.value="";
-      doSearch("");
-    };
-  });
+  currentCat="all";
   doSearch("");
+}
+
+function setSearchCat(cat){
+  currentCat=cat;
+  var chips=document.querySelectorAll("#catChips .cc");
+  chips.forEach(function(c){
+    c.className=c.getAttribute("data-cat")===cat?"cc on":"cc off";
+  });
+  var inp=document.getElementById("searchInput");
+  if(inp)inp.value="";
+  doSearch("");
+  if(tg&&tg.HapticFeedback)tg.HapticFeedback.impactOccurred("light");
 }
 
 function doSearch(query){
@@ -1094,7 +1096,7 @@ function doSearch(query){
     return catOk&&qOk;
   });
   var rc=document.getElementById("resultCount");
-  if(rc)rc.textContent=q?list.length:(catCounts[currentCat]||list.length);
+  if(rc)rc.textContent=list.length;
   var container=document.getElementById("searchResults");
   if(!container)return;
   if(!list.length){
