@@ -478,26 +478,27 @@ html,body{width:100%;height:100%;background:#07050f;font-family:Inter,sans-serif
 <div class="screen" id="screen-search">
   <div class="tb">
     <div class="tr" style="margin-bottom:10px;"><div class="logo">STA<em>G</em>ERZ</div><div style="font-size:9px;letter-spacing:2px;color:rgba(255,255,255,.2);">&#128269; SEARCH</div></div>
-    <div style="display:flex;align-items:center;gap:6px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);border-radius:8px;padding:8px 12px;margin-bottom:10px;"><span style="font-size:14px;opacity:.4;">&#128269;</span><input style="flex:1;background:transparent;border:none;outline:none;font-size:13px;color:#fff;" type="text" placeholder="Search artists, skills, locations..." oninput="searchArtists(this.value)" id="searchInput"></div>
-    <div class="cr">
-      <div class="cc on" onclick="switchCat(this,'all')"><div class="ci">&#127757;</div><div class="cl">All</div></div>
-      <div class="cc off" onclick="switchCat(this,'music')"><div class="ci">&#127925;</div><div class="cl">Music</div></div>
-      <div class="cc off" onclick="switchCat(this,'film')"><div class="ci">&#127916;</div><div class="cl">Film</div></div>
-      <div class="cc off" onclick="switchCat(this,'dance')"><div class="ci">&#128131;</div><div class="cl">Dance</div></div>
-      <div class="cc off" onclick="switchCat(this,'ai')"><div class="ci">&#129302;</div><div class="cl">AI</div></div>
-      <div class="cc off" onclick="switchCat(this,'art')"><div class="ci">&#127912;</div><div class="cl">Art</div></div>
-      <div class="cc off" onclick="switchCat(this,'photo')"><div class="ci">&#128247;</div><div class="cl">Photo</div></div>
+    <div style="display:flex;align-items:center;gap:6px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);border-radius:8px;padding:8px 12px;margin-bottom:10px;">
+      <span style="font-size:14px;opacity:.4;">&#128269;</span>
+      <input id="searchInput" style="flex:1;background:transparent;border:none;outline:none;font-size:13px;color:#fff;" type="text" placeholder="Search artists, skills, locations...">
+    </div>
+    <div id="catChips" style="display:flex;gap:6px;overflow-x:auto;padding-bottom:4px;">
+      <div class="cc on" data-cat="all"><div class="ci">&#127757;</div><div class="cl">All</div></div>
+      <div class="cc off" data-cat="music"><div class="ci">&#127925;</div><div class="cl">Music</div></div>
+      <div class="cc off" data-cat="film"><div class="ci">&#127916;</div><div class="cl">Film</div></div>
+      <div class="cc off" data-cat="dance"><div class="ci">&#128131;</div><div class="cl">Dance</div></div>
+      <div class="cc off" data-cat="ai"><div class="ci">&#129302;</div><div class="cl">AI</div></div>
+      <div class="cc off" data-cat="art"><div class="ci">&#127912;</div><div class="cl">Art</div></div>
+      <div class="cc off" data-cat="photo"><div class="ci">&#128247;</div><div class="cl">Photo</div></div>
     </div>
   </div>
   <div class="sa">
     <div class="pd pt">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;"><div style="font-size:9px;color:rgba(255,255,255,.25);"><span style="color:rgba(180,160,255,.6);">247</span> ARTISTS WORLDWIDE</div><div style="font-size:8px;color:rgba(180,160,255,.5);cursor:pointer;">Sort &#8595;</div></div>
-      <div class="ai" onclick="goTo(this,'profile')"><div class="av" style="background:linear-gradient(135deg,#1a0840,#280c50);">&#127928;</div><div class="an"><div style="font-size:12px;font-weight:600;color:#fff;margin-bottom:1px;">Maya Rivera</div><div class="at">Musician &middot; Singer</div><div class="atg"><div class="atag">Guitar</div><div class="atag">Vocals</div><div class="atag">Songwriting</div></div></div><div class="ar"><div class="aloc">Berlin<br><span style="color:rgba(40,200,80,.7);">&#9679; Online</span></div><button class="cb">Collab</button></div></div>
-      <div class="ai" onclick="goTo(this,'profile')"><div class="av" style="background:linear-gradient(135deg,#0a1840,#142850);">&#127916;</div><div class="an"><div style="font-size:12px;font-weight:600;color:#fff;margin-bottom:1px;">James Kofi</div><div class="at">Filmmaker &middot; Director</div><div class="atg"><div class="atag">Directing</div><div class="atag">Editing</div><div class="atag">DOP</div></div></div><div class="ar"><div class="aloc">New York<br><span style="color:rgba(40,200,80,.7);">&#9679; Online</span></div><button class="cb">Collab</button></div></div>
-      <div class="ai" onclick="goTo(this,'profile')"><div class="av" style="background:linear-gradient(135deg,#1a0830,#2a0840);">&#128131;</div><div class="an"><div style="font-size:12px;font-weight:600;color:#fff;margin-bottom:1px;">Sofia Lima</div><div class="at">Dancer &middot; Choreographer</div><div class="atg"><div class="atag">Ballet</div><div class="atag">Hip-Hop</div><div class="atag">Latin</div></div></div><div class="ar"><div class="aloc">Sao Paulo<br><span style="color:rgba(255,160,40,.7);">&#9679; Away</span></div><button class="cb">Collab</button></div></div>
-      <div class="ai" onclick="goTo(this,'profile')"><div class="av" style="background:linear-gradient(135deg,#201018,#301820);">&#127908;</div><div class="an"><div style="font-size:12px;font-weight:600;color:#fff;margin-bottom:1px;">Leila Mensah</div><div class="at">Singer &middot; Songwriter</div><div class="atg"><div class="atag">Afrobeat</div><div class="atag">RnB</div><div class="atag">Soul</div></div></div><div class="ar"><div class="aloc">Lagos<br><span style="color:rgba(40,200,80,.7);">&#9679; Online</span></div><button class="cb">Collab</button></div></div>
-      <div class="ai" onclick="goTo(this,'profile')"><div class="av" style="background:linear-gradient(135deg,#0a2018,#102818);">&#127927;</div><div class="an"><div style="font-size:12px;font-weight:600;color:#fff;margin-bottom:1px;">Amir Hashim</div><div class="at">Musician &middot; Producer</div><div class="atg"><div class="atag">Jazz</div><div class="atag">Prod.</div><div class="atag">Sax</div></div></div><div class="ar"><div class="aloc">Tokyo<br><span style="color:rgba(255,255,255,.2);">&#9679; Offline</span></div><button class="cb">Collab</button></div></div>
-      <div class="ai" onclick="goTo(this,'profile')"><div class="av" style="background:linear-gradient(135deg,#101828,#182030);">&#128247;</div><div class="an"><div style="font-size:12px;font-weight:600;color:#fff;margin-bottom:1px;">Chen Wei</div><div class="at">Photographer</div><div class="atg"><div class="atag">Portrait</div><div class="atag">Concert</div><div class="atag">Editorial</div></div></div><div class="ar"><div class="aloc">Shanghai<br><span style="color:rgba(40,200,80,.7);">&#9679; Online</span></div><button class="cb">Collab</button></div></div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+        <div style="font-size:9px;color:rgba(255,255,255,.25);"><span id="resultCount">247</span> ARTISTS WORLDWIDE</div>
+        <div style="font-size:8px;color:rgba(180,160,255,.5);">Sort &#8595;</div>
+      </div>
+      <div id="searchResults"></div>
       <div class="gap"></div>
     </div>
   </div>
@@ -984,6 +985,138 @@ function switchCat(el,cat){
   document.querySelectorAll(".cc").forEach(function(c){c.className="cc off";});
   el.className="cc on";
   filterArtists(cat);
+}
+
+function collabSoon(){
+  sA("Collaboration requests are coming soon!\n\nSTAGERZ is growing. Your request will reach the artist directly.");
+}
+
+function goTo(el,id){
+  document.querySelectorAll(".screen").forEach(function(s){s.classList.remove("active");});
+  var t=document.getElementById("screen-"+id);
+  if(t){t.classList.add("active");var sa=t.querySelector(".sa");if(sa)sa.scrollTop=0;}
+  if(id==="search"){
+    setTimeout(function(){initSearch();},50);
+  }
+  if(tg&&tg.HapticFeedback)tg.HapticFeedback.impactOccurred("light");
+}
+
+function sA(msg){
+  if(tg)tg.showAlert(msg);else alert(msg);
+}
+
+function sFT(el){
+  document.querySelectorAll(".ftb").forEach(function(t){t.className="ftb off";});
+  el.className="ftb on";
+}
+
+function sW(v){
+  document.getElementById("myV").style.display=v==="my"?"block":"none";
+  document.getElementById("commV").style.display=v==="comm"?"block":"none";
+  document.getElementById("myBtn").className="tb2 "+(v==="my"?"on":"off");
+  document.getElementById("commBtn").className="tb2 "+(v==="comm"?"on":"off");
+}
+
+function sFC(el){
+  document.querySelectorAll(".fc").forEach(function(c){c.className="fc off";});
+  el.className="fc on";
+  filterArtists(el.textContent.trim());
+}
+
+var allArtists=[
+  {name:"Maya Rivera",type:"Musician · Singer",tags:["Guitar","Vocals","Songwriting"],loc:"Berlin",flag:"&#127465;&#127466;",status:"Online",statusColor:"rgba(40,200,80,.7)",icon:"&#127928;",bg:"linear-gradient(135deg,#1a0840,#280c50)",cat:"music"},
+  {name:"Leila Mensah",type:"Singer · Songwriter",tags:["Afrobeat","RnB","Soul"],loc:"Lagos",flag:"&#127475;&#127468;",status:"Online",statusColor:"rgba(40,200,80,.7)",icon:"&#127908;",bg:"linear-gradient(135deg,#201018,#301820)",cat:"music"},
+  {name:"Amir Hashim",type:"Musician · Producer",tags:["Jazz","Production","Sax"],loc:"Tokyo",flag:"&#127471;&#127477;",status:"Offline",statusColor:"rgba(255,255,255,.2)",icon:"&#127927;",bg:"linear-gradient(135deg,#0a2018,#102818)",cat:"music"},
+  {name:"Carlos Mendez",type:"Guitarist · Composer",tags:["Classical","Flamenco","Film"],loc:"Madrid",flag:"&#127466;&#127480;",status:"Online",statusColor:"rgba(40,200,80,.7)",icon:"&#127928;",bg:"linear-gradient(135deg,#180820,#280830)",cat:"music"},
+  {name:"James Kofi",type:"Filmmaker · Director",tags:["Directing","Editing","DOP"],loc:"New York",flag:"&#127482;&#127480;",status:"Online",statusColor:"rgba(40,200,80,.7)",icon:"&#127916;",bg:"linear-gradient(135deg,#0a1840,#142850)",cat:"film"},
+  {name:"Yuki Tanaka",type:"Cinematographer",tags:["DOP","Color Grade","Drone"],loc:"Osaka",flag:"&#127471;&#127477;",status:"Away",statusColor:"rgba(255,160,40,.7)",icon:"&#127909;",bg:"linear-gradient(135deg,#0a1020,#142030)",cat:"film"},
+  {name:"Lena Bauer",type:"Film Editor · Director",tags:["Editing","Grading","VFX"],loc:"Munich",flag:"&#127465;&#127466;",status:"Online",statusColor:"rgba(40,200,80,.7)",icon:"&#9986;",bg:"linear-gradient(135deg,#101828,#182030)",cat:"film"},
+  {name:"Sofia Lima",type:"Dancer · Choreographer",tags:["Ballet","Hip-Hop","Latin"],loc:"Sao Paulo",flag:"&#127463;&#127479;",status:"Away",statusColor:"rgba(255,160,40,.7)",icon:"&#128131;",bg:"linear-gradient(135deg,#1a0830,#2a0840)",cat:"dance"},
+  {name:"Amara Diallo",type:"Dancer · Performer",tags:["Afro","Contemporary","Acro"],loc:"Paris",flag:"&#127467;&#127479;",status:"Online",statusColor:"rgba(40,200,80,.7)",icon:"&#128131;",bg:"linear-gradient(135deg,#200818,#300820)",cat:"dance"},
+  {name:"Chen Wei",type:"Photographer",tags:["Portrait","Concert","Editorial"],loc:"Shanghai",flag:"&#127464;&#127475;",status:"Online",statusColor:"rgba(40,200,80,.7)",icon:"&#128247;",bg:"linear-gradient(135deg,#101828,#182030)",cat:"photo"},
+  {name:"Sara Nkosi",type:"Visual Artist · Photographer",tags:["Fine Art","Fashion","Street"],loc:"Cape Town",flag:"&#127487;&#127462;",status:"Online",statusColor:"rgba(40,200,80,.7)",icon:"&#128247;",bg:"linear-gradient(135deg,#181020,#281828)",cat:"photo"},
+  {name:"Zara AI",type:"AI Creator · Designer",tags:["Generative","Motion","3D"],loc:"London",flag:"&#127468;&#127463;",status:"Online",statusColor:"rgba(40,200,80,.7)",icon:"&#129302;",bg:"linear-gradient(135deg,#201018,#281020)",cat:"ai"},
+  {name:"Dev Sharma",type:"AI Artist · Coder",tags:["Stable Diff","Midjourney","ML"],loc:"Bangalore",flag:"&#127470;&#127475;",status:"Away",statusColor:"rgba(255,160,40,.7)",icon:"&#129302;",bg:"linear-gradient(135deg,#101820,#182028)",cat:"ai"},
+  {name:"Marco Rossi",type:"Visual Artist · Painter",tags:["Digital","Illustration","NFT"],loc:"Milan",flag:"&#127470;&#127481;",status:"Offline",statusColor:"rgba(255,255,255,.2)",icon:"&#127912;",bg:"linear-gradient(135deg,#181020,#201828)",cat:"art"},
+];
+
+var catCounts={"all":247,"music":89,"film":54,"dance":31,"photo":38,"ai":22,"art":13};
+
+function collabSoon(){
+  sA("Collaboration requests are coming soon!\n\nThis feature connects artists worldwide.");
+}
+
+var artistDB=[
+  {n:"Maya Rivera",t:"Musician - Singer",tags:"Guitar Vocals Songwriting",loc:"Berlin",flag:"DE",status:"Online",sc:"rgba(40,200,80,.7)",icon:"&#127928;",bg:"#1a0840",cat:"music"},
+  {n:"Leila Mensah",t:"Singer - Songwriter",tags:"Afrobeat RnB Soul",loc:"Lagos",flag:"NG",status:"Online",sc:"rgba(40,200,80,.7)",icon:"&#127908;",bg:"#201018",cat:"music"},
+  {n:"Amir Hashim",t:"Musician - Producer",tags:"Jazz Production Sax",loc:"Tokyo",flag:"JP",status:"Offline",sc:"rgba(255,255,255,.2)",icon:"&#127927;",bg:"#0a2018",cat:"music"},
+  {n:"Carlos Mendez",t:"Guitarist - Composer",tags:"Classical Flamenco Film",loc:"Madrid",flag:"ES",status:"Online",sc:"rgba(40,200,80,.7)",icon:"&#127928;",bg:"#180820",cat:"music"},
+  {n:"James Kofi",t:"Filmmaker - Director",tags:"Directing Editing DOP",loc:"New York",flag:"US",status:"Online",sc:"rgba(40,200,80,.7)",icon:"&#127916;",bg:"#0a1840",cat:"film"},
+  {n:"Yuki Tanaka",t:"Cinematographer",tags:"DOP Color Drone",loc:"Osaka",flag:"JP",status:"Away",sc:"rgba(255,160,40,.7)",icon:"&#127909;",bg:"#0a1020",cat:"film"},
+  {n:"Lena Bauer",t:"Film Editor - Director",tags:"Editing Grading VFX",loc:"Munich",flag:"DE",status:"Online",sc:"rgba(40,200,80,.7)",icon:"&#9986;",bg:"#101828",cat:"film"},
+  {n:"Sofia Lima",t:"Dancer - Choreographer",tags:"Ballet Hip-Hop Latin",loc:"Sao Paulo",flag:"BR",status:"Away",sc:"rgba(255,160,40,.7)",icon:"&#128131;",bg:"#1a0830",cat:"dance"},
+  {n:"Amara Diallo",t:"Dancer - Performer",tags:"Afro Contemporary Acro",loc:"Paris",flag:"FR",status:"Online",sc:"rgba(40,200,80,.7)",icon:"&#128131;",bg:"#200818",cat:"dance"},
+  {n:"Chen Wei",t:"Photographer",tags:"Portrait Concert Editorial",loc:"Shanghai",flag:"CN",status:"Online",sc:"rgba(40,200,80,.7)",icon:"&#128247;",bg:"#101828",cat:"photo"},
+  {n:"Sara Nkosi",t:"Visual Artist - Photographer",tags:"Fine Art Fashion Street",loc:"Cape Town",flag:"ZA",status:"Online",sc:"rgba(40,200,80,.7)",icon:"&#128247;",bg:"#181020",cat:"photo"},
+  {n:"Zara AI",t:"AI Creator - Designer",tags:"Generative Motion 3D",loc:"London",flag:"GB",status:"Online",sc:"rgba(40,200,80,.7)",icon:"&#129302;",bg:"#201018",cat:"ai"},
+  {n:"Dev Sharma",t:"AI Artist - Coder",tags:"Stable-Diff Midjourney ML",loc:"Bangalore",flag:"IN",status:"Away",sc:"rgba(255,160,40,.7)",icon:"&#129302;",bg:"#101820",cat:"ai"},
+  {n:"Marco Rossi",t:"Visual Artist - Painter",tags:"Digital Illustration NFT",loc:"Milan",flag:"IT",status:"Offline",sc:"rgba(255,255,255,.2)",icon:"&#127912;",bg:"#181020",cat:"art"}
+];
+
+var catCounts={all:247,music:89,film:54,dance:31,photo:38,ai:22,art:13};
+var currentCat="all";
+
+function initSearch(){
+  var input=document.getElementById("searchInput");
+  if(input){
+    input.value="";
+    input.oninput=function(){doSearch(this.value);};
+  }
+  var chips=document.querySelectorAll("#catChips .cc");
+  chips.forEach(function(chip){
+    chip.onclick=function(){
+      chips.forEach(function(c){c.className="cc off";});
+      chip.className="cc on";
+      currentCat=chip.getAttribute("data-cat")||"all";
+      var inp=document.getElementById("searchInput");
+      if(inp)inp.value="";
+      doSearch("");
+    };
+  });
+  doSearch("");
+}
+
+function doSearch(query){
+  var q=query.toLowerCase().trim();
+  var list=artistDB.filter(function(a){
+    var catOk=currentCat==="all"||a.cat===currentCat;
+    var qOk=!q||a.n.toLowerCase().indexOf(q)>-1||a.t.toLowerCase().indexOf(q)>-1||a.loc.toLowerCase().indexOf(q)>-1||a.tags.toLowerCase().indexOf(q)>-1;
+    return catOk&&qOk;
+  });
+  var rc=document.getElementById("resultCount");
+  if(rc)rc.textContent=q?list.length:(catCounts[currentCat]||list.length);
+  var container=document.getElementById("searchResults");
+  if(!container)return;
+  if(!list.length){
+    container.innerHTML="<div style='text-align:center;padding:40px;color:rgba(255,255,255,.25);font-size:11px;'>No artists found</div>";
+    return;
+  }
+  var html="";
+  list.forEach(function(a){
+    html+="<div class='ai' onclick='goTo(this,"+'"profile"'+")'style='margin-bottom:7px;'>";
+    html+="<div class='av' style='background:linear-gradient(135deg,"+a.bg+",#280c50);'>"+a.icon+"</div>";
+    html+="<div class='an'>";
+    html+="<div style='font-size:12px;font-weight:600;color:#fff;margin-bottom:1px;'>"+a.n+"</div>";
+    html+="<div class='at'>"+a.t+"</div>";
+    html+="<div class='atg'>";
+    a.tags.split(" ").forEach(function(t){html+="<div class='atag'>"+t+"</div>";});
+    html+="</div></div>";
+    html+="<div class='ar'>";
+    html+="<div class='aloc'>"+a.flag+" "+a.loc+"<br><span style='color:"+a.sc+";'>&#9679; "+a.status+"</span></div>";
+    html+="<button class='cb' onclick='event.stopPropagation();collabSoon()'>Collab</button>";
+    html+="</div></div>";
+  });
+  container.innerHTML=html;
 }
 
 function collabSoon(){
