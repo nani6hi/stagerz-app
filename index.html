@@ -480,7 +480,7 @@ html,body{width:100%;height:100%;background:#07050f;font-family:Inter,sans-serif
     <div class="tr" style="margin-bottom:10px;"><div class="logo">STA<em>G</em>ERZ</div><div style="font-size:9px;letter-spacing:2px;color:rgba(255,255,255,.2);">&#128269; SEARCH</div></div>
     <div style="display:flex;align-items:center;gap:6px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);border-radius:8px;padding:8px 12px;margin-bottom:10px;">
       <span style="font-size:14px;opacity:.4;">&#128269;</span>
-      <input id="searchInput" style="flex:1;background:transparent;border:none;outline:none;font-size:13px;color:#fff;" type="text" placeholder="Search artists, skills, locations...">
+      <input id="searchInput" style="flex:1;background:transparent;border:none;outline:none;font-size:13px;color:#fff;" type="text" placeholder="Search artists, skills, locations..." oninput="doSearch(this.value)" onkeyup="doSearch(this.value)">
     </div>
     <div id="catChips" style="display:flex;gap:6px;overflow-x:auto;padding-bottom:4px;">
       <div class="cc on" data-cat="all" onclick="setSearchCat('all')"><div class="ci">&#127757;</div><div class="cl">All</div></div>
