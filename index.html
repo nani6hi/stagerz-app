@@ -317,12 +317,12 @@ html,body{width:100%;height:100%;background:#07050f;font-family:Inter,sans-serif
     <div class="pd pt">
       <div class="st">On Stage Now</div>
       <div class="sr">
-        <div class="si"><div style="width:48px;height:48px;border-radius:50%;background:rgba(100,80,255,.1);border:1.5px dashed rgba(100,80,255,.3);display:flex;align-items:center;justify-content:center;font-size:20px;">+</div><div class="sn">Your Story</div></div>
+        <div class="si" onclick="goTo(this,'famemaker')"><div style="width:48px;height:48px;border-radius:50%;background:rgba(100,80,255,.1);border:1.5px dashed rgba(100,80,255,.3);display:flex;align-items:center;justify-content:center;font-size:20px;">+</div><div class="sn">Your Story</div></div>
         <div class="si" onclick="goTo(this,'profile')"><div class="sg gold"><div class="sa2">&#127928;</div></div><div class="sn">Maya</div></div>
-        <div class="si"><div class="sg blue"><div class="sa2" style="background:linear-gradient(135deg,#0a1840,#142850);">&#127916;</div></div><div class="sn">James</div></div>
-        <div class="si"><div class="sg red"><div class="sa2" style="background:linear-gradient(135deg,#1a0830,#2a0840);">&#128131;</div></div><div class="sn">Sofia</div></div>
-        <div class="si"><div class="sg gold"><div class="sa2" style="background:linear-gradient(135deg,#201018,#301820);">&#127908;</div></div><div class="sn">Leila</div></div>
-        <div class="si"><div class="sg blue"><div class="sa2" style="background:linear-gradient(135deg,#0a2018,#102818);">&#127927;</div></div><div class="sn">Amir</div></div>
+        <div class="si" onclick="goTo(this,'search')"><div class="sg blue"><div class="sa2" style="background:linear-gradient(135deg,#0a1840,#142850);">&#127916;</div></div><div class="sn">James</div></div>
+        <div class="si" onclick="goTo(this,'search')"><div class="sg red"><div class="sa2" style="background:linear-gradient(135deg,#1a0830,#2a0840);">&#128131;</div></div><div class="sn">Sofia</div></div>
+        <div class="si" onclick="goTo(this,'profile')"><div class="sg gold"><div class="sa2" style="background:linear-gradient(135deg,#201018,#301820);">&#127908;</div></div><div class="sn">Leila</div></div>
+        <div class="si" onclick="goTo(this,'search')"><div class="sg blue"><div class="sa2" style="background:linear-gradient(135deg,#0a2018,#102818);">&#127927;</div></div><div class="sn">Amir</div></div>
       </div>
       <div class="st">Featured Performance</div>
       <div style="background:linear-gradient(160deg,rgba(30,15,80,.8),rgba(15,8,40,.9));border:1px solid rgba(100,80,255,.2);border-radius:12px;overflow:hidden;margin-bottom:12px;cursor:pointer;" onclick="goTo(this,'public')">
@@ -348,7 +348,7 @@ html,body{width:100%;height:100%;background:#07050f;font-family:Inter,sans-serif
           <div style="display:flex;align-items:center;gap:7px;margin-bottom:5px;"><div style="width:22px;height:22px;border-radius:50%;background:linear-gradient(135deg,#201018,#301820);display:flex;align-items:center;justify-content:center;font-size:11px;">&#127908;</div><div style="font-size:10px;font-weight:600;color:#fff;">Leila Mensah</div><div style="font-size:7px;color:rgba(255,255,255,.25);margin-left:auto;">Lagos &#127475;&#127468;</div></div>
           <div class="wt">Midnight in Lagos</div>
           <div class="wtg"><div class="tg">Afrobeat</div><div class="tg">Soul</div><div class="tg">Original</div></div>
-          <div class="wa"><div class="wat">&#10084; 2.4k</div><div class="wat">&#128172; 138</div><div class="wat">&#8599; Share</div><div class="ws">STAGERZ &#10022;</div></div>
+          <div class="wa"><div class="wat">&#10084; 2.4k</div><div class="wat">&#128172; 138</div><div class="wat" onclick="shareStagerz()">&#8599; Share</div><div class="ws">STAGERZ &#10022;</div></div>
         </div>
       </div>
       <div style="background:rgba(12,8,28,.7);border:1px solid rgba(255,255,255,.05);border-radius:10px;padding:10px 12px;margin-bottom:12px;display:flex;align-items:flex-start;gap:8px;cursor:pointer;" onclick="goTo(this,'profile')">
@@ -402,7 +402,7 @@ html,body{width:100%;height:100%;background:#07050f;font-family:Inter,sans-serif
 <!-- SCREEN 4: WANTED -->
 <div class="screen" id="screen-wanted">
   <div class="tb">
-    <div class="tr" style="margin-bottom:10px;"><div class="logo" style="font-size:18px;">WANT<span style="color:#d4a840;">ED</span> &#127919;</div><button class="bp" style="width:auto;padding:7px 14px;font-size:11px;letter-spacing:2px;" onclick="sA('Post WANTED coming soon!')">+ POST</button></div>
+    <div class="tr" style="margin-bottom:10px;"><div class="logo" style="font-size:18px;">WANT<span style="color:#d4a840;">ED</span> &#127919;</div><button class="bp" style="width:auto;padding:7px 14px;font-size:11px;letter-spacing:2px;" onclick="sA('WANTED posts are coming in the full STAGERZ app!\n\nFor now explore the Community tab to see what artists need.')">+ POST</button></div>
     <div class="tw"><button class="tb2 on" id="myBtn" onclick="sW('my')">&#128100; MY WANTED</button><button class="tb2 off" id="commBtn" onclick="sW('comm')">&#127757; COMMUNITY</button></div>
     <div style="display:flex;gap:5px;overflow-x:auto;margin-bottom:12px;padding-bottom:4px;"><div class="fc on" onclick="sFC(this)">All</div><div class="fc off" onclick="sFC(this)">&#127925; Music</div><div class="fc off" onclick="sFC(this)">&#127916; Film</div><div class="fc off" onclick="sFC(this)">&#128131; Dance</div><div class="fc off" onclick="sFC(this)">&#9986; Edit</div><div class="fc off" onclick="sFC(this)">&#129302; AI</div></div>
   </div>
@@ -416,7 +416,7 @@ html,body{width:100%;height:100%;background:#07050f;font-family:Inter,sans-serif
           <div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:8px;"><div style="padding:2px 8px;background:rgba(100,80,255,.08);border:1px solid rgba(100,80,255,.15);border-radius:10px;font-size:7px;color:rgba(180,160,255,.6);">Berlin</div><div style="padding:2px 8px;background:rgba(100,80,255,.08);border:1px solid rgba(100,80,255,.15);border-radius:10px;font-size:7px;color:rgba(180,160,255,.6);">Indie</div><div style="padding:2px 8px;background:rgba(100,80,255,.08);border:1px solid rgba(100,80,255,.15);border-radius:10px;font-size:7px;color:rgba(180,160,255,.6);">Paid</div></div>
           <div style="display:flex;align-items:center;justify-content:space-between;"><div style="font-size:9px;color:rgba(255,255,255,.25);"><span style="color:rgba(212,168,64,.7);font-weight:600;">8</span> responses</div><div style="display:flex;gap:6px;"><button style="padding:4px 10px;border-radius:4px;font-family:'Bebas Neue',sans-serif;font-size:9px;cursor:pointer;background:transparent;color:rgba(180,160,255,.6);border:1px solid rgba(100,80,255,.2);">Edit</button><button style="padding:4px 10px;border-radius:4px;font-family:'Bebas Neue',sans-serif;font-size:9px;cursor:pointer;background:rgba(255,60,60,.08);color:rgba(255,100,100,.6);border:1px solid rgba(255,60,60,.15);">Close</button></div></div>
         </div>
-        <div style="border:1px dashed rgba(212,168,64,.2);border-radius:10px;padding:16px;text-align:center;cursor:pointer;margin-bottom:10px;" onclick="sA('Post WANTED coming soon!')">
+        <div style="border:1px dashed rgba(212,168,64,.2);border-radius:10px;padding:16px;text-align:center;cursor:pointer;margin-bottom:10px;" onclick="sA('WANTED posts are coming in the full STAGERZ app!\n\nFor now explore the Community tab to see what artists need.')">
           <div style="font-size:20px;margin-bottom:6px;">&#127919;</div>
           <div style="font-family:'Bebas Neue',sans-serif;font-size:13px;letter-spacing:2px;color:rgba(212,168,64,.6);margin-bottom:3px;">Post New Wanted</div>
           <div style="font-size:9px;color:rgba(255,255,255,.2);">Free &middot; 1 active post</div>
@@ -424,7 +424,7 @@ html,body{width:100%;height:100%;background:#07050f;font-family:Inter,sans-serif
       </div>
       <div id="commV" style="display:none;">
         <div style="background:rgba(100,80,255,.07);border:1px solid rgba(100,80,255,.15);border-radius:8px;padding:8px 12px;margin-bottom:10px;display:flex;align-items:center;gap:8px;"><div style="font-size:14px;">&#10024;</div><div style="font-size:9px;color:rgba(180,160,255,.6);">Showing posts matching your skills as a <strong style="color:rgba(212,168,64,.8);">Musician &middot; Guitarist</strong> in <strong style="color:rgba(212,168,64,.8);">Berlin.</strong></div></div>
-        <div class="cd" onclick="sA('Apply coming soon!')">
+        <div class="cd" onclick="sA('Collaboration requests are coming soon!\n\nSTAGERZ is growing. Your application will reach the artist directly.')">
           <div class="urg match">&#11088; 98% Match</div>
           <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;"><div style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#0a1840,#142850);display:flex;align-items:center;justify-content:center;font-size:18px;border:1px solid rgba(100,80,255,.2);">&#127916;</div><div><div style="font-size:11px;font-weight:600;color:#fff;margin-bottom:1px;">James Kofi</div><div style="font-size:8px;color:rgba(255,255,255,.28);">Filmmaker &middot; New York &middot; &#11088; 4.7</div></div></div>
           <div class="cr2">&#127928; Guitarist Wanted</div>
@@ -432,7 +432,7 @@ html,body{width:100%;height:100%;background:#07050f;font-family:Inter,sans-serif
           <div class="ctg"><div class="ctag">Acoustic</div><div class="ctag">Electric</div><div class="ctag">Remote</div><div class="ctag">Paid</div></div>
           <div class="cf"><div class="ct">2h ago &middot; <span style="color:rgba(180,160,255,.5);">4 applied</span></div><button class="ab">APPLY NOW</button></div>
         </div>
-        <div class="cd" onclick="sA('Apply coming soon!')">
+        <div class="cd" onclick="sA('Collaboration requests are coming soon!\n\nSTAGERZ is growing. Your application will reach the artist directly.')">
           <div class="urg new">&#9679; New</div>
           <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;"><div style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#201018,#301820);display:flex;align-items:center;justify-content:center;font-size:18px;border:1px solid rgba(100,80,255,.2);">&#127908;</div><div><div style="font-size:11px;font-weight:600;color:#fff;margin-bottom:1px;">Leila Mensah</div><div style="font-size:8px;color:rgba(255,255,255,.28);">Singer &middot; Lagos &middot; &#11088; 4.8</div></div></div>
           <div class="cr2">&#127928; Guitarist Wanted</div>
@@ -440,7 +440,7 @@ html,body{width:100%;height:100%;background:#07050f;font-family:Inter,sans-serif
           <div class="ctg"><div class="ctag">Afrobeat</div><div class="ctag">Soul</div><div class="ctag">Remote</div><div class="ctag">EP</div></div>
           <div class="cf"><div class="ct">30m ago &middot; <span style="color:rgba(180,160,255,.5);">1 applied</span></div><button class="ab">APPLY NOW</button></div>
         </div>
-        <div class="cd" onclick="sA('Apply coming soon!')">
+        <div class="cd" onclick="sA('Collaboration requests are coming soon!\n\nSTAGERZ is growing. Your application will reach the artist directly.')">
           <div class="urg hot">&#128293; Urgent</div>
           <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;"><div style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#1a0830,#2a0840);display:flex;align-items:center;justify-content:center;font-size:18px;border:1px solid rgba(100,80,255,.2);">&#128131;</div><div><div style="font-size:11px;font-weight:600;color:#fff;margin-bottom:1px;">Sofia Lima</div><div style="font-size:8px;color:rgba(255,255,255,.28);">Dancer &middot; Sao Paulo &middot; &#11088; 5.0</div></div></div>
           <div class="cr2">&#127925; Live Musician Wanted</div>
@@ -471,8 +471,8 @@ html,body{width:100%;height:100%;background:#07050f;font-family:Inter,sans-serif
         <div style="display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:10px;">
           <div class="pav">&#127928;<div style="position:absolute;bottom:-1px;right:-1px;width:18px;height:18px;border-radius:50%;background:linear-gradient(135deg,#4030c0,#6050d8);border:2px solid #07050f;display:flex;align-items:center;justify-content:center;font-size:8px;">&#10022;</div></div>
           <div style="display:flex;gap:8px;padding-top:8px;">
-            <button style="padding:8px 14px;border-radius:4px;font-family:'Bebas Neue',sans-serif;font-size:11px;letter-spacing:2px;cursor:pointer;background:rgba(255,255,255,.05);color:rgba(200,180,255,.7);border:1px solid rgba(100,80,255,.2);" onclick="sA('Messaging coming soon!')">&#128172; MSG</button>
-            <button style="padding:8px 14px;border-radius:4px;font-family:'Bebas Neue',sans-serif;font-size:11px;letter-spacing:2px;cursor:pointer;background:linear-gradient(135deg,#3020a0,#5040c8);color:#fff;border:none;" onclick="sA('Follow coming soon!')">+ FOLLOW</button>
+            <button style="padding:8px 14px;border-radius:4px;font-family:'Bebas Neue',sans-serif;font-size:11px;letter-spacing:2px;cursor:pointer;background:rgba(255,255,255,.05);color:rgba(200,180,255,.7);border:1px solid rgba(100,80,255,.2);" onclick="sA('Direct messaging is coming in the full STAGERZ app!\n\nFor now use Telegram to reach out to artists.')">&#128172; MSG</button>
+            <button style="padding:8px 14px;border-radius:4px;font-family:'Bebas Neue',sans-serif;font-size:11px;letter-spacing:2px;cursor:pointer;background:linear-gradient(135deg,#3020a0,#5040c8);color:#fff;border:none;" onclick="sA('Following artists is coming soon!\n\nSTAGERZ is being built. Stay tuned.')">+ FOLLOW</button>
           </div>
         </div>
         <div style="font-family:'Playfair Display',serif;font-weight:900;font-size:22px;color:#fff;margin-bottom:2px;">Maya Rivera</div>
@@ -493,8 +493,8 @@ html,body{width:100%;height:100%;background:#07050f;font-family:Inter,sans-serif
         <div class="stc"><span class="stn">34</span><span class="stl">Collabs</span></div>
         <div class="stc"><span class="stn">4.9</span><span class="stl">Rating</span></div>
       </div>
-      <button class="bp" style="margin-bottom:10px;" onclick="sA('Collab request coming soon!')">&#129309; REQUEST COLLABORATION</button>
-      <button class="bs" style="margin-bottom:10px;" onclick="sA('Messaging coming soon!')">&#128172; SEND MESSAGE</button>
+      <button class="bp" style="margin-bottom:10px;" onclick="sA('Collaboration requests are coming soon!\n\nThis is the feature that connects artists worldwide. It will be ready in the full STAGERZ app.')">&#129309; REQUEST COLLABORATION</button>
+      <button class="bs" style="margin-bottom:10px;" onclick="sA('Direct messaging is coming in the full STAGERZ app!\n\nFor now use Telegram to reach out to artists.')">&#128172; SEND MESSAGE</button>
       <button class="bg" style="margin-bottom:14px;" onclick="goTo(this,'backstage')">&#11088; GO BACKSTAGE</button>
       <div class="st">Skills</div>
       <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px;">
@@ -587,7 +587,7 @@ html,body{width:100%;height:100%;background:#07050f;font-family:Inter,sans-serif
       <div id="rA" style="display:none;flex-direction:column;gap:8px;margin-bottom:12px;">
         <div style="display:flex;gap:8px;">
           <button class="bs" style="flex:1;" onclick="retRec()">&#8617; RETAKE</button>
-          <button class="bg" style="flex:1;" onclick="sA('Publishing to World Stage!')">&#127757; PUBLISH</button>
+          <button class="bg" style="flex:1;" onclick="sA('Publishing to the World Stage!\n\nThis feature is coming in the full STAGERZ app. Your performance will reach artists and fans worldwide.')">&#127757; PUBLISH</button>
         </div>
         <div style="text-align:center;font-size:8px;color:rgba(255,255,255,.15);">Published with STAGERZ &#10022; credit automatically</div>
       </div>
@@ -635,24 +635,24 @@ html,body{width:100%;height:100%;background:#07050f;font-family:Inter,sans-serif
           <div class="popt uns" onclick="sPub(this)"><div class="pr"></div><div style="font-size:14px;">&#128101;</div><div><div class="pon">Followers Only</div><div class="pod">Only your followers</div></div></div>
           <div class="popt uns" onclick="sPub(this)"><div class="pr"></div><div style="font-size:14px;">&#128274;</div><div><div class="pon">Team Only</div><div class="pod">Private &mdash; crew only</div></div></div>
         </div>
-        <button class="bg" onclick="sA('Publishing to World Stage!')">&#127917; PUBLISH TO WORLD STAGE</button>
+        <button class="bg" onclick="sA('Publishing to the World Stage!\n\nThis feature is coming in the full STAGERZ app. Your performance will reach artists and fans worldwide.')">&#127917; PUBLISH TO WORLD STAGE</button>
         <div style="display:flex;align-items:center;gap:6px;padding:8px 10px;background:rgba(100,80,255,.05);border:1px solid rgba(100,80,255,.12);border-radius:6px;margin-top:8px;"><div style="font-size:12px;">&#128101;</div><div style="font-size:8px;color:rgba(180,160,255,.5);">Tom Fischer and Anna Muller will be credited automatically.</div></div>
       </div>
     </div>
     <div id="fmSV" class="pd pt" style="display:none;">
-      <div style="height:150px;background:linear-gradient(135deg,#1a0840,#0a1040);border-radius:12px;border:1.5px dashed rgba(212,168,64,.25);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;cursor:pointer;margin-bottom:12px;" onclick="sA('Upload cover coming soon!')">
+      <div style="height:150px;background:linear-gradient(135deg,#1a0840,#0a1040);border-radius:12px;border:1.5px dashed rgba(212,168,64,.25);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;cursor:pointer;margin-bottom:12px;" onclick="sA('File uploads are coming in the full STAGERZ app!\n\nFor now use Quick Stage to record and publish directly.')">
         <div style="font-size:28px;opacity:.4;">&#128444;</div>
         <div style="font-family:'Bebas Neue',sans-serif;font-size:13px;letter-spacing:2px;color:rgba(212,168,64,.5);">ADD COVER IMAGE</div>
         <div style="font-size:8px;color:rgba(255,255,255,.18);">Tap to upload &middot; JPG or PNG</div>
       </div>
-      <div style="background:rgba(12,8,28,.85);border:1px solid rgba(100,80,255,.12);border-radius:10px;padding:12px;margin-bottom:10px;display:flex;align-items:center;gap:10px;cursor:pointer;" onclick="sA('Attach audio coming soon!')">
+      <div style="background:rgba(12,8,28,.85);border:1px solid rgba(100,80,255,.12);border-radius:10px;padding:12px;margin-bottom:10px;display:flex;align-items:center;gap:10px;cursor:pointer;" onclick="sA('Audio uploads are coming in the full STAGERZ app!\n\nFor now use Quick Stage to record directly.')">
         <div style="width:36px;height:36px;border-radius:8px;background:rgba(100,80,255,.12);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;">&#127925;</div>
         <div style="flex:1;"><div style="font-size:10px;font-weight:600;color:#fff;margin-bottom:2px;">Attach Audio Track</div><div style="font-size:8px;color:rgba(255,255,255,.25);">MP3, WAV &middot; Max 10MB</div></div>
         <div style="font-size:14px;color:rgba(100,80,255,.4);">+</div>
       </div>
       <div style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:8px;padding:10px 12px;margin-bottom:10px;"><div style="font-size:7px;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.2);margin-bottom:5px;">Title</div><div style="font-size:11px;color:rgba(255,255,255,.25);">Add a title...</div></div>
       <div style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:8px;padding:10px 12px;margin-bottom:14px;height:60px;"><div style="font-size:7px;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.2);margin-bottom:5px;">Description</div><div style="font-size:10px;color:rgba(255,255,255,.18);">Tell your story...</div></div>
-      <button class="bg" onclick="sA('Publishing Showcase!')" style="margin-bottom:14px;">&#128444; PUBLISH SHOWCASE</button>
+      <button class="bg" onclick="sA('Publishing your Showcase!\n\nThis feature is coming in the full STAGERZ app.')" style="margin-bottom:14px;">&#128444; PUBLISH SHOWCASE</button>
     </div>
   </div>
   <div class="nb"><div class="ni" onclick="goTo(this,'home')"><div class="ni-icon">&#127968;</div><span>Home</span></div><div class="ni" onclick="goTo(this,'search')"><div class="ni-icon">&#128269;</div><span>Search</span></div><div class="ni" onclick="goTo(this,'wanted')"><div class="ni-icon">&#127919;</div><span>Wanted</span></div><div class="ni" onclick="goTo(this,'profile')"><div class="ni-icon">&#128100;</div><span>Profile</span></div><div class="ni active" onclick="goTo(this,'famemaker')"><div class="ni-icon">&#127916;</div><span>Create</span></div></div>
@@ -690,7 +690,7 @@ html,body{width:100%;height:100%;background:#07050f;font-family:Inter,sans-serif
           <div class="npac">
             <div class="npa" onclick="tLike(this)"><div class="npai" id="heartIcon">&#129293;</div><div class="npac2" id="nL">2.4k</div></div>
             <div class="npa"><div class="npai">&#128172;</div><div class="npac2">138</div></div>
-            <div class="npa"><div class="npai">&#8599;</div><div class="npac2">Share</div></div>
+            <div class="npa" onclick="shareStagerz()"><div class="npai">&#8599;</div><div class="npac2">Share</div></div>
             <div class="npa" onclick="goTo(this,'profile')"><div class="npai">&#128100;</div><div class="npac2">Profile</div></div>
           </div>
         </div>
@@ -710,7 +710,7 @@ html,body{width:100%;height:100%;background:#07050f;font-family:Inter,sans-serif
           <div style="display:flex;align-items:center;gap:7px;margin-bottom:5px;"><div style="width:22px;height:22px;border-radius:50%;background:linear-gradient(135deg,#201018,#301820);display:flex;align-items:center;justify-content:center;font-size:11px;">&#127908;</div><div style="font-size:10px;font-weight:600;color:#fff;">Leila Mensah</div><div style="font-size:7px;color:rgba(255,255,255,.25);margin-left:auto;">Lagos</div></div>
           <div class="pftl">Midnight in Lagos</div>
           <div style="display:flex;gap:4px;margin-bottom:7px;"><div style="padding:2px 6px;border-radius:8px;font-size:7px;background:rgba(100,80,255,.07);border:1px solid rgba(100,80,255,.13);color:rgba(180,160,255,.5);">Afrobeat</div><div style="padding:2px 6px;border-radius:8px;font-size:7px;background:rgba(100,80,255,.07);border:1px solid rgba(100,80,255,.13);color:rgba(180,160,255,.5);">Soul</div></div>
-          <div class="pfac"><div class="pfa lk">&#10084; 2.1k</div><div class="pfa">&#128172; 94</div><div class="pfa">&#8599; Share</div><div class="pfst">STAGERZ &#10022;</div></div>
+          <div class="pfac"><div class="pfa lk">&#10084; 2.1k</div><div class="pfa">&#128172; 94</div><div class="pfa" onclick="shareStagerz()">&#8599; Share</div><div class="pfst">STAGERZ &#10022;</div></div>
         </div>
       </div>
       <div class="pfc">
@@ -719,7 +719,7 @@ html,body{width:100%;height:100%;background:#07050f;font-family:Inter,sans-serif
           <div style="display:flex;align-items:center;gap:7px;margin-bottom:5px;"><div style="width:22px;height:22px;border-radius:50%;background:linear-gradient(135deg,#1a0830,#2a0840);display:flex;align-items:center;justify-content:center;font-size:11px;">&#128131;</div><div style="font-size:10px;font-weight:600;color:#fff;">Sofia Lima</div><div style="font-size:7px;color:rgba(255,255,255,.25);margin-left:auto;">Sao Paulo</div></div>
           <div class="pftl">Rhythm of the City</div>
           <div style="display:flex;gap:4px;margin-bottom:7px;"><div style="padding:2px 6px;border-radius:8px;font-size:7px;background:rgba(100,80,255,.07);border:1px solid rgba(100,80,255,.13);color:rgba(180,160,255,.5);">Quick Stage</div><div style="padding:2px 6px;border-radius:8px;font-size:7px;background:rgba(100,80,255,.07);border:1px solid rgba(100,80,255,.13);color:rgba(180,160,255,.5);">Dance</div></div>
-          <div class="pfac"><div class="pfa">&#129293; 890</div><div class="pfa">&#128172; 64</div><div class="pfa">&#8599; Share</div><div class="pfst">STAGERZ &#10022;</div></div>
+          <div class="pfac"><div class="pfa">&#129293; 890</div><div class="pfa">&#128172; 64</div><div class="pfa" onclick="shareStagerz()">&#8599; Share</div><div class="pfst">STAGERZ &#10022;</div></div>
         </div>
       </div>
       <div class="jcta" onclick="goTo(this,'home')">
@@ -778,7 +778,7 @@ html,body{width:100%;height:100%;background:#07050f;font-family:Inter,sans-serif
           <div><div style="font-size:10px;font-weight:600;color:rgba(212,168,64,.85);margin-bottom:1px;">Mine NACKL While You Create</div><div style="font-size:8px;color:rgba(212,168,64,.45);">Powered by Acki Nacki Bee Engine</div></div>
         </div>
       </div>
-      <button class="bg" style="margin-bottom:10px;" onclick="sA('Welcome to Backstage! Payment coming soon.')">GO BACKSTAGE NOW</button>
+      <button class="bg" style="margin-bottom:10px;" onclick="sA('Welcome to STAGERZ Backstage!\n\nPayment integration is coming soon. You will be among the first to unlock unlimited projects, NACKL mining and all premium features.')">GO BACKSTAGE NOW</button>
       <button class="bs" style="margin-bottom:14px;" onclick="goTo(this,'home')">Continue with Free</button>
       <div class="tr3"><div class="tri">Secure</div><div class="tri">Cancel Anytime</div><div class="tri">Worldwide</div></div>
       <div class="payr">
@@ -792,6 +792,20 @@ html,body{width:100%;height:100%;background:#07050f;font-family:Inter,sans-serif
 
 <script>
 var tg=window.Telegram&&window.Telegram.WebApp;
+
+function shareStagerz(){
+  var url="https://stagerz.app";
+  var text="Check out this amazing performance on STAGERZ - Your World Stage!";
+  if(tg&&tg.openTelegramLink){
+    tg.openTelegramLink("https://t.me/share/url?url="+encodeURIComponent(url)+"&text="+encodeURIComponent(text));
+  } else {
+    if(navigator.share){
+      navigator.share({title:"STAGERZ",text:text,url:url});
+    } else {
+      sA("Share STAGERZ with your artist friends!\n\nhttps://stagerz.app");
+    }
+  }
+}
 if(tg){tg.ready();tg.expand();}
 var uN=tg&&tg.initDataUnsafe&&tg.initDataUnsafe.user?tg.initDataUnsafe.user.first_name:"Artist";
 
