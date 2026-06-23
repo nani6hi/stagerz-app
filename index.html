@@ -980,10 +980,17 @@ function skipOnboard(){
   if(tg&&tg.HapticFeedback)tg.HapticFeedback.impactOccurred("medium");
 }
 
+function collabSoon(){
+  sA("Collaboration requests are coming soon!\n\nSTAGERZ is growing. Your request will reach the artist directly.");
+}
+
 function goTo(el,id){
   document.querySelectorAll(".screen").forEach(function(s){s.classList.remove("active");});
   var t=document.getElementById("screen-"+id);
   if(t){t.classList.add("active");var sa=t.querySelector(".sa");if(sa)sa.scrollTop=0;}
+  if(id==="search"){
+    setTimeout(function(){filterArtists("all");},50);
+  }
   if(tg&&tg.HapticFeedback)tg.HapticFeedback.impactOccurred("light");
 }
 
@@ -1037,57 +1044,48 @@ function searchArtists(query){
            a.loc.toLowerCase().indexOf(query)>-1||
            a.tags.join(" ").toLowerCase().indexOf(query)>-1;
   });
-  document.getElementById("resultCount").textContent=filtered.length;
-  var html="";
-  filtered.forEach(function(a){
-    html+="<div class='ai' onclick='goTo(this,\'profile\')'>";
-    html+="<div class='av' style='background:"+a.bg+";'>"+a.icon+"</div>";
-    html+="<div class='an'><div style='font-size:12px;font-weight:600;color:#fff;margin-bottom:1px;'>"+a.name+"</div>";
-    html+="<div class='at'>"+a.type+"</div>";
-    html+="<div class='atg'>";
-    a.tags.forEach(function(t){html+="<div class='atag'>"+t+"</div>";});
-    html+="</div></div>";
-    html+="<div class='ar'><div class='aloc'>"+a.flag+" "+a.loc+"<br><span style='color:"+a.statusColor+";'>&#9679; "+a.status+"</span></div>";
-    html+="<button class='cb' onclick='event.stopPropagation();sA("Collaboration request coming soon!")'>Collab</button></div>";
-    html+="</div>";
-  });
-  if(!filtered.length)html="<div style='text-align:center;padding:40px 20px;color:rgba(255,255,255,.25);font-size:11px;'>No artists found for<br><em style='color:rgba(180,160,255,.4);'>"+query+"</em></div>";
-  document.getElementById("searchResults").innerHTML=html;
+  renderArtists(filtered,filtered.length);
 }
 
 function filterArtists(cat){
   var filter=cat.toLowerCase().replace(/[^a-z]/g,"");
-  if(filter==="all"||filter==="")filter="all";
+  if(filter===""||filter==="all")filter="all";
   var filtered=filter==="all"?allArtists:allArtists.filter(function(a){return a.cat===filter;});
   var count=catCounts[filter]||filtered.length;
-  document.getElementById("resultCount").textContent=count;
-  var html="";
-  filtered.forEach(function(a){
-    html+="<div class='ai' onclick='goTo(this,\'profile\')'>";
-    html+="<div class='av' style='background:"+a.bg+";'>"+a.icon+"</div>";
-    html+="<div class='an'><div style='font-size:12px;font-weight:600;color:#fff;margin-bottom:1px;'>"+a.name+"</div>";
-    html+="<div class='at'>"+a.type+"</div>";
-    html+="<div class='atg'>";
-    a.tags.forEach(function(t){html+="<div class='atag'>"+t+"</div>";});
-    html+="</div></div>";
-    html+="<div class='ar'><div class='aloc'>"+a.flag+" "+a.loc+"<br><span style='color:"+a.statusColor+";'>&#9679; "+a.status+"</span></div>";
-    html+="<button class='cb' onclick='event.stopPropagation();sA("Collaboration request coming soon!")'>Collab</button></div>";
-    html+="</div>";
-  });
-  document.getElementById("searchResults").innerHTML=html;
+  renderArtists(filtered,count);
 }
 
-// Init search with all artists
-document.addEventListener("DOMContentLoaded",function(){filterArtists("all");});
-
-document.querySelectorAll(".cr").forEach(function(row){
-  row.querySelectorAll(".cc").forEach(function(c){
-    c.addEventListener("click",function(){
-      row.querySelectorAll(".cc").forEach(function(x){x.className="cc off";});
-      c.className="cc on";
-    });
+function renderArtists(list,count){
+  var rc=document.getElementById("resultCount");
+  if(rc)rc.textContent=count;
+  var container=document.getElementById("searchResults");
+  container.innerHTML="";
+  if(!list.length){
+    container.innerHTML="<div style='text-align:center;padding:40px 20px;color:rgba(255,255,255,.25);font-size:11px;'>No artists found</div>";
+    return;
+  }
+  list.forEach(function(a){
+    var el=document.createElement("div");
+    el.className="ai";
+    el.style.cursor="pointer";
+    el.innerHTML="<div class='av' style='background:"+a.bg+";'>"+a.icon+"</div>"+
+      "<div class='an'>"+
+        "<div style='font-size:12px;font-weight:600;color:#fff;margin-bottom:1px;'>"+a.name+"</div>"+
+        "<div class='at'>"+a.type+"</div>"+
+        "<div class='atg'>"+a.tags.map(function(t){return "<div class='atag'>"+t+"</div>";}).join("")+"</div>"+
+      "</div>"+
+      "<div class='ar'>"+
+        "<div class='aloc'>"+a.flag+" "+a.loc+"<br><span style='color:"+a.statusColor+";'>&#9679; "+a.status+"</span></div>"+
+        "<button class='cb' id='cb_"+a.name.replace(/\s/g,"")+"'>Collab</button>"+
+      "</div>";
+    el.querySelector(".ai,.cb")&&el.addEventListener("click",function(){goTo(el,"profile");});
+    el.querySelector("#cb_"+a.name.replace(/\s/g,""))&&el.querySelector("#cb_"+a.name.replace(/\s/g,"")).addEventListener("click",function(e){e.stopPropagation();collabSoon();});
+    container.appendChild(el);
   });
-});
+}
+
+// Search init happens when search screen opens
+;
 
 function sPT(el,tab){
   document.querySelectorAll(".ptab").forEach(function(t){t.className="ptab";});
