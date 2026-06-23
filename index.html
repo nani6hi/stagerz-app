@@ -478,7 +478,7 @@ html,body{width:100%;height:100%;background:#07050f;font-family:Inter,sans-serif
 <div class="screen" id="screen-search">
   <div class="tb">
     <div class="tr" style="margin-bottom:10px;"><div class="logo">STA<em>G</em>ERZ</div><div style="font-size:9px;letter-spacing:2px;color:rgba(255,255,255,.2);">&#128269; SEARCH</div></div>
-    <div style="display:flex;align-items:center;gap:6px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);border-radius:8px;padding:8px 12px;margin-bottom:10px;"><span style="font-size:14px;opacity:.4;">&#128269;</span><input style="flex:1;background:transparent;border:none;outline:none;font-size:13px;color:#fff;" type="text" placeholder="Search artists, skills, locations..."></div>
+    <div style="display:flex;align-items:center;gap:6px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);border-radius:8px;padding:8px 12px;margin-bottom:10px;"><span style="font-size:14px;opacity:.4;">&#128269;</span><input style="flex:1;background:transparent;border:none;outline:none;font-size:13px;color:#fff;" type="text" placeholder="Search artists, skills, locations..." oninput="searchArtists(this.value)" id="searchInput"></div>
     <div class="cr">
       <div class="cc on"><div class="ci">&#127757;</div><div class="cl">All</div></div>
       <div class="cc off"><div class="ci">&#127925;</div><div class="cl">Music</div></div>
@@ -1006,7 +1006,79 @@ function sW(v){
 function sFC(el){
   document.querySelectorAll(".fc").forEach(function(c){c.className="fc off";});
   el.className="fc on";
+  filterArtists(el.textContent.trim());
 }
+
+var allArtists=[
+  {name:"Maya Rivera",type:"Musician · Singer",tags:["Guitar","Vocals","Songwriting"],loc:"Berlin",flag:"&#127465;&#127466;",status:"Online",statusColor:"rgba(40,200,80,.7)",icon:"&#127928;",bg:"linear-gradient(135deg,#1a0840,#280c50)",cat:"music"},
+  {name:"Leila Mensah",type:"Singer · Songwriter",tags:["Afrobeat","RnB","Soul"],loc:"Lagos",flag:"&#127475;&#127468;",status:"Online",statusColor:"rgba(40,200,80,.7)",icon:"&#127908;",bg:"linear-gradient(135deg,#201018,#301820)",cat:"music"},
+  {name:"Amir Hashim",type:"Musician · Producer",tags:["Jazz","Production","Sax"],loc:"Tokyo",flag:"&#127471;&#127477;",status:"Offline",statusColor:"rgba(255,255,255,.2)",icon:"&#127927;",bg:"linear-gradient(135deg,#0a2018,#102818)",cat:"music"},
+  {name:"Carlos Mendez",type:"Guitarist · Composer",tags:["Classical","Flamenco","Film"],loc:"Madrid",flag:"&#127466;&#127480;",status:"Online",statusColor:"rgba(40,200,80,.7)",icon:"&#127928;",bg:"linear-gradient(135deg,#180820,#280830)",cat:"music"},
+  {name:"James Kofi",type:"Filmmaker · Director",tags:["Directing","Editing","DOP"],loc:"New York",flag:"&#127482;&#127480;",status:"Online",statusColor:"rgba(40,200,80,.7)",icon:"&#127916;",bg:"linear-gradient(135deg,#0a1840,#142850)",cat:"film"},
+  {name:"Yuki Tanaka",type:"Cinematographer",tags:["DOP","Color Grade","Drone"],loc:"Osaka",flag:"&#127471;&#127477;",status:"Away",statusColor:"rgba(255,160,40,.7)",icon:"&#127909;",bg:"linear-gradient(135deg,#0a1020,#142030)",cat:"film"},
+  {name:"Lena Bauer",type:"Film Editor · Director",tags:["Editing","Grading","VFX"],loc:"Munich",flag:"&#127465;&#127466;",status:"Online",statusColor:"rgba(40,200,80,.7)",icon:"&#9986;",bg:"linear-gradient(135deg,#101828,#182030)",cat:"film"},
+  {name:"Sofia Lima",type:"Dancer · Choreographer",tags:["Ballet","Hip-Hop","Latin"],loc:"Sao Paulo",flag:"&#127463;&#127479;",status:"Away",statusColor:"rgba(255,160,40,.7)",icon:"&#128131;",bg:"linear-gradient(135deg,#1a0830,#2a0840)",cat:"dance"},
+  {name:"Amara Diallo",type:"Dancer · Performer",tags:["Afro","Contemporary","Acro"],loc:"Paris",flag:"&#127467;&#127479;",status:"Online",statusColor:"rgba(40,200,80,.7)",icon:"&#128131;",bg:"linear-gradient(135deg,#200818,#300820)",cat:"dance"},
+  {name:"Chen Wei",type:"Photographer",tags:["Portrait","Concert","Editorial"],loc:"Shanghai",flag:"&#127464;&#127475;",status:"Online",statusColor:"rgba(40,200,80,.7)",icon:"&#128247;",bg:"linear-gradient(135deg,#101828,#182030)",cat:"photo"},
+  {name:"Sara Nkosi",type:"Visual Artist · Photographer",tags:["Fine Art","Fashion","Street"],loc:"Cape Town",flag:"&#127487;&#127462;",status:"Online",statusColor:"rgba(40,200,80,.7)",icon:"&#128247;",bg:"linear-gradient(135deg,#181020,#281828)",cat:"photo"},
+  {name:"Zara AI",type:"AI Creator · Designer",tags:["Generative","Motion","3D"],loc:"London",flag:"&#127468;&#127463;",status:"Online",statusColor:"rgba(40,200,80,.7)",icon:"&#129302;",bg:"linear-gradient(135deg,#201018,#281020)",cat:"ai"},
+  {name:"Dev Sharma",type:"AI Artist · Coder",tags:["Stable Diff","Midjourney","ML"],loc:"Bangalore",flag:"&#127470;&#127475;",status:"Away",statusColor:"rgba(255,160,40,.7)",icon:"&#129302;",bg:"linear-gradient(135deg,#101820,#182028)",cat:"ai"},
+  {name:"Marco Rossi",type:"Visual Artist · Painter",tags:["Digital","Illustration","NFT"],loc:"Milan",flag:"&#127470;&#127481;",status:"Offline",statusColor:"rgba(255,255,255,.2)",icon:"&#127912;",bg:"linear-gradient(135deg,#181020,#201828)",cat:"art"},
+];
+
+var catCounts={"all":247,"music":89,"film":54,"dance":31,"photo":38,"ai":22,"art":13};
+
+function searchArtists(query){
+  query=query.toLowerCase().trim();
+  if(!query){filterArtists("all");return;}
+  var filtered=allArtists.filter(function(a){
+    return a.name.toLowerCase().indexOf(query)>-1||
+           a.type.toLowerCase().indexOf(query)>-1||
+           a.loc.toLowerCase().indexOf(query)>-1||
+           a.tags.join(" ").toLowerCase().indexOf(query)>-1;
+  });
+  document.getElementById("resultCount").textContent=filtered.length;
+  var html="";
+  filtered.forEach(function(a){
+    html+="<div class='ai' onclick='goTo(this,\'profile\')'>";
+    html+="<div class='av' style='background:"+a.bg+";'>"+a.icon+"</div>";
+    html+="<div class='an'><div style='font-size:12px;font-weight:600;color:#fff;margin-bottom:1px;'>"+a.name+"</div>";
+    html+="<div class='at'>"+a.type+"</div>";
+    html+="<div class='atg'>";
+    a.tags.forEach(function(t){html+="<div class='atag'>"+t+"</div>";});
+    html+="</div></div>";
+    html+="<div class='ar'><div class='aloc'>"+a.flag+" "+a.loc+"<br><span style='color:"+a.statusColor+";'>&#9679; "+a.status+"</span></div>";
+    html+="<button class='cb' onclick='event.stopPropagation();sA("Collaboration request coming soon!")'>Collab</button></div>";
+    html+="</div>";
+  });
+  if(!filtered.length)html="<div style='text-align:center;padding:40px 20px;color:rgba(255,255,255,.25);font-size:11px;'>No artists found for<br><em style='color:rgba(180,160,255,.4);'>"+query+"</em></div>";
+  document.getElementById("searchResults").innerHTML=html;
+}
+
+function filterArtists(cat){
+  var filter=cat.toLowerCase().replace(/[^a-z]/g,"");
+  if(filter==="all"||filter==="")filter="all";
+  var filtered=filter==="all"?allArtists:allArtists.filter(function(a){return a.cat===filter;});
+  var count=catCounts[filter]||filtered.length;
+  document.getElementById("resultCount").textContent=count;
+  var html="";
+  filtered.forEach(function(a){
+    html+="<div class='ai' onclick='goTo(this,\'profile\')'>";
+    html+="<div class='av' style='background:"+a.bg+";'>"+a.icon+"</div>";
+    html+="<div class='an'><div style='font-size:12px;font-weight:600;color:#fff;margin-bottom:1px;'>"+a.name+"</div>";
+    html+="<div class='at'>"+a.type+"</div>";
+    html+="<div class='atg'>";
+    a.tags.forEach(function(t){html+="<div class='atag'>"+t+"</div>";});
+    html+="</div></div>";
+    html+="<div class='ar'><div class='aloc'>"+a.flag+" "+a.loc+"<br><span style='color:"+a.statusColor+";'>&#9679; "+a.status+"</span></div>";
+    html+="<button class='cb' onclick='event.stopPropagation();sA("Collaboration request coming soon!")'>Collab</button></div>";
+    html+="</div>";
+  });
+  document.getElementById("searchResults").innerHTML=html;
+}
+
+// Init search with all artists
+document.addEventListener("DOMContentLoaded",function(){filterArtists("all");});
 
 document.querySelectorAll(".cr").forEach(function(row){
   row.querySelectorAll(".cc").forEach(function(c){
