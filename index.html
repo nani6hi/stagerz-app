@@ -1273,7 +1273,7 @@ var artistDB=[
   {n:"Leila Mensah",t:"Singer - Songwriter",tags:"Afrobeat RnB Soul",loc:"Lagos",flag:"NG",status:"Online",sc:"rgba(40,200,80,.7)",icon:"&#127908;",bg:"#201018",cat:"music"},
   {n:"Amir Hashim",t:"Musician - Producer",tags:"Jazz Production Sax",loc:"Tokyo",flag:"JP",status:"Offline",sc:"rgba(255,255,255,.2)",icon:"&#127927;",bg:"#0a2018",cat:"music"},
   {n:"Carlos Mendez",t:"Guitarist - Composer",tags:"Classical Flamenco Film",loc:"Madrid",flag:"ES",status:"Online",sc:"rgba(40,200,80,.7)",icon:"&#127928;",bg:"#180820",cat:"music"},
-  {n:"James Kofi",t:"Filmmaker - Director",tags:"Directing Editing DOP",loc:"New York",flag:"US",status:"Online",sc:"rgba(40,200,80,.7)",icon:"&#127916;",bg:"#0a1840",cat:"film"},
+  {n:"James Kofi",t:"Filmmaker - Director",tags:"Directing Editing DOP",loc:"New York",flag:"US",status:"Online",sc:"rgba(40,200,80,.7)",icon:"&#127916;",bg:"#0a1840",cat:"film",p:"profile2"},
   {n:"Yuki Tanaka",t:"Cinematographer",tags:"DOP Color Drone",loc:"Osaka",flag:"JP",status:"Away",sc:"rgba(255,160,40,.7)",icon:"&#127909;",bg:"#0a1020",cat:"film"},
   {n:"Lena Bauer",t:"Film Editor - Director",tags:"Editing Grading VFX",loc:"Munich",flag:"DE",status:"Online",sc:"rgba(40,200,80,.7)",icon:"&#9986;",bg:"#101828",cat:"film"},
   {n:"Sofia Lima",t:"Dancer - Choreographer",tags:"Ballet Hip-Hop Latin",loc:"Sao Paulo",flag:"BR",status:"Away",sc:"rgba(255,160,40,.7)",icon:"&#128131;",bg:"#1a0830",cat:"dance"},
@@ -1442,7 +1442,7 @@ function renderArtists(list,count){
         "<div class='aloc'>"+a.flag+" "+a.loc+"<br><span style='color:"+a.statusColor+";'>&#9679; "+a.status+"</span></div>"+
         "<button class='cb' id='cb_"+a.name.replace(/\s/g,"")+"'>Collab</button>"+
       "</div>";
-    el.addEventListener("click",function(){goTo(el,"profile");});
+    el.addEventListener("click",function(){goTo(el,a.p||"profile");});
     var cb=el.querySelector(".cb");
     if(cb)cb.addEventListener("click",function(e){e.stopPropagation();collabSoon();});
     container.appendChild(el);
