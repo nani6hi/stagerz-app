@@ -1442,7 +1442,7 @@ function renderArtists(list,count){
         "<div class='aloc'>"+a.flag+" "+a.loc+"<br><span style='color:"+a.statusColor+";'>&#9679; "+a.status+"</span></div>"+
         "<button class='cb' id='cb_"+a.name.replace(/\s/g,"")+"'>Collab</button>"+
       "</div>";
-    el.addEventListener("click",function(){goTo(el,a.p||"profile");});
+    el.onclick=function(){goTo(el,a.p||"profile");};
     var cb=el.querySelector(".cb");
     if(cb)cb.addEventListener("click",function(e){e.stopPropagation();collabSoon();});
     container.appendChild(el);
