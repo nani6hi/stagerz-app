@@ -420,14 +420,14 @@ html,body{width:100%;height:100%;background:#07050f;font-family:Inter,sans-serif
   </div>
   <div class="sa">
     <div class="pd pt">
-      <div class="st">On Stage Now</div>
+      <div id="forYouContent" style="display:none;"></div><div id="homeFeed"><div class="st">On Stage Now</div>
       <div class="sr">
         <div class="si" onclick="goTo(this,'famemaker')"><div style="width:48px;height:48px;border-radius:50%;background:rgba(100,80,255,.1);border:1.5px dashed rgba(100,80,255,.3);display:flex;align-items:center;justify-content:center;font-size:20px;">+</div><div class="sn">Your Story</div></div>
         <div class="si" onclick="goTo(this,'profile')"><div class="sg gold"><div class="sa2">&#127928;</div></div><div class="sn">Maya</div></div>
         <div class="si" onclick="goTo(this,'profile2')"><div class="sg blue"><div class="sa2" style="background:linear-gradient(135deg,#0a1840,#142850);">&#127916;</div></div><div class="sn">James</div></div>
         <div class="si" onclick="goTo(this,'profile3')"><div class="sg red"><div class="sa2" style="background:linear-gradient(135deg,#1a0830,#2a0840);">&#128131;</div></div><div class="sn">Sofia</div></div>
         <div class="si" onclick="goTo(this,'profile4')"><div class="sg gold"><div class="sa2" style="background:linear-gradient(135deg,#201018,#301820);">&#127908;</div></div><div class="sn">Leila</div></div>
-        <div class="si" onclick="goTo(this,'search')"><div class="sg blue"><div class="sa2" style="background:linear-gradient(135deg,#0a2018,#102818);">&#127927;</div></div><div class="sn">Amir</div></div>
+        <div class="si" onclick="goTo(this,'profile6')"><div class="sg blue"><div class="sa2" style="background:linear-gradient(135deg,#0a2018,#102818);">&#127927;</div></div><div class="sn">Amir</div></div>
       </div>
       <div class="st">Featured Performance</div>
       <div style="background:linear-gradient(160deg,rgba(30,15,80,.8),rgba(15,8,40,.9));border:1px solid rgba(100,80,255,.2);border-radius:12px;overflow:hidden;margin-bottom:12px;cursor:pointer;" onclick="goTo(this,'public')">
@@ -463,8 +463,8 @@ html,body{width:100%;height:100%;background:#07050f;font-family:Inter,sans-serif
       </div>
       <div class="st">Discover Artists</div>
       <div class="dr">
-        <div class="dc" onclick="goTo(this,'search')"><div class="da" style="background:linear-gradient(135deg,#101828,#182030);">&#128247;</div><div class="dn">Chen Wei</div><div class="dt">Photo</div><div class="dl">Shanghai</div><div class="db">+ Follow</div></div>
-        <div class="dc" onclick="goTo(this,'search')"><div class="da" style="background:linear-gradient(135deg,#0a2018,#102818);">&#127927;</div><div class="dn">Amir H.</div><div class="dt">Musician</div><div class="dl">Tokyo</div><div class="db">+ Follow</div></div>
+        <div class="dc" onclick="goTo(this,'profile5')"><div class="da" style="background:linear-gradient(135deg,#101828,#182030);">&#128247;</div><div class="dn">Chen Wei</div><div class="dt">Photo</div><div class="dl">Shanghai</div><div class="db">+ Follow</div></div>
+        <div class="dc" onclick="goTo(this,'profile6')"><div class="da" style="background:linear-gradient(135deg,#0a2018,#102818);">&#127927;</div><div class="dn">Amir H.</div><div class="dt">Musician</div><div class="dl">Tokyo</div><div class="db">+ Follow</div></div>
         <div class="dc" onclick="goTo(this,'search')"><div class="da" style="background:linear-gradient(135deg,#201018,#281020);">&#129302;</div><div class="dn">Zara AI</div><div class="dt">AI Creator</div><div class="dl">London</div><div class="db">+ Follow</div></div>
         <div class="dc" onclick="goTo(this,'search')"><div class="da" style="background:linear-gradient(135deg,#181020,#201828);">&#9986;</div><div class="dn">Marco R.</div><div class="dt">Editor</div><div class="dl">Milan</div><div class="db">+ Follow</div></div>
       </div>
@@ -472,6 +472,7 @@ html,body{width:100%;height:100%;background:#07050f;font-family:Inter,sans-serif
     </div>
   </div>
   
+  </div>
   <div class="nb"><div class="ni active" onclick="goTo(this,'home')"><div class="ni-icon">&#127968;</div><span>Home</span></div><div class="ni" onclick="goTo(this,'search')"><div class="ni-icon">&#128269;</div><span>Search</span></div><div class="ni" onclick="goTo(this,'public')"><div class="ni-icon">&#127917;</div><span>Stage</span></div><div class="ni" onclick="goTo(this,'wanted')"><div class="ni-icon">&#127919;</div><span>Wanted</span></div><div class="ni" onclick="goTo(this,'profile')"><div class="ni-icon">&#128100;</div><span>Profile</span></div></div>
 </div>
 
@@ -1090,6 +1091,104 @@ This feature connects artists directly in the full STAGERZ app.')" style="paddin
   <div class="nb"><div class="ni" onclick="goTo(this,'home')"><div class="ni-icon">&#127968;</div><span>Home</span></div><div class="ni" onclick="goTo(this,'search')"><div class="ni-icon">&#128269;</div><span>Search</span></div><div class="ni" onclick="goTo(this,'public')"><div class="ni-icon">&#127917;</div><span>Stage</span></div><div class="ni" onclick="goTo(this,'wanted')"><div class="ni-icon">&#127919;</div><span>Wanted</span></div><div class="ni active" onclick="goTo(this,'profile5')"><div class="ni-icon">&#128100;</div><span>Profile</span></div></div>
 </div>
 
+<!-- SCREEN 5F: AMIR HASHIM PROFILE -->
+<div class="screen" id="screen-profile6">
+  <div class="sa">
+    <div class="cv" style="background:linear-gradient(135deg,#0a2018,#102818,#060e08);">
+      <div style="position:absolute;top:-5px;left:20%;width:1px;height:100%;background:linear-gradient(180deg,rgba(40,200,80,.4),transparent);transform:rotate(-12deg);transform-origin:top center;"></div>
+      <div style="position:absolute;top:-5px;left:50%;width:1.5px;height:100%;background:linear-gradient(180deg,rgba(255,220,100,.4),transparent);transform-origin:top center;"></div>
+      <div style="position:absolute;top:-5px;left:80%;width:1px;height:100%;background:linear-gradient(180deg,rgba(40,200,80,.4),transparent);transform:rotate(12deg);transform-origin:top center;"></div>
+      <div class="csil">&#127927;</div>
+      <div class="cfd"></div>
+      <div class="bk" onclick="goTo(this,'home')">&#8249;</div>
+    </div>
+    <div class="pd">
+      <div style="margin-top:-26px;margin-bottom:10px;">
+        <div style="display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:10px;">
+          <div class="pav" style="background:linear-gradient(135deg,#0a2018,#20a060);">&#127927;<div style="position:absolute;bottom:-1px;right:-1px;width:18px;height:18px;border-radius:50%;background:linear-gradient(135deg,#0a2018,#20a060);border:2px solid #07050f;display:flex;align-items:center;justify-content:center;font-size:8px;">&#10022;</div></div>
+          <div style="display:flex;gap:8px;padding-top:8px;">
+            <button style="padding:8px 14px;border-radius:4px;font-family:'Bebas Neue',sans-serif;font-size:11px;letter-spacing:2px;cursor:pointer;background:rgba(255,255,255,.05);color:rgba(200,180,255,.7);border:1px solid rgba(100,80,255,.2);" onclick="sA('Messaging coming soon!')">&#128172; MSG</button>
+            <button style="padding:8px 14px;border-radius:4px;font-family:'Bebas Neue',sans-serif;font-size:11px;letter-spacing:2px;cursor:pointer;background:linear-gradient(135deg,#3020a0,#5040c8);color:#fff;border:none;" onclick="sA('Follow coming soon!')">+ FOLLOW</button>
+          </div>
+        </div>
+        <div style="font-family:'Playfair Display',serif;font-weight:900;font-size:22px;color:#fff;margin-bottom:2px;">Amir Hashim</div>
+        <div style="font-size:11px;color:rgba(255,255,255,.3);margin-bottom:5px;">@amirh &middot; #7734</div>
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;flex-wrap:wrap;">
+          <div style="display:inline-flex;align-items:center;gap:5px;padding:3px 10px;background:rgba(20,160,60,.12);border:1px solid rgba(20,160,60,.2);border-radius:20px;font-size:9px;letter-spacing:2px;text-transform:uppercase;color:rgba(80,220,120,.8);">&#127927; Musician &middot; Producer</div>
+          <div style="display:inline-flex;align-items:center;gap:4px;padding:2px 9px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);border-radius:20px;"><div style="width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,.3);"></div><span style="font-size:8px;color:rgba(255,255,255,.4);">Offline</span></div>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
+          <div style="font-size:9px;color:rgba(255,255,255,.35);">&#128205; Tokyo, Japan</div>
+          <div style="font-size:9px;color:rgba(255,255,255,.35);">&#11088; 4.7</div>
+        </div>
+        <div style="font-size:11px;color:rgba(255,255,255,.45);line-height:1.6;margin-bottom:12px;">Jazz saxophonist and music producer blending Eastern and Western sounds. 10 years performing internationally. Specializes in film scores and cross-cultural collaborations. &#127757;</div>
+      </div>
+      <div class="strow">
+        <div class="stc"><span class="stn">42</span><span class="stl">Projects</span></div>
+        <div class="stc"><span class="stn">2.2k</span><span class="stl">Followers</span></div>
+        <div class="stc"><span class="stn">78</span><span class="stl">Collabs</span></div>
+        <div class="stc"><span class="stn">4.7</span><span class="stl">Rating</span></div>
+      </div>
+      <button class="bp" style="margin-bottom:10px;" onclick="sA('Collaboration request coming soon!')">&#129309; REQUEST COLLABORATION</button>
+      <button class="bg" style="margin-bottom:14px;" onclick="goTo(this,'famemaker')">&#127916; CREATE / FAMEMAKER</button>
+      <div class="st">Skills</div>
+      <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px;">
+        <div class="skc gold">&#127927; Saxophone</div>
+        <div class="skc gold">&#127911; Production</div>
+        <div class="skc gold">&#127926; Jazz</div>
+        <div class="skc">&#127932; Composition</div>
+        <div class="skc">&#127916; Film Score</div>
+        <div class="skc">&#127929; Piano</div>
+      </div>
+      <div class="st">Looking For</div>
+      <div style="background:rgba(212,168,64,.05);border:1px solid rgba(212,168,64,.2);border-radius:6px;padding:10px 12px;margin-bottom:14px;">
+        <div style="display:flex;flex-direction:column;gap:7px;">
+          <div style="display:flex;align-items:center;justify-content:space-between;">
+            <div style="display:flex;align-items:center;gap:6px;"><div style="font-size:14px;">&#127916;</div><div style="font-size:10px;color:rgba(232,212,160,.8);">Film Director</div><div style="font-size:8px;color:rgba(255,255,255,.2);">Remote &middot; Rev Share</div></div>
+            <button onclick="sA('Collaboration request coming soon!')" style="padding:4px 10px;background:linear-gradient(135deg,#3020a0,#5040c8);border:none;border-radius:10px;font-size:8px;color:#fff;cursor:pointer;">&#129309; Collab</button>
+          </div>
+          <div style="height:1px;background:rgba(255,255,255,.05);"></div>
+          <div style="display:flex;align-items:center;justify-content:space-between;">
+            <div style="display:flex;align-items:center;gap:6px;"><div style="font-size:14px;">&#127908;</div><div style="font-size:10px;color:rgba(232,212,160,.8);">Vocalist</div><div style="font-size:8px;color:rgba(255,255,255,.2);">Tokyo &middot; Paid</div></div>
+            <button onclick="sA('Collaboration request coming soon!')" style="padding:4px 10px;background:linear-gradient(135deg,#3020a0,#5040c8);border:none;border-radius:10px;font-size:8px;color:#fff;cursor:pointer;">&#129309; Collab</button>
+          </div>
+          <div style="height:1px;background:rgba(255,255,255,.05);"></div>
+          <div style="display:flex;align-items:center;justify-content:space-between;">
+            <div style="display:flex;align-items:center;gap:6px;"><div style="font-size:14px;">&#128131;</div><div style="font-size:10px;color:rgba(232,212,160,.8);">Dancer</div><div style="font-size:8px;color:rgba(255,255,255,.2);">Tokyo &middot; Credit</div></div>
+            <button onclick="sA('Collaboration request coming soon!')" style="padding:4px 10px;background:linear-gradient(135deg,#3020a0,#5040c8);border:none;border-radius:10px;font-size:8px;color:#fff;cursor:pointer;">&#129309; Collab</button>
+          </div>
+        </div>
+      </div>
+      <div class="st">Active Project</div>
+      <div style="background:rgba(20,160,60,.06);border:1px solid rgba(20,160,60,.15);border-radius:6px;padding:10px 12px;position:relative;overflow:hidden;margin-bottom:14px;">
+        <div style="position:absolute;top:0;left:0;width:3px;height:100%;background:linear-gradient(180deg,#20a060,#d4a840);"></div>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+          <div style="font-size:7px;letter-spacing:2px;text-transform:uppercase;color:rgba(80,220,120,.5);">&#128293; In Progress</div>
+          <div style="display:flex;gap:6px;">
+            <button onclick="sA('Team chat coming soon!')" style="width:26px;height:26px;border-radius:50%;background:rgba(20,160,60,.15);border:1px solid rgba(20,160,60,.3);display:flex;align-items:center;justify-content:center;font-size:12px;cursor:pointer;">&#128172;</button>
+            <button onclick="goTo(this,'project')" style="width:26px;height:26px;border-radius:50%;background:rgba(212,168,64,.1);border:1px solid rgba(212,168,64,.25);display:flex;align-items:center;justify-content:center;font-size:14px;cursor:pointer;color:#d4a840;">&#8250;</button>
+          </div>
+        </div>
+        <div style="font-family:'Playfair Display',serif;font-size:14px;font-weight:700;color:#fff;margin-bottom:3px;">East Meets West — Film Score</div>
+        <div style="font-size:9px;color:rgba(255,255,255,.3);margin-bottom:8px;">Film Score &middot; Jazz &middot; Tokyo &middot; 3 crew</div>
+        <div style="height:2px;background:rgba(255,255,255,.06);border-radius:2px;overflow:hidden;margin-bottom:4px;"><div style="height:100%;width:55%;background:linear-gradient(90deg,#20a060,#d4a840);border-radius:2px;"></div></div>
+        <div style="font-size:7px;color:rgba(255,255,255,.2);text-align:right;">55% complete &middot; Premiere Dec 2025</div>
+      </div>
+      <div class="st">Portfolio</div>
+      <div class="pg" style="margin-bottom:16px;">
+        <div class="pi" onclick="goTo(this,'public')">&#127927;</div>
+        <div class="pi" onclick="goTo(this,'public')">&#127926;</div>
+        <div class="pi" onclick="goTo(this,'public')">&#127911;</div>
+        <div class="pi" onclick="goTo(this,'public')">&#127932;</div>
+        <div class="pi" onclick="goTo(this,'public')">&#127916;</div>
+        <div class="pi" onclick="goTo(this,'public')">&#127929;</div>
+      </div>
+      <div class="gap"></div>
+    </div>
+  </div>
+  <div class="nb"><div class="ni" onclick="goTo(this,'home')"><div class="ni-icon">&#127968;</div><span>Home</span></div><div class="ni" onclick="goTo(this,'search')"><div class="ni-icon">&#128269;</div><span>Search</span></div><div class="ni" onclick="goTo(this,'public')"><div class="ni-icon">&#127917;</div><span>Stage</span></div><div class="ni" onclick="goTo(this,'wanted')"><div class="ni-icon">&#127919;</div><span>Wanted</span></div><div class="ni active" onclick="goTo(this,'profile6')"><div class="ni-icon">&#128100;</div><span>Profile</span></div></div>
+</div>
+
 <!-- SCREEN 6: PROJECT -->
 <div class="screen" id="screen-project">
   <div class="tb">
@@ -1614,179 +1713,83 @@ function sA(msg){
 function sFT(el){
   document.querySelectorAll(".ftb").forEach(function(t){t.className="ftb off";});
   el.className="ftb on";
-}
-
-function sW(v){
-  document.getElementById("myV").style.display=v==="my"?"block":"none";
-  document.getElementById("commV").style.display=v==="comm"?"block":"none";
-  document.getElementById("myBtn").className="tb2 "+(v==="my"?"on":"off");
-  document.getElementById("commBtn").className="tb2 "+(v==="comm"?"on":"off");
-}
-
-function sFC(el){
-  document.querySelectorAll(".fc").forEach(function(c){c.className="fc off";});
-  el.className="fc on";
-  filterArtists(el.textContent.trim());
-}
-
-
-function collabSoon(){
-  sA("Collaboration requests are coming soon!\n\nSTAGERZ is growing. Your request will reach the artist directly.");
-}
-
-function goTo(el,id){
-  document.querySelectorAll(".screen").forEach(function(s){s.classList.remove("active");});
-  var t=document.getElementById("screen-"+id);
-  if(t){t.classList.add("active");var sa=t.querySelector(".sa");if(sa)sa.scrollTop=0;}
-  if(id==="search"){
-    setTimeout(function(){initSearch();},50);
+  var tab=el.textContent.trim().toLowerCase();
+  var feed=document.getElementById("homeFeed");
+  if(!feed)return;
+  if(tab.indexOf("for you")>-1||tab.indexOf("you")>-1){
+    feed.style.opacity="0";
+    setTimeout(function(){feed.innerHTML=getForYouFeed();feed.style.opacity="1";},200);
+  } else if(tab.indexOf("following")>-1){
+    feed.style.opacity="0";
+    setTimeout(function(){feed.innerHTML=getFollowingFeed();feed.style.opacity="1";},200);
+  } else if(tab.indexOf("wanted")>-1){
+    feed.style.opacity="0";
+    setTimeout(function(){goTo(el,"wanted");feed.style.opacity="1";},200);
+  } else if(tab.indexOf("trending")>-1){
+    feed.style.opacity="0";
+    setTimeout(function(){feed.innerHTML=getTrendingFeed();feed.style.opacity="1";},200);
   }
-  if(tg&&tg.HapticFeedback)tg.HapticFeedback.impactOccurred("light");
+  feed.style.transition="opacity .2s ease";
 }
 
-function sA(msg){
-  if(tg)tg.showAlert(msg);else alert(msg);
+function getForYouFeed(){
+  return document.getElementById("forYouContent").innerHTML;
 }
 
-function sFT(el){
-  document.querySelectorAll(".ftb").forEach(function(t){t.className="ftb off";});
-  el.className="ftb on";
-}
-
-function sW(v){
-  document.getElementById("myV").style.display=v==="my"?"block":"none";
-  document.getElementById("commV").style.display=v==="comm"?"block":"none";
-  document.getElementById("myBtn").className="tb2 "+(v==="my"?"on":"off");
-  document.getElementById("commBtn").className="tb2 "+(v==="comm"?"on":"off");
-}
-
-function sFC(el){
-  document.querySelectorAll(".fc").forEach(function(c){c.className="fc off";});
-  el.className="fc on";
-  filterArtists(el.textContent.trim());
-}
-
-var catCounts={"all":247,"music":89,"film":54,"dance":31,"photo":38,"ai":22,"art":13};
-
-function collabSoon(){
-  sA("Collaboration requests are coming soon!\n\nThis feature connects artists worldwide.");
-}
-
-var artistDB=[
-  {n:"Maya Rivera",t:"Musician - Singer",tags:"Guitar Vocals Songwriting",loc:"Berlin",flag:"DE",status:"Online",sc:"rgba(40,200,80,.7)",icon:"&#127928;",bg:"#1a0840",cat:"music"},
-  {n:"Leila Mensah",t:"Singer - Songwriter",tags:"Afrobeat RnB Soul",loc:"Lagos",flag:"NG",status:"Online",sc:"rgba(40,200,80,.7)",icon:"&#127908;",bg:"#201018",cat:"music",p:"profile4"},
-  {n:"Amir Hashim",t:"Musician - Producer",tags:"Jazz Production Sax",loc:"Tokyo",flag:"JP",status:"Offline",sc:"rgba(255,255,255,.2)",icon:"&#127927;",bg:"#0a2018",cat:"music"},
-  {n:"Carlos Mendez",t:"Guitarist - Composer",tags:"Classical Flamenco Film",loc:"Madrid",flag:"ES",status:"Online",sc:"rgba(40,200,80,.7)",icon:"&#127928;",bg:"#180820",cat:"music"},
-  {n:"James Kofi",t:"Filmmaker - Director",tags:"Directing Editing DOP",loc:"New York",flag:"US",status:"Online",sc:"rgba(40,200,80,.7)",icon:"&#127916;",bg:"#0a1840",cat:"film",p:"profile2"},
-  {n:"Yuki Tanaka",t:"Cinematographer",tags:"DOP Color Drone",loc:"Osaka",flag:"JP",status:"Away",sc:"rgba(255,160,40,.7)",icon:"&#127909;",bg:"#0a1020",cat:"film"},
-  {n:"Lena Bauer",t:"Film Editor - Director",tags:"Editing Grading VFX",loc:"Munich",flag:"DE",status:"Online",sc:"rgba(40,200,80,.7)",icon:"&#9986;",bg:"#101828",cat:"film"},
-  {n:"Sofia Lima",t:"Dancer - Choreographer",tags:"Ballet Hip-Hop Latin",loc:"Sao Paulo",flag:"BR",status:"Away",sc:"rgba(255,160,40,.7)",icon:"&#128131;",bg:"#1a0830",cat:"dance",p:"profile3"},
-  {n:"Amara Diallo",t:"Dancer - Performer",tags:"Afro Contemporary Acro",loc:"Paris",flag:"FR",status:"Online",sc:"rgba(40,200,80,.7)",icon:"&#128131;",bg:"#200818",cat:"dance"},
-  {n:"Chen Wei",t:"Photographer",tags:"Portrait Concert Editorial",loc:"Shanghai",flag:"CN",status:"Online",sc:"rgba(40,200,80,.7)",icon:"&#128247;",bg:"#101828",cat:"photo",p:"profile5"},
-  {n:"Sara Nkosi",t:"Visual Artist - Photographer",tags:"Fine Art Fashion Street",loc:"Cape Town",flag:"ZA",status:"Online",sc:"rgba(40,200,80,.7)",icon:"&#128247;",bg:"#181020",cat:"photo"},
-  {n:"Zara AI",t:"AI Creator - Designer",tags:"Generative Motion 3D",loc:"London",flag:"GB",status:"Online",sc:"rgba(40,200,80,.7)",icon:"&#129302;",bg:"#201018",cat:"ai"},
-  {n:"Dev Sharma",t:"AI Artist - Coder",tags:"Stable-Diff Midjourney ML",loc:"Bangalore",flag:"IN",status:"Away",sc:"rgba(255,160,40,.7)",icon:"&#129302;",bg:"#101820",cat:"ai"},
-  {n:"Marco Rossi",t:"Visual Artist - Painter",tags:"Digital Illustration NFT",loc:"Milan",flag:"IT",status:"Offline",sc:"rgba(255,255,255,.2)",icon:"&#127912;",bg:"#181020",cat:"art"}
-];
-
-var catCounts={all:247,music:89,film:54,dance:31,photo:38,ai:22,art:13};
-var currentCat="all";
-
-function initSearch(){
-  var input=document.getElementById("searchInput");
-  if(input){
-    input.value="";
-    input.oninput=function(){doSearch(this.value);};
-  }
-  currentCat="all";
-  doSearch("");
-}
-
-function setSearchCat(cat){
-  currentCat=cat;
-  var chips=document.querySelectorAll("#catChips .cc");
-  chips.forEach(function(c){
-    c.className=c.getAttribute("data-cat")===cat?"cc on":"cc off";
-  });
-  var inp=document.getElementById("searchInput");
-  if(inp)inp.value="";
-  doSearch("");
-  if(tg&&tg.HapticFeedback)tg.HapticFeedback.impactOccurred("light");
-}
-
-function doSearch(query){
-  var q=query.toLowerCase().trim();
-  var list=artistDB.filter(function(a){
-    var catOk=currentCat==="all"||a.cat===currentCat;
-    var name=a.n||a.name||"";
-    var type=a.t||a.type||"";
-    var tags=Array.isArray(a.tags)?a.tags.join(" "):a.tags||"";
-    var qOk=!q||name.toLowerCase().indexOf(q)>-1||type.toLowerCase().indexOf(q)>-1||a.loc.toLowerCase().indexOf(q)>-1||tags.toLowerCase().indexOf(q)>-1;
-    return catOk&&qOk;
-  });
-  var rc=document.getElementById("resultCount");
-  if(rc)rc.textContent=list.length;
-  var container=document.getElementById("searchResults");
-  if(!container)return;
-  if(!list.length){
-    container.innerHTML="<div style='text-align:center;padding:40px;color:rgba(255,255,255,.25);font-size:11px;'>No artists found</div>";
-    return;
-  }
-  container.innerHTML="";
-  list.forEach(function(a){
-    var name=a.n||a.name||"";
-    var type=a.t||a.type||"";
-    var tags=Array.isArray(a.tags)?a.tags:(a.tags?a.tags.split(" "):[]);
-    var sc=a.sc||a.statusColor||"rgba(255,255,255,.2)";
-    var flag=a.flag||"";
-    var dest=a.p||a.profile||"profile";
+function getFollowingFeed(){
+  var artists=[
+    {name:"Maya Rivera",icon:"&#127928;",bg:"linear-gradient(135deg,#1a0840,#280c50)",dest:"profile",time:"2h ago",action:"New track uploaded"},
+    {name:"Leila Mensah",icon:"&#127908;",bg:"linear-gradient(135deg,#201018,#301820)",dest:"profile4",time:"4h ago",action:"Posted a Quick Stage"},
+    {name:"Sofia Lima",icon:"&#128131;",bg:"linear-gradient(135deg,#1a0830,#2a0840)",dest:"profile3",time:"1d ago",action:"Updated her project"}
+  ];
+  var html="<div style='padding:14px;'>";
+  html+="<div style='font-size:32px;margin-bottom:8px;text-align:center;'>&#128101;</div>";
+  html+="<div style='font-family:Playfair Display,serif;font-size:15px;font-weight:700;color:#fff;margin-bottom:4px;text-align:center;'>Following Feed</div>";
+  html+="<div style='font-size:10px;color:rgba(255,255,255,.3);text-align:center;margin-bottom:14px;'>Latest from artists you follow</div>";
+  artists.forEach(function(a){
     var el=document.createElement("div");
-    el.className="ai";
-    el.style.marginBottom="7px";
-    el.style.cursor="pointer";
-    el.innerHTML=
-      "<div class='av' style='background:linear-gradient(135deg,"+a.bg+",#280c50);'>"+a.icon+"</div>"+
-      "<div class='an'>"+
-        "<div style='font-size:12px;font-weight:600;color:#fff;margin-bottom:1px;'>"+name+"</div>"+
-        "<div class='at'>"+type+"</div>"+
-        "<div class='atg'>"+tags.map(function(t){return "<div class='atag'>"+t+"</div>";}).join("")+"</div>"+
-      "</div>"+
-      "<div class='ar'>"+
-        "<div class='aloc'>"+flag+" "+a.loc+"<br><span style='color:"+sc+";'>&#9679; "+a.status+"</span></div>"+
-        "<button class='cb'>Collab</button>"+
-      "</div>";
-    el.onclick=function(){goTo(el,dest);};
-    var cb=el.querySelector(".cb");
-    if(cb)cb.addEventListener("click",function(e){e.stopPropagation();collabSoon();});
-    container.appendChild(el);
+    el.style.cssText="background:rgba(12,8,28,.85);border:1px solid rgba(100,80,255,.1);border-radius:10px;padding:10px 12px;display:flex;align-items:center;gap:8px;cursor:pointer;margin-bottom:8px;";
+    el.innerHTML="<div style='width:36px;height:36px;border-radius:50%;background:"+a.bg+";display:flex;align-items:center;justify-content:center;font-size:18px;'>"+a.icon+"</div>"+
+      "<div style='flex:1;'><div style='font-size:11px;font-weight:600;color:#fff;'>"+a.name+"</div><div style='font-size:8px;color:rgba(255,255,255,.3);'>"+a.action+"</div></div>"+
+      "<div style='font-size:9px;color:rgba(212,168,64,.7);'>"+a.time+"</div>";
+    el.onclick=(function(dest){return function(){goTo(el,dest);};})(a.dest);
+    document.getElementById("homeFeed").innerHTML="";
+    document.getElementById("homeFeed").appendChild(el);
   });
-}
-function sBill(type){
-  var m=type==="monthly";
-  var mb=document.getElementById("mB");
-  var yb=document.getElementById("yB");
-  if(mb)mb.className="blb "+(m?"on":"off");
-  if(yb)yb.className="blb "+(m?"off":"on");
-  var bp=document.getElementById("bP");
-  if(bp)bp.innerHTML=m?"EUR9.99":"EUR5.99";
-  var bper=document.getElementById("bPer");
-  if(bper)bper.textContent=m?"per month - billed monthly":"per month - billed yearly";
-  var save=document.getElementById("bSave");
-  if(save)save.textContent=m?"":"Save EUR48 per year";
-  if(tg&&tg.HapticFeedback)tg.HapticFeedback.impactOccurred("light");
+  return html+"</div>";
 }
 
-function shareStagerz(){
-  var url="https://stagerz.app";
-  var text="Check out this amazing performance on STAGERZ - Your World Stage!";
-  if(tg&&tg.openTelegramLink){
-    tg.openTelegramLink("https://t.me/share/url?url="+encodeURIComponent(url)+"&text="+encodeURIComponent(text));
-  } else if(navigator.share){
-    navigator.share({title:"STAGERZ",text:text,url:url});
-  } else {
-    sA("Share STAGERZ!\n\nhttps://stagerz.app");
-  }
+function getTrendingFeed(){
+  var trending=[
+    {title:"Midnight in Lagos",artist:"Leila Mensah",loc:"Lagos",icon:"&#127908;",bg:"linear-gradient(135deg,#201018,#0a1040)",rank:"#1",likes:"2.4k",comments:"138",growth:"+240%",dest:"public"},
+    {title:"Rhythm of the City",artist:"Sofia Lima",loc:"Sao Paulo",icon:"&#128131;",bg:"linear-gradient(135deg,#1a0830,#0a0840)",rank:"#2",likes:"890",comments:"64",growth:"+180%",dest:"public"},
+    {title:"Golden Hours",artist:"Maya Rivera",loc:"Berlin",icon:"&#127928;",bg:"linear-gradient(135deg,#1a0840,#0a1040)",rank:"#3",likes:"2.1k",comments:"94",growth:"+120%",dest:"public"}
+  ];
+  var container=document.getElementById("homeFeed");
+  container.innerHTML="<div style='font-size:8px;letter-spacing:2.5px;text-transform:uppercase;color:rgba(255,255,255,.22);margin-bottom:10px;'>&#128293; Trending Now</div>";
+  trending.forEach(function(t){
+    var card=document.createElement("div");
+    card.style.cssText="background:rgba(12,8,28,.85);border:1px solid rgba(100,80,255,.1);border-radius:12px;overflow:hidden;margin-bottom:10px;cursor:pointer;transition:transform .15s ease;";
+    card.innerHTML=
+      "<div style='height:80px;background:"+t.bg+";display:flex;align-items:center;justify-content:center;position:relative;'>"+
+        "<div style='font-size:36px;opacity:.6;'>"+t.icon+"</div>"+
+        "<div style='position:absolute;top:6px;left:8px;padding:2px 8px;background:rgba(100,80,255,.15);border:1px solid rgba(100,80,255,.3);border-radius:10px;font-size:7px;color:rgba(180,160,255,.9);'>"+t.rank+" TRENDING</div>"+
+      "</div>"+
+      "<div style='padding:10px 12px;'>"+
+        "<div style='font-family:Playfair Display,serif;font-size:13px;font-weight:700;color:#fff;margin-bottom:2px;'>"+t.title+"</div>"+
+        "<div style='font-size:8px;color:rgba(180,160,255,.5);margin-bottom:6px;'>"+t.artist+" &middot; "+t.loc+"</div>"+
+        "<div style='display:flex;gap:10px;'>"+
+          "<div style='font-size:8px;color:rgba(255,255,255,.3);'>&#10084; "+t.likes+"</div>"+
+          "<div style='font-size:8px;color:rgba(255,255,255,.3);'>&#128172; "+t.comments+"</div>"+
+          "<div style='font-size:8px;color:rgba(212,168,64,.6);'>"+t.growth+" this week</div>"+
+        "</div>"+
+      "</div>";
+    card.onclick=(function(dest){return function(){goTo(card,dest);};})(t.dest);
+    container.appendChild(card);
+  });
+  return "";
 }
+
 
 var npProg=35;
 setInterval(function(){
@@ -1801,11 +1804,11 @@ function tLike(el){
   var liked=el.getAttribute("data-liked")==="1";
   if(!liked){
     el.setAttribute("data-liked","1");
-    if(ic)ic.textContent="❤️";
+    if(ic)ic.textContent="\u2764\uFE0F";
     if(ct){ct.textContent="2.5k";ct.style.color="rgba(255,80,100,.8)";}
   } else {
     el.setAttribute("data-liked","0");
-    if(ic)ic.textContent="🤍";
+    if(ic)ic.textContent="\u{1F90D}";
     if(ct){ct.textContent="2.4k";ct.style.color="rgba(255,255,255,.25)";}
   }
   if(tg&&tg.HapticFeedback)tg.HapticFeedback.impactOccurred("light");
@@ -1922,7 +1925,7 @@ function stpRec(){
   var ri=document.getElementById("rI");if(ri)ri.style.display="none";
   var tr=document.getElementById("tR");if(tr){tr.style.borderColor="rgba(40,200,80,.5)";tr.classList.remove("ring-pulse");}
   var rw=document.getElementById("recWave");if(rw)rw.style.display="none";
-  var tc=document.getElementById("tC");if(tc){tc.textContent="✓";tc.style.fontSize="22px";tc.style.color="rgba(40,200,80,.9)";}
+  var tc=document.getElementById("tC");if(tc){tc.textContent="\u2713";tc.style.fontSize="22px";tc.style.color="rgba(40,200,80,.9)";}
   var rh=document.getElementById("rH");if(rh)rh.style.display="none";
   var ra=document.getElementById("rA");if(ra)ra.style.display="flex";
   if(tg&&tg.HapticFeedback)tg.HapticFeedback.notificationOccurred("success");
@@ -2051,6 +2054,120 @@ function renderArtists(list,count){
     container.appendChild(el);
   });
 }
+function sW(v){
+  var myV=document.getElementById("myV");
+  var commV=document.getElementById("commV");
+  var myBtn=document.getElementById("myBtn");
+  var commBtn=document.getElementById("commBtn");
+  if(myV)myV.style.display=v==="my"?"block":"none";
+  if(commV)commV.style.display=v==="comm"?"block":"none";
+  if(myBtn)myBtn.className="tb2 "+(v==="my"?"on":"off");
+  if(commBtn)commBtn.className="tb2 "+(v==="comm"?"on":"off");
+}
+
+function sFC(el){
+  document.querySelectorAll(".fc").forEach(function(c){c.className="fc off";});
+  el.className="fc on";
+  filterArtists(el.textContent.trim());
+}
+
+function sBill(type){
+  var m=type==="monthly";
+  var mb=document.getElementById("mB");
+  var yb=document.getElementById("yB");
+  if(mb)mb.className="blb "+(m?"on":"off");
+  if(yb)yb.className="blb "+(m?"off":"on");
+  var bp=document.getElementById("bP");
+  if(bp)bp.innerHTML=m?"EUR 9.99":"EUR 5.99";
+  var bper=document.getElementById("bPer");
+  if(bper)bper.textContent=m?"per month - billed monthly":"per month - billed yearly";
+  var save=document.getElementById("bSave");
+  if(save)save.textContent=m?"":"Save EUR 48 per year";
+  if(tg&&tg.HapticFeedback)tg.HapticFeedback.impactOccurred("light");
+}
+
+var currentCat="all";
+
+function setSearchCat(cat){
+  currentCat=cat;
+  var chips=document.querySelectorAll("#catChips .cc");
+  chips.forEach(function(c){
+    c.className=c.getAttribute("data-cat")===cat?"cc on":"cc off";
+  });
+  var inp=document.getElementById("searchInput");
+  if(inp)inp.value="";
+  doSearch("");
+  if(tg&&tg.HapticFeedback)tg.HapticFeedback.impactOccurred("light");
+}
+
+function initSearch(){
+  var input=document.getElementById("searchInput");
+  if(input){
+    input.value="";
+    input.oninput=function(){doSearch(this.value);};
+    input.onkeyup=function(){doSearch(this.value);};
+  }
+  currentCat="all";
+  doSearch("");
+}
+
+var artistDB=[
+  {n:"Maya Rivera",t:"Musician - Singer",tags:"Guitar Vocals Songwriting",loc:"Berlin",flag:"DE",status:"Online",sc:"rgba(40,200,80,.7)",icon:"&#127928;",bg:"#1a0840",cat:"music",p:"profile"},
+  {n:"Leila Mensah",t:"Singer - Songwriter",tags:"Afrobeat RnB Soul",loc:"Lagos",flag:"NG",status:"Online",sc:"rgba(40,200,80,.7)",icon:"&#127908;",bg:"#201018",cat:"music",p:"profile4"},
+  {n:"Amir Hashim",t:"Musician - Producer",tags:"Jazz Production Sax",loc:"Tokyo",flag:"JP",status:"Offline",sc:"rgba(255,255,255,.2)",icon:"&#127927;",bg:"#0a2018",cat:"music",p:"profile6"},
+  {n:"Carlos Mendez",t:"Guitarist - Composer",tags:"Classical Flamenco Film",loc:"Madrid",flag:"ES",status:"Online",sc:"rgba(40,200,80,.7)",icon:"&#127928;",bg:"#180820",cat:"music"},
+  {n:"James Kofi",t:"Filmmaker - Director",tags:"Directing Editing DOP",loc:"New York",flag:"US",status:"Online",sc:"rgba(40,200,80,.7)",icon:"&#127916;",bg:"#0a1840",cat:"film",p:"profile2"},
+  {n:"Yuki Tanaka",t:"Cinematographer",tags:"DOP Color Drone",loc:"Osaka",flag:"JP",status:"Away",sc:"rgba(255,160,40,.7)",icon:"&#127909;",bg:"#0a1020",cat:"film"},
+  {n:"Lena Bauer",t:"Film Editor - Director",tags:"Editing Grading VFX",loc:"Munich",flag:"DE",status:"Online",sc:"rgba(40,200,80,.7)",icon:"&#9986;",bg:"#101828",cat:"film"},
+  {n:"Sofia Lima",t:"Dancer - Choreographer",tags:"Ballet Hip-Hop Latin",loc:"Sao Paulo",flag:"BR",status:"Away",sc:"rgba(255,160,40,.7)",icon:"&#128131;",bg:"#1a0830",cat:"dance",p:"profile3"},
+  {n:"Amara Diallo",t:"Dancer - Performer",tags:"Afro Contemporary Acro",loc:"Paris",flag:"FR",status:"Online",sc:"rgba(40,200,80,.7)",icon:"&#128131;",bg:"#200818",cat:"dance"},
+  {n:"Chen Wei",t:"Photographer",tags:"Portrait Concert Editorial",loc:"Shanghai",flag:"CN",status:"Online",sc:"rgba(40,200,80,.7)",icon:"&#128247;",bg:"#101828",cat:"photo",p:"profile5"},
+  {n:"Sara Nkosi",t:"Visual Artist - Photographer",tags:"Fine Art Fashion Street",loc:"Cape Town",flag:"ZA",status:"Online",sc:"rgba(40,200,80,.7)",icon:"&#128247;",bg:"#181020",cat:"photo"},
+  {n:"Zara AI",t:"AI Creator - Designer",tags:"Generative Motion 3D",loc:"London",flag:"GB",status:"Online",sc:"rgba(40,200,80,.7)",icon:"&#129302;",bg:"#201018",cat:"ai"},
+  {n:"Dev Sharma",t:"AI Artist - Coder",tags:"Stable-Diff Midjourney ML",loc:"Bangalore",flag:"IN",status:"Away",sc:"rgba(255,160,40,.7)",icon:"&#129302;",bg:"#101820",cat:"ai"},
+  {n:"Marco Rossi",t:"Visual Artist - Painter",tags:"Digital Illustration NFT",loc:"Milan",flag:"IT",status:"Offline",sc:"rgba(255,255,255,.2)",icon:"&#127912;",bg:"#181020",cat:"art"}
+];
+
+function doSearch(query){
+  var q=query.toLowerCase().trim();
+  var list=artistDB.filter(function(a){
+    var catOk=currentCat==="all"||a.cat===currentCat;
+    var tags=a.tags||"";
+    var qOk=!q||a.n.toLowerCase().indexOf(q)>-1||a.t.toLowerCase().indexOf(q)>-1||a.loc.toLowerCase().indexOf(q)>-1||tags.toLowerCase().indexOf(q)>-1;
+    return catOk&&qOk;
+  });
+  var rc=document.getElementById("resultCount");
+  if(rc)rc.textContent=list.length;
+  var container=document.getElementById("searchResults");
+  if(!container)return;
+  if(!list.length){
+    container.innerHTML="<div style='text-align:center;padding:40px;color:rgba(255,255,255,.25);font-size:11px;'>No artists found</div>";
+    return;
+  }
+  container.innerHTML="";
+  list.forEach(function(a){
+    var dest=a.p||"profile";
+    var tags=a.tags?a.tags.split(" "):[];
+    var el=document.createElement("div");
+    el.className="ai";el.style.marginBottom="7px";el.style.cursor="pointer";
+    el.innerHTML=
+      "<div class='av' style='background:linear-gradient(135deg,"+a.bg+",#280c50);'>"+a.icon+"</div>"+
+      "<div class='an'>"+
+        "<div style='font-size:12px;font-weight:600;color:#fff;margin-bottom:1px;'>"+a.n+"</div>"+
+        "<div class='at'>"+a.t+"</div>"+
+        "<div class='atg'>"+tags.map(function(t){return "<div class='atag'>"+t+"</div>";}).join("")+"</div>"+
+      "</div>"+
+      "<div class='ar'>"+
+        "<div class='aloc'>"+a.flag+" "+a.loc+"<br><span style='color:"+a.sc+";'>&#9679; "+a.status+"</span></div>"+
+        "<button class='cb'>Collab</button>"+
+      "</div>";
+    el.onclick=(function(d){return function(){goTo(el,d);};})(dest);
+    var cb=el.querySelector(".cb");
+    if(cb)cb.addEventListener("click",function(e){e.stopPropagation();collabSoon();});
+    container.appendChild(el);
+  });
+}
+
 
 </script>
 </body>
