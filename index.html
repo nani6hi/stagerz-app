@@ -534,7 +534,7 @@ html,body{width:100%;height:100%;background:#07050f;font-family:Inter,sans-serif
         <div style="background:rgba(100,80,255,.07);border:1px solid rgba(100,80,255,.15);border-radius:8px;padding:8px 12px;margin-bottom:10px;display:flex;align-items:center;gap:8px;"><div style="font-size:14px;">&#10024;</div><div style="font-size:9px;color:rgba(180,160,255,.6);">Showing posts matching your skills as a <strong style="color:rgba(212,168,64,.8);">Musician &middot; Guitarist</strong> in <strong style="color:rgba(212,168,64,.8);">Berlin.</strong></div></div>
         <div class="cd" onclick="sA('Collaboration requests are coming soon!\n\nSTAGERZ is growing. Your application will reach the artist directly.')">
           <div class="urg match">&#11088; 98% Match</div>
-          <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;"><div style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#0a1840,#142850);display:flex;align-items:center;justify-content:center;font-size:18px;border:1px solid rgba(100,80,255,.2);">&#127916;</div><div><div style="font-size:11px;font-weight:600;color:#fff;margin-bottom:1px;">James Kofi</div><div style="font-size:8px;color:rgba(255,255,255,.28);">Filmmaker &middot; New York &middot; &#11088; 4.7</div></div></div>
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;" onclick="goTo(this,'profile2')"><div style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#0a1840,#142850);display:flex;align-items:center;justify-content:center;font-size:18px;border:1px solid rgba(100,80,255,.2);">&#127916;</div><div><div style="font-size:11px;font-weight:600;color:#fff;margin-bottom:1px;">James Kofi</div><div style="font-size:8px;color:rgba(255,255,255,.28);">Filmmaker &middot; New York &middot; &#11088; 4.7</div></div></div>
           <div class="cr2">&#127928; Guitarist Wanted</div>
           <div class="cd2">Need guitarist for short film soundtrack. Acoustic + Electric. Remote OK. Full credit + paid.</div>
           <div class="ctg"><div class="ctag">Acoustic</div><div class="ctag">Electric</div><div class="ctag">Remote</div><div class="ctag">Paid</div></div>
@@ -701,6 +701,104 @@ This feature connects artists directly in the full STAGERZ app.')" style="paddin
   </div>
   
   <div class="nb"><div class="ni" onclick="goTo(this,'home')"><div class="ni-icon">&#127968;</div><span>Home</span></div><div class="ni" onclick="goTo(this,'search')"><div class="ni-icon">&#128269;</div><span>Search</span></div><div class="ni" onclick="goTo(this,'public')"><div class="ni-icon">&#127917;</div><span>Stage</span></div><div class="ni" onclick="goTo(this,'wanted')"><div class="ni-icon">&#127919;</div><span>Wanted</span></div><div class="ni active" onclick="goTo(this,'profile')"><div class="ni-icon">&#128100;</div><span>Profile</span></div></div>
+</div>
+
+<!-- SCREEN 5B: JAMES KOFI PROFILE -->
+<div class="screen" id="screen-profile2">
+  <div class="sa">
+    <div class="cv" style="background:linear-gradient(135deg,#0a1840,#142850,#0a1040);">
+      <div style="position:absolute;top:-5px;left:20%;width:1px;height:100%;background:linear-gradient(180deg,rgba(40,80,255,.5),transparent);transform:rotate(-12deg);transform-origin:top center;"></div>
+      <div style="position:absolute;top:-5px;left:50%;width:1.5px;height:100%;background:linear-gradient(180deg,rgba(255,220,100,.4),transparent);transform-origin:top center;"></div>
+      <div style="position:absolute;top:-5px;left:80%;width:1px;height:100%;background:linear-gradient(180deg,rgba(40,80,255,.5),transparent);transform:rotate(12deg);transform-origin:top center;"></div>
+      <div class="csil">&#127916;</div>
+      <div class="cfd"></div>
+      <div class="bk" onclick="goTo(this,'home')">&#8249;</div>
+    </div>
+    <div class="pd">
+      <div style="margin-top:-26px;margin-bottom:10px;">
+        <div style="display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:10px;">
+          <div class="pav" style="background:linear-gradient(135deg,#0a1840,#2050d0);">&#127916;<div style="position:absolute;bottom:-1px;right:-1px;width:18px;height:18px;border-radius:50%;background:linear-gradient(135deg,#0a1840,#2050d0);border:2px solid #07050f;display:flex;align-items:center;justify-content:center;font-size:8px;">&#10022;</div></div>
+          <div style="display:flex;gap:8px;padding-top:8px;">
+            <button style="padding:8px 14px;border-radius:4px;font-family:'Bebas Neue',sans-serif;font-size:11px;letter-spacing:2px;cursor:pointer;background:rgba(255,255,255,.05);color:rgba(200,180,255,.7);border:1px solid rgba(100,80,255,.2);" onclick="sA('Messaging coming soon!')">&#128172; MSG</button>
+            <button style="padding:8px 14px;border-radius:4px;font-family:'Bebas Neue',sans-serif;font-size:11px;letter-spacing:2px;cursor:pointer;background:linear-gradient(135deg,#3020a0,#5040c8);color:#fff;border:none;" onclick="sA('Follow coming soon!')">+ FOLLOW</button>
+          </div>
+        </div>
+        <div style="font-family:'Playfair Display',serif;font-weight:900;font-size:22px;color:#fff;margin-bottom:2px;">James Kofi</div>
+        <div style="font-size:11px;color:rgba(255,255,255,.3);margin-bottom:5px;">@jameskofi &middot; #1204</div>
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;flex-wrap:wrap;">
+          <div style="display:inline-flex;align-items:center;gap:5px;padding:3px 10px;background:rgba(100,80,255,.12);border:1px solid rgba(100,80,255,.2);border-radius:20px;font-size:9px;letter-spacing:2px;text-transform:uppercase;color:rgba(180,160,255,.8);">&#127916; Filmmaker &middot; Director</div>
+          <div style="display:inline-flex;align-items:center;gap:4px;padding:2px 9px;background:rgba(40,200,80,.08);border:1px solid rgba(40,200,80,.2);border-radius:20px;"><div style="width:6px;height:6px;border-radius:50%;background:#40c850;animation:bk 2s ease-in-out infinite;"></div><span style="font-size:8px;color:rgba(40,200,80,.85);">Available</span></div>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;flex-wrap:wrap;">
+          <div style="font-size:9px;color:rgba(255,255,255,.35);">&#128205; New York, USA</div>
+          <div style="font-size:9px;color:rgba(255,255,255,.35);">&#11088; 4.7</div>
+        </div>
+        <div style="font-size:11px;color:rgba(255,255,255,.45);line-height:1.6;margin-bottom:12px;">Award-winning filmmaker and director with 10 years of experience. Specializing in music videos, short films and documentaries. Open to global collaborations. &#127757;</div>
+      </div>
+      <div class="strow">
+        <div class="stc"><span class="stn">24</span><span class="stl">Projects</span></div>
+        <div class="stc"><span class="stn">1.2k</span><span class="stl">Followers</span></div>
+        <div class="stc"><span class="stn">67</span><span class="stl">Collabs</span></div>
+        <div class="stc"><span class="stn">4.7</span><span class="stl">Rating</span></div>
+      </div>
+      <button class="bp" style="margin-bottom:10px;" onclick="sA('Collaboration request coming soon!\n\nThis feature connects artists worldwide in the full STAGERZ app.')">&#129309; REQUEST COLLABORATION</button>
+      <button class="bg" style="margin-bottom:14px;" onclick="goTo(this,'famemaker')">&#127916; CREATE / FAMEMAKER</button>
+      <div class="st">Skills</div>
+      <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px;">
+        <div class="skc gold">&#127916; Directing</div>
+        <div class="skc gold">&#9986; Editing</div>
+        <div class="skc gold">&#127909; Cinematography</div>
+        <div class="skc">&#127775; Color Grading</div>
+        <div class="skc">&#128250; VFX</div>
+        <div class="skc">&#127908; Music Video</div>
+      </div>
+      <div class="st">Looking For</div>
+      <div style="background:rgba(212,168,64,.05);border:1px solid rgba(212,168,64,.2);border-radius:6px;padding:10px 12px;margin-bottom:14px;">
+        <div style="display:flex;flex-direction:column;gap:7px;">
+          <div style="display:flex;align-items:center;justify-content:space-between;">
+            <div style="display:flex;align-items:center;gap:6px;"><div style="font-size:14px;">&#127925;</div><div style="font-size:10px;color:rgba(232,212,160,.8);">Composer</div><div style="font-size:8px;color:rgba(255,255,255,.2);">Remote &middot; Rev Share</div></div>
+            <button onclick="sA('Collaboration request coming soon!')" style="padding:4px 10px;background:linear-gradient(135deg,#3020a0,#5040c8);border:none;border-radius:10px;font-size:8px;color:#fff;cursor:pointer;">&#129309; Collab</button>
+          </div>
+          <div style="height:1px;background:rgba(255,255,255,.05);"></div>
+          <div style="display:flex;align-items:center;justify-content:space-between;">
+            <div style="display:flex;align-items:center;gap:6px;"><div style="font-size:14px;">&#127911;</div><div style="font-size:10px;color:rgba(232,212,160,.8);">Sound Designer</div><div style="font-size:8px;color:rgba(255,255,255,.2);">Remote &middot; Paid</div></div>
+            <button onclick="sA('Collaboration request coming soon!')" style="padding:4px 10px;background:linear-gradient(135deg,#3020a0,#5040c8);border:none;border-radius:10px;font-size:8px;color:#fff;cursor:pointer;">&#129309; Collab</button>
+          </div>
+          <div style="height:1px;background:rgba(255,255,255,.05);"></div>
+          <div style="display:flex;align-items:center;justify-content:space-between;">
+            <div style="display:flex;align-items:center;gap:6px;"><div style="font-size:14px;">&#128131;</div><div style="font-size:10px;color:rgba(232,212,160,.8);">Choreographer</div><div style="font-size:8px;color:rgba(255,255,255,.2);">New York &middot; Paid</div></div>
+            <button onclick="sA('Collaboration request coming soon!')" style="padding:4px 10px;background:linear-gradient(135deg,#3020a0,#5040c8);border:none;border-radius:10px;font-size:8px;color:#fff;cursor:pointer;">&#129309; Collab</button>
+          </div>
+        </div>
+      </div>
+      <div class="st">Active Project</div>
+      <div style="background:rgba(100,80,255,.06);border:1px solid rgba(100,80,255,.15);border-radius:6px;padding:10px 12px;position:relative;overflow:hidden;margin-bottom:14px;">
+        <div style="position:absolute;top:0;left:0;width:3px;height:100%;background:linear-gradient(180deg,#2050d0,#d4a840);"></div>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+          <div style="font-size:7px;letter-spacing:2px;text-transform:uppercase;color:rgba(180,160,255,.5);">&#128293; In Progress</div>
+          <div style="display:flex;gap:6px;">
+            <button onclick="sA('Team chat coming soon!')" style="width:26px;height:26px;border-radius:50%;background:rgba(100,80,255,.15);border:1px solid rgba(100,80,255,.3);display:flex;align-items:center;justify-content:center;font-size:12px;cursor:pointer;">&#128172;</button>
+            <button onclick="goTo(this,'project')" style="width:26px;height:26px;border-radius:50%;background:rgba(212,168,64,.1);border:1px solid rgba(212,168,64,.25);display:flex;align-items:center;justify-content:center;font-size:12px;cursor:pointer;">&#8250;</button>
+          </div>
+        </div>
+        <div style="font-family:'Playfair Display',serif;font-size:14px;font-weight:700;color:#fff;margin-bottom:3px;">The Last Take</div>
+        <div style="font-size:9px;color:rgba(255,255,255,.3);margin-bottom:8px;">Short Film &middot; Drama &middot; New York &middot; 4 crew</div>
+        <div style="height:2px;background:rgba(255,255,255,.06);border-radius:2px;overflow:hidden;margin-bottom:4px;"><div style="height:100%;width:70%;background:linear-gradient(90deg,#2050d0,#d4a840);border-radius:2px;"></div></div>
+        <div style="font-size:7px;color:rgba(255,255,255,.2);text-align:right;">70% complete &middot; Award Entry</div>
+      </div>
+      <div class="st">Portfolio</div>
+      <div class="pg" style="margin-bottom:16px;">
+        <div class="pi" onclick="goTo(this,'public')">&#127916;</div>
+        <div class="pi" onclick="goTo(this,'public')">&#127909;</div>
+        <div class="pi" onclick="goTo(this,'public')">&#127908;</div>
+        <div class="pi" onclick="goTo(this,'public')">&#128250;</div>
+        <div class="pi" onclick="goTo(this,'public')">&#127775;</div>
+        <div class="pi" onclick="goTo(this,'public')">&#128247;</div>
+      </div>
+      <div class="gap"></div>
+    </div>
+  </div>
+  <div class="nb"><div class="ni" onclick="goTo(this,'home')"><div class="ni-icon">&#127968;</div><span>Home</span></div><div class="ni" onclick="goTo(this,'search')"><div class="ni-icon">&#128269;</div><span>Search</span></div><div class="ni" onclick="goTo(this,'public')"><div class="ni-icon">&#127917;</div><span>Stage</span></div><div class="ni" onclick="goTo(this,'wanted')"><div class="ni-icon">&#127919;</div><span>Wanted</span></div><div class="ni active" onclick="goTo(this,'profile2')"><div class="ni-icon">&#128100;</div><span>Profile</span></div></div>
 </div>
 
 <!-- SCREEN 6: PROJECT -->
