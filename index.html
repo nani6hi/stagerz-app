@@ -81,10 +81,9 @@ async function initUser() {
 }
 
 function updateUserUI(user) {
-  var name = user.first_name + (user.last_name ? ' ' + user.last_name : '');
-  // Update "Your Story" bubble
-  var storyNames = document.querySelectorAll('.sn');
-  if (storyNames[0]) storyNames[0].textContent = user.first_name || 'You';
+  // Only update the "Your Story" label on home screen
+  var yourStory = document.querySelector('#screen-home .sn');
+  if (yourStory) yourStory.textContent = user.first_name || 'You';
 }
 
 // Load real WANTED posts from Supabase
@@ -186,7 +185,8 @@ async function realFollow(targetUserId) {
 
 // Init when app loads
 document.addEventListener('DOMContentLoaded', function() {
-  setTimeout(initUser, 500);
+  // Wait for app to be fully rendered before connecting Supabase
+  setTimeout(initUser, 1500);
 });
 </script>
 
