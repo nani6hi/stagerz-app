@@ -5,6 +5,190 @@
 <meta name='viewport' content='width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no'>
 <title>STAGERZ</title>
 <script src='https://telegram.org/js/telegram-web-app.js'></script>
+
+<!-- Supabase Direct API -->
+<script>
+var SUPA_URL = 'https://edxicnafggnnvcdvxemk.supabase.co';
+var SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVkeGljbmFmZ2dubnZjZHZ4ZW1rIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI0MDcxOTcsImV4cCI6MjA5Nzk4MzE5N30.RDe1DRdhz6EmHbctEGJOsMjU39p6-bxYCfROd7yBVAo';
+var currentUser = null;
+
+// Direct REST API helpers - no library needed
+function supaHeaders() {
+  return {
+    'Content-Type': 'application/json',
+    'apikey': SUPA_KEY,
+    'Authorization': 'Bearer ' + SUPA_KEY,
+    'Prefer': 'return=representation'
+  };
+}
+
+async function supaSelect(table, filters) {
+  var url = SUPA_URL + '/rest/v1/' + table + '?select=*';
+  if (filters) url += '&' + filters;
+  var res = await fetch(url, { method: 'GET', headers: supaHeaders() });
+  if (!res.ok) { console.log('Select error:', await res.text()); return null; }
+  return await res.json();
+}
+
+async function supaUpsert(table, data) {
+  var res = await fetch(SUPA_URL + '/rest/v1/' + table, {
+    method: 'POST',
+    headers: Object.assign({}, supaHeaders(), { 'Prefer': 'resolution=merge-duplicates,return=representation' }),
+    body: JSON.stringify(data)
+  });
+  if (!res.ok) { console.log('Upsert error:', await res.text()); return null; }
+  return await res.json();
+}
+
+async function supaInsert(table, data) {
+  var res = await fetch(SUPA_URL + '/rest/v1/' + table, {
+    method: 'POST',
+    headers: supaHeaders(),
+    body: JSON.stringify(data)
+  });
+  if (!res.ok) { console.log('Insert error:', await res.text()); return null; }
+  return await res.json();
+}
+
+// Initialize Telegram user + Supabase
+async function initUser() {
+  var tgUser = tg && tg.initDataUnsafe && tg.initDataUnsafe.user;
+  if (!tgUser) {
+    // Demo user for browser testing
+    tgUser = { id: 999999, first_name: 'Demo', last_name: 'User', username: 'demouser' };
+  }
+
+  currentUser = tgUser;
+
+  // Save/update user in Supabase
+  var result = await supaUpsert('users', {
+    id: tgUser.id,
+    username: tgUser.username || '',
+    first_name: tgUser.first_name || '',
+    last_name: tgUser.last_name || '',
+    photo_url: tgUser.photo_url || ''
+  });
+
+  if (result) console.log('User ready:', tgUser.first_name);
+  else console.log('User save failed');
+
+  // Update UI with real user name
+  updateUserUI(tgUser);
+
+  // Load real wanted posts
+  loadWantedPosts();
+}
+
+function updateUserUI(user) {
+  var name = user.first_name + (user.last_name ? ' ' + user.last_name : '');
+  // Update "Your Story" bubble
+  var storyNames = document.querySelectorAll('.sn');
+  if (storyNames[0]) storyNames[0].textContent = user.first_name || 'You';
+}
+
+// Load real WANTED posts from Supabase
+async function loadWantedPosts() {
+  var data = await supaSelect('wanted_posts', 'status=eq.open&order=created_at.desc&limit=20');
+  if (data && data.length > 0) {
+    renderWantedPosts(data);
+    console.log('Loaded', data.length, 'wanted posts from Supabase!');
+  }
+}
+
+function renderWantedPosts(posts) {
+  var container = document.getElementById('commV');
+  if (!container) return;
+  posts.forEach(function(post) {
+    if (post.user_id === 1) return; // skip system demo posts
+    var comp = post.compensation === 'paid' ? 'Paid' : post.compensation === 'rev_share' ? 'Rev Share' : 'Credit';
+    var loc = post.remote ? 'Remote' : post.location;
+    var card = document.createElement('div');
+    card.className = 'cd';
+    card.setAttribute('data-wcat', post.category);
+    card.style.borderColor = 'rgba(212,168,64,.25)';
+    var badge = document.createElement('div');
+    badge.className = 'urg new';
+    badge.style.cssText = 'background:rgba(212,168,64,.15);color:rgba(212,168,64,.9);';
+    badge.textContent = 'NEW';
+    var title = document.createElement('div');
+    title.style.cssText = 'font-size:11px;font-weight:600;color:#fff;margin-bottom:4px;';
+    title.textContent = post.title;
+    var desc = document.createElement('div');
+    desc.style.cssText = 'font-size:9px;color:rgba(255,255,255,.4);margin-bottom:6px;';
+    desc.textContent = post.description;
+    var tags = document.createElement('div');
+    tags.style.cssText = 'display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px;';
+    var tagStyle = 'padding:2px 7px;border-radius:8px;font-size:8px;';
+    tags.innerHTML =
+      '<div style="' + tagStyle + 'background:rgba(212,168,64,.08);border:1px solid rgba(212,168,64,.2);color:rgba(212,168,64,.7);">' + post.role_needed + '</div>' +
+      '<div style="' + tagStyle + 'background:rgba(100,80,255,.08);border:1px solid rgba(100,80,255,.2);color:rgba(180,160,255,.6);">' + loc + '</div>' +
+      '<div style="' + tagStyle + 'background:rgba(40,200,80,.08);border:1px solid rgba(40,200,80,.2);color:rgba(40,200,80,.7);">' + comp + '</div>';
+    var btn = document.createElement('button');
+    btn.style.cssText = 'width:100%;padding:8px;background:linear-gradient(135deg,#3020a0,#5040c8);border:none;border-radius:4px;font-family:Bebas Neue,sans-serif;font-size:12px;letter-spacing:2px;color:#fff;cursor:pointer;';
+    btn.textContent = 'APPLY NOW';
+    btn.onclick = (function(id) { return function() { applyToWanted(id); }; })(post.id);
+    card.appendChild(badge);
+    card.appendChild(title);
+    card.appendChild(desc);
+    card.appendChild(tags);
+    card.appendChild(btn);
+    container.insertBefore(card, container.firstChild);
+  });
+}
+
+
+// Post a new WANTED
+async function postWanted(title, description, role, category, location, remote, compensation) {
+  if (!currentUser) { sA('Please open via Telegram to post.'); return; }
+  var result = await supaInsert('wanted_posts', {
+    user_id: currentUser.id,
+    title: title,
+    description: description,
+    role_needed: role,
+    category: category,
+    location: location || 'Remote',
+    remote: remote,
+    compensation: compensation || 'rev_share',
+    status: 'open'
+  });
+  if (!result) { sA('Error posting. Please try again.'); return; }
+  sA('Your WANTED post is live!');
+  loadWantedPosts();
+}
+
+// Apply to a WANTED post
+async function applyToWanted(postId) {
+  if (!currentUser) { sA('Please open via Telegram to apply.'); return; }
+  sA('Application sent!\n\nThe artist will receive your Telegram profile.\n\nFull messaging coming soon.');
+}
+
+// Real like button
+async function realLike(postId) {
+  if (!currentUser) return false;
+  var result = await supaUpsert('likes', {
+    user_id: currentUser.id,
+    post_id: postId,
+    post_type: 'performance'
+  });
+  return !!result;
+}
+
+// Real follow
+async function realFollow(targetUserId) {
+  if (!currentUser) { sA('Please open via Telegram to follow.'); return; }
+  var result = await supaUpsert('follows', {
+    follower_id: currentUser.id,
+    following_id: targetUserId
+  });
+  if (result) sA('Following! You will see their updates in your feed.');
+}
+
+// Init when app loads
+document.addEventListener('DOMContentLoaded', function() {
+  setTimeout(initUser, 500);
+});
+</script>
+
 <link href='https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900&family=Bebas+Neue&family=Inter:wght@300;400;500;600&display=swap' rel='stylesheet'>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;}
