@@ -77,6 +77,9 @@ async function initUser() {
 
   // Load real wanted posts
   loadWantedPosts();
+
+  // Load user profile
+  loadUserProfile();
 }
 
 function updateUserUI(user) {
@@ -447,6 +450,9 @@ html,body{width:100%;height:100%;background:#1a1628;font-family:Inter,sans-serif
 .ptab{flex:1;text-align:center;padding:8px 3px;font-family:'Bebas Neue',sans-serif;font-size:9px;letter-spacing:1.5px;color:rgba(255,255,255,.4);cursor:pointer;position:relative;-webkit-tap-highlight-color:transparent;}
 .ptab.act{color:rgba(180,160,255,.85);}
 .ptab.act::after{content:'';position:absolute;bottom:0;left:15%;right:15%;height:1.5px;background:#6050d8;border-radius:2px;}
+
+.roleChip{padding:5px 10px;border-radius:20px;font-size:9px;letter-spacing:1px;cursor:pointer;border:1px solid rgba(100,80,255,.2);color:rgba(180,160,255,.6);background:rgba(100,80,255,.05);}
+.roleChip.on{background:linear-gradient(135deg,#3020a0,#5040c8);color:#fff;border-color:transparent;}
 </style>
 </head>
 <body>
@@ -789,107 +795,129 @@ html,body{width:100%;height:100%;background:#1a1628;font-family:Inter,sans-serif
 <!-- SCREEN 5: PROFILE -->
 <div class="screen" id="screen-profile">
   <div class="sa">
-    <div class="cv">
+    <div class="cv" id="userCoverBg">
       <div style="position:absolute;top:-5px;left:20%;width:1px;height:100%;background:linear-gradient(180deg,rgba(80,60,255,.5),transparent);transform:rotate(-12deg);transform-origin:top center;"></div>
       <div style="position:absolute;top:-5px;left:50%;width:1.5px;height:100%;background:linear-gradient(180deg,rgba(255,220,100,.4),transparent);transform-origin:top center;"></div>
       <div style="position:absolute;top:-5px;left:80%;width:1px;height:100%;background:linear-gradient(180deg,rgba(80,60,255,.5),transparent);transform:rotate(12deg);transform-origin:top center;"></div>
-      <div class="csil">&#127928;</div>
+      <div class="csil" id="userCoverIcon">&#127928;</div>
       <div class="cfd"></div>
-      <div class="bk" onclick="goTo(this,'home')">&#8249;</div>
     </div>
     <div class="pd">
       <div style="margin-top:-26px;margin-bottom:10px;">
         <div style="display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:10px;">
-          <div class="pav">&#127928;<div style="position:absolute;bottom:-1px;right:-1px;width:18px;height:18px;border-radius:50%;background:linear-gradient(135deg,#4030c0,#6050d8);border:2px solid #1a1628;display:flex;align-items:center;justify-content:center;font-size:8px;">&#10022;</div></div>
+          <div class="pav" id="userAvatar" style="background:linear-gradient(135deg,#1a0840,#280c50);">
+            <img id="userAvatarImg" style="display:none;width:100%;height:100%;object-fit:cover;border-radius:50%;" />
+            <span id="userAvatarIcon">&#127928;</span>
+            <div style="position:absolute;bottom:-1px;right:-1px;width:18px;height:18px;border-radius:50%;background:linear-gradient(135deg,#1a0840,#280c50);border:2px solid #1a1628;display:flex;align-items:center;justify-content:center;font-size:8px;">&#10022;</div>
+          </div>
           <div style="display:flex;gap:8px;padding-top:8px;">
-            <button style="padding:8px 14px;border-radius:4px;font-family:'Bebas Neue',sans-serif;font-size:11px;letter-spacing:2px;cursor:pointer;background:rgba(255,255,255,.1);color:rgba(200,180,255,.7);border:1px solid rgba(100,80,255,.2);" onclick="sA('Direct messaging is coming in the full STAGERZ app!\n\nFor now use Telegram to reach out to artists.')">&#128172; MSG</button>
-            <button style="padding:8px 14px;border-radius:4px;font-family:'Bebas Neue',sans-serif;font-size:11px;letter-spacing:2px;cursor:pointer;background:linear-gradient(135deg,#3020a0,#5040c8);color:#fff;border:none;" onclick="sA('Following artists is coming soon!\n\nSTAGERZ is being built. Stay tuned.')">+ FOLLOW</button>
+            <button onclick="showEditProfile()" style="padding:8px 14px;border-radius:4px;font-family:'Bebas Neue',sans-serif;font-size:11px;letter-spacing:2px;cursor:pointer;background:rgba(255,255,255,.05);color:rgba(200,180,255,.7);border:1px solid rgba(100,80,255,.2);">&#9998; EDIT</button>
+            <button onclick="shareStagerz()" style="padding:8px 14px;border-radius:4px;font-family:'Bebas Neue',sans-serif;font-size:11px;letter-spacing:2px;cursor:pointer;background:linear-gradient(135deg,#3020a0,#5040c8);color:#fff;border:none;">&#8599; SHARE</button>
           </div>
         </div>
-        <div style="font-family:'Playfair Display',serif;font-weight:900;font-size:22px;color:#fff;margin-bottom:2px;">Maya Rivera</div>
-        <div style="font-size:11px;color:rgba(255,255,255,.3);margin-bottom:5px;">@mayarivera &middot; #2847</div>
+        <div style="font-family:'Playfair Display',serif;font-weight:900;font-size:22px;color:#fff;margin-bottom:2px;" id="userDisplayName">Your Name</div>
+        <div style="font-size:11px;color:rgba(255,255,255,.3);margin-bottom:5px;" id="userHandle">@username</div>
         <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;flex-wrap:wrap;">
-          <div style="display:inline-flex;align-items:center;gap:5px;padding:3px 10px;background:rgba(120,100,255,.18);border:1px solid rgba(100,80,255,.2);border-radius:20px;font-size:9px;letter-spacing:2px;text-transform:uppercase;color:rgba(180,160,255,.8);">&#127925; Musician</div>
+          <div id="userRoleBadge" style="display:inline-flex;align-items:center;gap:5px;padding:3px 10px;background:rgba(100,80,255,.12);border:1px solid rgba(100,80,255,.2);border-radius:20px;font-size:9px;letter-spacing:2px;text-transform:uppercase;color:rgba(180,160,255,.8);">&#127928; Artist</div>
           <div style="display:inline-flex;align-items:center;gap:4px;padding:2px 9px;background:rgba(40,200,80,.08);border:1px solid rgba(40,200,80,.2);border-radius:20px;"><div style="width:6px;height:6px;border-radius:50%;background:#40c850;animation:bk 2s ease-in-out infinite;"></div><span style="font-size:8px;color:rgba(40,200,80,.85);">Available</span></div>
         </div>
-        <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;flex-wrap:wrap;">
-          <div style="font-size:9px;color:rgba(255,255,255,.35);">&#128205; Berlin, Germany</div>
-          <div style="font-size:9px;color:rgba(255,255,255,.35);">&#11088; 4.9</div>
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
+          <div style="font-size:9px;color:rgba(255,255,255,.35);" id="userLocation">&#128205; Worldwide</div>
         </div>
-        <div style="font-size:11px;color:rgba(255,255,255,.45);line-height:1.6;margin-bottom:12px;">Singer-songwriter and guitarist with 8 years experience. Open to collaborations worldwide. &#127757;</div>
+        <div style="font-size:11px;color:rgba(255,255,255,.45);line-height:1.6;margin-bottom:12px;" id="userBio">Welcome to STAGERZ! Tap EDIT to set up your artist profile.</div>
       </div>
+
+      <!-- Stats -->
       <div class="strow">
-        <div class="stc"><span class="stn">12</span><span class="stl">Projects</span></div>
-        <div class="stc"><span class="stn">840</span><span class="stl">Followers</span></div>
-        <div class="stc"><span class="stn">34</span><span class="stl">Collabs</span></div>
-        <div class="stc"><span class="stn">4.9</span><span class="stl">Rating</span></div>
+        <div class="stc"><span class="stn" id="userProjects">0</span><span class="stl">Projects</span></div>
+        <div class="stc"><span class="stn" id="userFollowers">0</span><span class="stl">Followers</span></div>
+        <div class="stc"><span class="stn" id="userCollabs">0</span><span class="stl">Collabs</span></div>
+        <div class="stc"><span class="stn">5.0</span><span class="stl">Rating</span></div>
       </div>
-      <button class="bp" style="margin-bottom:10px;" onclick="sA('Collaboration request coming soon!
 
-This feature connects artists worldwide in the full STAGERZ app.')">&#129309; REQUEST COLLABORATION</button>
-      <button class="bg" style="margin-bottom:10px;" onclick="goTo(this,'famemaker')">&#127916; CREATE / FAMEMAKER</button>
-      <button class="bs" style="margin-bottom:10px;" onclick="sA('Direct messaging is coming in the full STAGERZ app!\n\nFor now use Telegram to reach out to artists.')">&#128172; SEND MESSAGE</button>
-      <div class="st">Skills</div>
-      <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px;">
-        <div class="skc gold">&#127925; Guitar</div><div class="skc gold">&#127908; Vocals</div><div class="skc gold">&#127932; Songwriting</div>
-        <div class="skc">&#127929; Piano</div><div class="skc">&#127911; Production</div><div class="skc">&#127916; Music Video</div>
+      <!-- Actions -->
+      <button class="bp" style="margin-bottom:10px;" onclick="goTo(this,'wanted')">&#127919; POST A WANTED</button>
+      <button class="bg" style="margin-bottom:14px;" onclick="goTo(this,'famemaker')">&#127916; CREATE / FAMEMAKER</button>
+
+      <!-- Setup prompt if no profile yet -->
+      <div id="setupPrompt" style="background:linear-gradient(135deg,rgba(100,80,255,.08),rgba(212,168,64,.05));border:1px solid rgba(212,168,64,.2);border-radius:10px;padding:14px;margin-bottom:14px;text-align:center;">
+        <div style="font-size:24px;margin-bottom:8px;">&#127775;</div>
+        <div style="font-family:'Playfair Display',serif;font-size:14px;font-weight:700;color:#fff;margin-bottom:6px;">Set up your Artist Profile</div>
+        <div style="font-size:9px;color:rgba(255,255,255,.35);line-height:1.6;margin-bottom:12px;">Tell the world who you are.<br>Get discovered by artists worldwide.</div>
+        <button onclick="showEditProfile()" style="padding:10px 20px;background:linear-gradient(135deg,#8a6018,#e8b830);color:#06040e;border:none;border-radius:4px;font-family:'Bebas Neue',sans-serif;font-size:14px;letter-spacing:2px;cursor:pointer;">&#9998; BUILD MY PROFILE</button>
       </div>
-      <div class="st">Looking For</div>
-      <div style="background:rgba(212,168,64,.05);border:1px solid rgba(212,168,64,.2);border-radius:6px;padding:10px 12px;margin-bottom:14px;">
-        <div style="display:flex;flex-direction:column;gap:7px;">
-          <div style="display:flex;align-items:center;justify-content:space-between;">
-            <div style="display:flex;align-items:center;gap:6px;"><div style="font-size:14px;">&#129345;</div><div style="font-size:10px;color:rgba(232,212,160,.8);">Drummer</div><div style="font-size:8px;color:rgba(255,255,255,.35);">Berlin &middot; Paid</div></div>
-            <button onclick="sA('Collaboration request sent!
 
-This feature connects artists directly in the full STAGERZ app.')" style="padding:4px 10px;background:linear-gradient(135deg,#3020a0,#5040c8);border:none;border-radius:10px;font-size:8px;color:#fff;cursor:pointer;">&#129309; Collab</button>
-          </div>
-          <div style="height:1px;background:rgba(255,255,255,.1);"></div>
-          <div style="display:flex;align-items:center;justify-content:space-between;">
-            <div style="display:flex;align-items:center;gap:6px;"><div style="font-size:14px;">&#127903;</div><div style="font-size:10px;color:rgba(232,212,160,.8);">Producer</div><div style="font-size:8px;color:rgba(255,255,255,.35);">Remote &middot; Rev Share</div></div>
-            <button onclick="sA('Collaboration request sent!
+      <!-- Skills (shown after setup) -->
+      <div id="userSkillsSection" style="display:none;">
+        <div class="st">Skills</div>
+        <div id="userSkillsList" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px;"></div>
+      </div>
 
-This feature connects artists directly in the full STAGERZ app.')" style="padding:4px 10px;background:linear-gradient(135deg,#3020a0,#5040c8);border:none;border-radius:10px;font-size:8px;color:#fff;cursor:pointer;">&#129309; Collab</button>
-          </div>
-          <div style="height:1px;background:rgba(255,255,255,.1);"></div>
-          <div style="display:flex;align-items:center;justify-content:space-between;">
-            <div style="display:flex;align-items:center;gap:6px;"><div style="font-size:14px;">&#9986;</div><div style="font-size:10px;color:rgba(232,212,160,.8);">Video Editor</div><div style="font-size:8px;color:rgba(255,255,255,.35);">Remote &middot; Paid</div></div>
-            <button onclick="sA('Collaboration request sent!
+      <!-- Portfolio -->
+      <div class="st">My Stage</div>
+      <div style="background:rgba(100,80,255,.04);border:1px solid rgba(100,80,255,.1);border-radius:10px;padding:20px;text-align:center;margin-bottom:14px;cursor:pointer;" onclick="goTo(this,'famemaker')">
+        <div style="font-size:28px;opacity:.4;margin-bottom:8px;">&#127916;</div>
+        <div style="font-size:9px;color:rgba(255,255,255,.25);">No performances yet</div>
+        <div style="font-size:8px;color:rgba(212,168,64,.5);margin-top:4px;">Tap to create your first performance</div>
+      </div>
 
-This feature connects artists directly in the full STAGERZ app.')" style="padding:4px 10px;background:linear-gradient(135deg,#3020a0,#5040c8);border:none;border-radius:10px;font-size:8px;color:#fff;cursor:pointer;">&#129309; Collab</button>
-          </div>
-          <div style="height:1px;background:rgba(255,255,255,.1);"></div>
-          <div style="display:flex;align-items:center;justify-content:space-between;">
-            <div style="display:flex;align-items:center;gap:6px;"><div style="font-size:14px;">&#128247;</div><div style="font-size:10px;color:rgba(232,212,160,.8);">Photographer</div><div style="font-size:8px;color:rgba(255,255,255,.35);">Berlin &middot; Credit</div></div>
-            <button onclick="sA('Collaboration request sent!
-
-This feature connects artists directly in the full STAGERZ app.')" style="padding:4px 10px;background:linear-gradient(135deg,#3020a0,#5040c8);border:none;border-radius:10px;font-size:8px;color:#fff;cursor:pointer;">&#129309; Collab</button>
-          </div>
+      <!-- Backstage CTA -->
+      <div onclick="goTo(this,'backstage')" style="background:linear-gradient(135deg,rgba(30,15,80,.6),rgba(15,8,40,.8));border:1px solid rgba(212,168,64,.2);border-radius:10px;padding:12px 14px;cursor:pointer;display:flex;align-items:center;gap:10px;margin-bottom:14px;">
+        <div style="font-size:22px;">&#11088;</div>
+        <div>
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:14px;letter-spacing:2px;color:rgba(212,168,64,.9);">GO BACKSTAGE</div>
+          <div style="font-size:8px;color:rgba(255,255,255,.3);">Unlock unlimited projects, NACKL mining and more</div>
         </div>
+        <div style="margin-left:auto;font-size:16px;color:rgba(212,168,64,.5);">&#8250;</div>
       </div>
-      <div class="st">Active Project</div>
-      <div style="background:rgba(100,80,255,.06);border:1px solid rgba(120,100,255,.2);border-radius:6px;padding:10px 12px;position:relative;overflow:hidden;cursor:pointer;margin-bottom:14px;" onclick="goTo(this,'project')">
-        <div style="position:absolute;top:0;left:0;width:3px;height:100%;background:linear-gradient(180deg,#6050d8,#e8b830);"></div>
-        <div style="font-size:7px;letter-spacing:2px;text-transform:uppercase;color:rgba(180,160,255,.5);margin-bottom:4px;">&#128293; In Progress</div>
-        <div style="font-family:'Playfair Display',serif;font-size:14px;font-weight:700;color:#fff;margin-bottom:3px;">Summer EP &mdash; Golden Hours</div>
-        <div style="font-size:9px;color:rgba(255,255,255,.3);margin-bottom:8px;">5 tracks &middot; Singer-Songwriter &middot; Berlin</div>
-        <div style="height:2px;background:rgba(255,255,255,.1);border-radius:2px;overflow:hidden;margin-bottom:4px;"><div style="height:100%;width:45%;background:linear-gradient(90deg,#4030c0,#e8b830);border-radius:2px;"></div></div>
-        <div style="font-size:7px;color:rgba(255,255,255,.35);text-align:right;">45% complete</div>
-      </div>
-      <div class="st">Portfolio</div>
-      <div class="pg" style="margin-bottom:16px;">
-        <div class="pi" onclick="openStageFilter('all')">&#127925;</div><div class="pi" onclick="openStageFilter('film')">&#127916;</div>
-        <div class="pi" onclick="openStageFilter('music')">&#127908;</div><div class="pi" onclick="openStageFilter('music')">&#127932;</div>
-        <div class="pi" onclick="openStageFilter('photo')">&#128247;</div><div class="pi" onclick="openStageFilter('all')">&#127911;</div>
-      </div>
+
       <div class="gap"></div>
     </div>
   </div>
-  
-  <div class="nb"><div class="ni" onclick="goTo(this,'home')"><div class="ni-icon">&#127968;</div><span>Home</span></div><div class="ni" onclick="goTo(this,'search')"><div class="ni-icon">&#128269;</div><span>Search</span></div><div class="ni" onclick="goTo(this,'public')"><div class="ni-icon">&#127917;</div><span>Stage</span></div><div class="ni" onclick="goTo(this,'wanted')"><div class="ni-icon">&#127919;</div><span>Wanted</span></div><div class="ni active" onclick="goTo(this,'profile')"><div class="ni-icon">&#128100;</div><span>Profile</span></div></div>
+
+  <!-- Edit Profile Modal -->
+  <div id="editProfileModal" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.85);z-index:999;overflow-y:auto;">
+    <div style="background:#1a1628;border-radius:16px 16px 0 0;position:absolute;bottom:0;left:0;right:0;padding:20px;max-height:90vh;overflow-y:auto;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+        <div style="font-family:'Playfair Display',serif;font-size:18px;font-weight:700;color:#fff;">Edit Profile</div>
+        <button onclick="hideEditProfile()" style="width:28px;height:28px;border-radius:50%;background:rgba(255,255,255,.08);border:none;color:rgba(255,255,255,.5);font-size:14px;cursor:pointer;">&#10005;</button>
+      </div>
+
+      <div style="font-size:9px;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.3);margin-bottom:6px;">Display Name</div>
+      <input id="editName" type="text" placeholder="Your artist name" style="width:100%;padding:10px 12px;background:rgba(255,255,255,.05);border:1px solid rgba(100,80,255,.2);border-radius:6px;color:#fff;font-size:13px;margin-bottom:12px;box-sizing:border-box;" />
+
+      <div style="font-size:9px;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.3);margin-bottom:6px;">I am a...</div>
+      <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px;" id="rolePicker">
+        <div class="roleChip on" onclick="pickRole(this,'Musician')">&#127928; Musician</div>
+        <div class="roleChip off" onclick="pickRole(this,'Filmmaker')">&#127916; Filmmaker</div>
+        <div class="roleChip off" onclick="pickRole(this,'Dancer')">&#128131; Dancer</div>
+        <div class="roleChip off" onclick="pickRole(this,'Photographer')">&#128247; Photographer</div>
+        <div class="roleChip off" onclick="pickRole(this,'Visual Artist')">&#127912; Visual Artist</div>
+        <div class="roleChip off" onclick="pickRole(this,'AI Creator')">&#129302; AI Creator</div>
+        <div class="roleChip off" onclick="pickRole(this,'Singer')">&#127908; Singer</div>
+        <div class="roleChip off" onclick="pickRole(this,'Producer')">&#127911; Producer</div>
+      </div>
+
+      <div style="font-size:9px;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.3);margin-bottom:6px;">Location</div>
+      <input id="editLocation" type="text" placeholder="City, Country" style="width:100%;padding:10px 12px;background:rgba(255,255,255,.05);border:1px solid rgba(100,80,255,.2);border-radius:6px;color:#fff;font-size:13px;margin-bottom:12px;box-sizing:border-box;" />
+
+      <div style="font-size:9px;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.3);margin-bottom:6px;">Bio</div>
+      <textarea id="editBio" placeholder="Tell the world about yourself and your art..." style="width:100%;padding:10px 12px;background:rgba(255,255,255,.05);border:1px solid rgba(100,80,255,.2);border-radius:6px;color:#fff;font-size:12px;line-height:1.5;min-height:80px;resize:none;margin-bottom:16px;box-sizing:border-box;"></textarea>
+
+      <button onclick="saveProfile()" style="width:100%;padding:14px;background:linear-gradient(135deg,#8a6018,#e8b830);color:#06040e;border:none;border-radius:4px;font-family:'Bebas Neue',sans-serif;font-size:16px;letter-spacing:3px;cursor:pointer;">SAVE PROFILE</button>
+    </div>
+  </div>
+
+  <div class="nb">
+    <div class="ni" onclick="goTo(this,'home')"><div class="ni-icon">&#127968;</div><span>Home</span></div>
+    <div class="ni" onclick="goTo(this,'search')"><div class="ni-icon">&#128269;</div><span>Search</span></div>
+    <div class="ni" onclick="goTo(this,'public')"><div class="ni-icon">&#127917;</div><span>Stage</span></div>
+    <div class="ni" onclick="goTo(this,'wanted')"><div class="ni-icon">&#127919;</div><span>Wanted</span></div>
+    <div class="ni active" onclick="goTo(this,'profile')"><div class="ni-icon">&#128100;</div><span>Profile</span></div>
+  </div>
 </div>
 
-<!-- SCREEN 5B: JAMES KOFI PROFILE -->
-<div class="screen" id="screen-profile2">
+id="screen-profile2">
   <div class="sa">
     <div class="cv" style="background:linear-gradient(135deg,#0a1840,#142850,#0a1040);">
       <div style="position:absolute;top:-5px;left:20%;width:1px;height:100%;background:linear-gradient(180deg,rgba(40,80,255,.5),transparent);transform:rotate(-12deg);transform-origin:top center;"></div>
@@ -3119,6 +3147,125 @@ function openStageFilter(cat){
       c.className=chipCat.indexOf("'"+cat+"'")>-1?"cc on":"cc off";
     });
   },100);
+}
+
+var selectedRole = 'Musician';
+
+function pickRole(el, role) {
+  document.querySelectorAll('.roleChip').forEach(function(c){c.className='roleChip off';});
+  el.className = 'roleChip on';
+  selectedRole = role;
+}
+
+function showEditProfile() {
+  var modal = document.getElementById('editProfileModal');
+  if (!modal) return;
+  // Pre-fill with current values
+  var name = document.getElementById('userDisplayName');
+  var loc = document.getElementById('userLocation');
+  var bio = document.getElementById('userBio');
+  if (name) document.getElementById('editName').value = name.textContent !== 'Your Name' ? name.textContent : (currentUser ? (currentUser.first_name || '') : '');
+  if (loc) document.getElementById('editLocation').value = loc.textContent.replace('&#128205; ','').replace('Worldwide','');
+  if (bio) document.getElementById('editBio').value = bio.textContent !== 'Welcome to STAGERZ! Tap EDIT to set up your artist profile.' ? bio.textContent : '';
+  modal.style.display = 'block';
+  if (tg && tg.HapticFeedback) tg.HapticFeedback.impactOccurred('light');
+}
+
+function hideEditProfile() {
+  var modal = document.getElementById('editProfileModal');
+  if (modal) modal.style.display = 'none';
+}
+
+async function saveProfile() {
+  var name = document.getElementById('editName').value.trim();
+  var location = document.getElementById('editLocation').value.trim();
+  var bio = document.getElementById('editBio').value.trim();
+
+  if (!name) { sA('Please enter your display name!'); return; }
+
+  // Update UI immediately
+  updateProfileUI({ display_name: name, role: selectedRole, location: location, bio: bio });
+  hideEditProfile();
+
+  // Save to Supabase if user is logged in
+  if (currentUser) {
+    var result = await supaUpsert('profiles', {
+      user_id: currentUser.id,
+      display_name: name,
+      role: selectedRole,
+      location: location || 'Worldwide',
+      bio: bio || ''
+    });
+    if (result) {
+      console.log('Profile saved!');
+      if (tg && tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
+      sA('Profile saved! You are now visible to artists worldwide.');
+    }
+  } else {
+    sA('Profile updated locally. Open via Telegram to save permanently.');
+  }
+}
+
+function updateProfileUI(data) {
+  if (data.display_name) {
+    var el = document.getElementById('userDisplayName');
+    if (el) el.textContent = data.display_name;
+  }
+  if (data.role) {
+    var badge = document.getElementById('userRoleBadge');
+    var icons = {'Musician':'&#127928;','Filmmaker':'&#127916;','Dancer':'&#128131;','Photographer':'&#128247;','Visual Artist':'&#127912;','AI Creator':'&#129302;','Singer':'&#127908;','Producer':'&#127911;'};
+    if (badge) badge.innerHTML = (icons[data.role] || '&#127928;') + ' ' + data.role;
+  }
+  if (data.location) {
+    var loc = document.getElementById('userLocation');
+    if (loc) loc.textContent = '&#128205; ' + data.location;
+  }
+  if (data.bio) {
+    var bio = document.getElementById('userBio');
+    if (bio) bio.textContent = data.bio;
+  }
+  // Hide setup prompt once profile is filled
+  var prompt = document.getElementById('setupPrompt');
+  if (prompt && data.display_name) prompt.style.display = 'none';
+}
+
+async function loadUserProfile() {
+  if (!currentUser) return;
+
+  // Update name from Telegram immediately
+  var tgName = (currentUser.first_name || '') + (currentUser.last_name ? ' ' + currentUser.last_name : '');
+  var nameEl = document.getElementById('userDisplayName');
+  if (nameEl && tgName) nameEl.textContent = tgName;
+
+  var handleEl = document.getElementById('userHandle');
+  if (handleEl && currentUser.username) handleEl.textContent = '@' + currentUser.username;
+
+  // Load photo if available
+  if (currentUser.photo_url) {
+    var img = document.getElementById('userAvatarImg');
+    var icon = document.getElementById('userAvatarIcon');
+    if (img) { img.src = currentUser.photo_url; img.style.display = 'block'; }
+    if (icon) icon.style.display = 'none';
+  }
+
+  // Load profile from Supabase
+  var data = await supaSelect('profiles', 'user_id=eq.' + currentUser.id + '&limit=1');
+  if (data && data.length > 0) {
+    var p = data[0];
+    updateProfileUI(p);
+    selectedRole = p.role || 'Musician';
+    // Pre-select role chip
+    document.querySelectorAll('.roleChip').forEach(function(c){
+      c.className = c.textContent.trim().indexOf(selectedRole) > -1 ? 'roleChip on' : 'roleChip off';
+    });
+  }
+
+  // Load follower count
+  var follows = await supaSelect('follows', 'following_id=eq.' + currentUser.id);
+  if (follows) {
+    var el = document.getElementById('userFollowers');
+    if (el) el.textContent = follows.length;
+  }
 }
 
 
