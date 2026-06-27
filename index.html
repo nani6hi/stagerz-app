@@ -1,4 +1,4 @@
-onclick="showPostWanted()"<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang='en'>
 <head>
 <meta charset='UTF-8'>
@@ -3274,8 +3274,13 @@ var pwComp = 'paid';
 var pwRemote = true;
 
 function showPostWanted(){
+  console.log('showPostWanted called');
   var modal = document.getElementById('postWantedModal');
-  if(modal) modal.style.display = 'block';
+  console.log('modal found:', !!modal);
+  if(modal){
+    modal.style.cssText = 'display:block;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.85);z-index:9999;overflow-y:auto;';
+    console.log('modal shown');
+  }
   if(tg && tg.HapticFeedback) tg.HapticFeedback.impactOccurred('light');
 }
 
