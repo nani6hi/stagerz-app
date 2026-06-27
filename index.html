@@ -2371,14 +2371,27 @@ function renderWantedPosts(posts) {
     if (post.user_id === 1) return; // skip system demo posts
     var comp = post.compensation === 'paid' ? 'Paid' : post.compensation === 'rev_share' ? 'Rev Share' : 'Credit';
     var loc = post.remote ? 'Remote' : post.location;
+    var isOwner = currentUser && currentUser.id === post.user_id;
     var card = document.createElement('div');
     card.className = 'cd';
     card.setAttribute('data-wcat', post.category);
-    card.style.borderColor = 'rgba(212,168,64,.25)';
+    card.style.borderColor = isOwner ? 'rgba(212,168,64,.4)' : 'rgba(212,168,64,.25)';
+
+    // Header row - badge + delete button if owner
+    var header = document.createElement('div');
+    header.style.cssText = 'display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;';
     var badge = document.createElement('div');
     badge.className = 'urg new';
     badge.style.cssText = 'background:rgba(212,168,64,.15);color:rgba(212,168,64,.9);';
-    badge.textContent = 'NEW';
+    badge.textContent = isOwner ? 'YOUR POST' : 'NEW';
+    header.appendChild(badge);
+    if(isOwner){
+      var delBtn = document.createElement('button');
+      delBtn.style.cssText = 'padding:3px 8px;background:rgba(255,60,60,.1);border:1px solid rgba(255,60,60,.25);border-radius:10px;font-size:9px;color:rgba(255,100,100,.8);cursor:pointer;';
+      delBtn.textContent = 'Delete';
+      delBtn.onclick = (function(id, c){ return function(e){ e.stopPropagation(); deleteWanted(id, c); }; })(post.id, card);
+      header.appendChild(delBtn);
+    }
     var title = document.createElement('div');
     title.style.cssText = 'font-size:11px;font-weight:600;color:#fff;margin-bottom:4px;';
     title.textContent = post.title;
@@ -2394,9 +2407,9 @@ function renderWantedPosts(posts) {
       '<div style="' + tagStyle + 'background:rgba(40,200,80,.08);border:1px solid rgba(40,200,80,.2);color:rgba(40,200,80,.7);">' + comp + '</div>';
     var btn = document.createElement('button');
     btn.style.cssText = 'width:100%;padding:8px;background:linear-gradient(135deg,#3020a0,#5040c8);border:none;border-radius:4px;font-family:Bebas Neue,sans-serif;font-size:12px;letter-spacing:2px;color:#fff;cursor:pointer;';
-    btn.textContent = 'APPLY NOW';
-    btn.onclick = (function(id) { return function() { applyToWanted(id); }; })(post.id);
-    card.appendChild(badge);
+    btn.textContent = isOwner ? 'EDIT POST' : 'APPLY NOW';
+    btn.onclick = (function(id){ return function(){ applyToWanted(id); }; })(post.id);
+    card.appendChild(header);
     card.appendChild(title);
     card.appendChild(desc);
     card.appendChild(tags);
@@ -3340,6 +3353,26 @@ async function submitWanted(){
   }
 }
 
+
+
+async function deleteWanted(postId, cardEl){
+  if(!currentUser){ sA('Please open via Telegram to delete.'); return; }
+  try {
+    var res = await fetch(SUPA_URL + '/rest/v1/wanted_posts?id=eq.' + postId + '&user_id=eq.' + currentUser.id, {
+      method: 'DELETE',
+      headers: supaHeaders(),
+      mode: 'cors'
+    });
+    if(res.ok){
+      if(cardEl) cardEl.remove();
+      if(tg && tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
+    } else {
+      sA('Could not delete. Only your own posts can be deleted.');
+    }
+  } catch(e) {
+    sA('Delete failed: ' + e.message);
+  }
+}
 
 </script>
 
