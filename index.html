@@ -2285,31 +2285,56 @@ async function initUser() {
   // Try multiple ways to get Telegram user
   var tgUser = null;
   
-  // Force reload tg in case it wasn't ready yet
+  // Reload tg reference
   if(!tg) tg = window.Telegram && window.Telegram.WebApp;
-  if(tg && tg.ready) tg.ready();
-  if(tg && tg.expand) tg.expand();
-  
-  // Log full initData for debugging
-  console.log('initData:', tg && tg.initData ? tg.initData.substring(0,50) : 'none');
-  console.log('initDataUnsafe:', JSON.stringify(tg && tg.initDataUnsafe));
-  
+  if(tg){ tg.ready(); tg.expand(); }
+
+  // Method 1: initDataUnsafe (standard)
   if(tg && tg.initDataUnsafe && tg.initDataUnsafe.user){
     tgUser = tg.initDataUnsafe.user;
-    console.log('Telegram user found:', tgUser.first_name);
-  } else if(window.Telegram && window.Telegram.WebApp){
-    var wa = window.Telegram.WebApp;
-    if(wa.initDataUnsafe && wa.initDataUnsafe.user){
+    console.log('Method 1 - initDataUnsafe:', tgUser.first_name);
+  }
+
+  // Method 2: Parse initData string manually
+  if(!tgUser && tg && tg.initData && tg.initData.length > 0){
+    try {
+      var params = new URLSearchParams(tg.initData);
+      var userStr = params.get('user');
+      if(userStr) tgUser = JSON.parse(decodeURIComponent(userStr));
+      if(tgUser) console.log('Method 2 - parsed initData:', tgUser.first_name);
+    } catch(e){ console.log('Method 2 failed:', e.message); }
+  }
+
+  // Method 3: Check window location hash (Telegram sometimes puts data here)
+  if(!tgUser && window.location.hash){
+    try {
+      var hash = window.location.hash.substring(1);
+      var hashParams = new URLSearchParams(hash);
+      var userStr = hashParams.get('user');
+      if(userStr) tgUser = JSON.parse(decodeURIComponent(userStr));
+      if(tgUser) console.log('Method 3 - hash:', tgUser.first_name);
+    } catch(e){ console.log('Method 3 failed:', e.message); }
+  }
+
+  // Method 4: Check Telegram.WebApp directly one more time
+  if(!tgUser){
+    var wa = window.Telegram && window.Telegram.WebApp;
+    if(wa && wa.initDataUnsafe && wa.initDataUnsafe.user){
       tgUser = wa.initDataUnsafe.user;
-      console.log('Telegram user found (fallback):', tgUser.first_name);
-    } else {
-      console.log('WebApp exists but no user. initData:', wa.initData ? wa.initData.substring(0,30) : 'empty');
+      console.log('Method 4 - direct WebApp:', tgUser.first_name);
     }
   }
-  
+
+  // Log full state for debugging
+  console.log('initData:', tg && tg.initData ? tg.initData.substring(0,80) : 'none');
+  console.log('initDataUnsafe:', JSON.stringify(tg && tg.initDataUnsafe));
+  console.log('hash:', window.location.hash.substring(0,50));
+
   if(!tgUser){
     console.log('No Telegram user - browser mode');
     tgUser = { id: 999999, first_name: 'Demo', last_name: 'User', username: 'demouser' };
+    // Show connect button on profile screen
+    showConnectButton();
   }
 
   currentUser = tgUser;
@@ -3376,6 +3401,61 @@ async function deleteWanted(postId, cardEl){
     }
   } catch(e) {
     sA('Delete failed: ' + e.message);
+  }
+}
+
+
+function showConnectButton(){
+  // Add a "Connect with Telegram" button to profile screen
+  var existing = document.getElementById('connectTgBtn');
+  if(existing) return;
+  var profileScreen = document.getElementById('screen-profile');
+  if(!profileScreen) return;
+  var pd = profileScreen.querySelector('.pd');
+  if(!pd) return;
+  var btn = document.createElement('button');
+  btn.id = 'connectTgBtn';
+  btn.style.cssText = 'width:100%;padding:12px;background:linear-gradient(135deg,#0088cc,#0099dd);color:#fff;border:none;border-radius:4px;font-family:Bebas Neue,sans-serif;font-size:14px;letter-spacing:2px;cursor:pointer;margin-bottom:10px;';
+  btn.innerHTML = '&#128241; CONNECT TELEGRAM ACCOUNT';
+  btn.onclick = requestTelegramContact;
+  pd.insertBefore(btn, pd.firstChild);
+}
+
+function requestTelegramContact(){
+  if(tg && tg.requestContact){
+    tg.requestContact(function(sent, contact){
+      console.log('Contact sent:', sent, JSON.stringify(contact));
+      if(sent && contact && contact.contact){
+        var c = contact.contact;
+        var user = {
+          id: c.user_id || 999999,
+          first_name: c.first_name || 'Artist',
+          last_name: c.last_name || '',
+          username: c.username || '',
+          phone: c.phone_number || ''
+        };
+        currentUser = user;
+        updateUserUI(user);
+        // Save to CloudStorage
+        if(tg.CloudStorage){
+          tg.CloudStorage.setItem('tg_user', JSON.stringify(user));
+        }
+        // Save to Supabase
+        supaUpsert('users', {
+          id: user.id,
+          username: user.username || '',
+          first_name: user.first_name || '',
+          last_name: user.last_name || ''
+        }).then(function(r){
+          if(r) sA('Welcome to STAGERZ, ' + user.first_name + '!\n\nYour profile is now connected.');
+        });
+        // Remove connect button
+        var btn = document.getElementById('connectTgBtn');
+        if(btn) btn.remove();
+      }
+    });
+  } else {
+    sA('Please open STAGERZ via @STAGERZBot in Telegram to connect your account.');
   }
 }
 
