@@ -2633,7 +2633,7 @@ function updateUserUI(user) {
 
 // Load real WANTED posts from Supabase
 async function loadWantedPosts() {
-  var data = await supaSelect('wanted_posts', 'status=eq.open&order=created_at.desc&limit=20');
+  var data = await supaSelect('wanted_posts', 'status=eq.open&user_id=neq.999999&order=created_at.desc&limit=20');
   if (data && data.length > 0) {
     renderWantedPosts(data);
     console.log('Loaded', data.length, 'wanted posts from Supabase!');
@@ -3645,7 +3645,8 @@ async function submitWanted(){
 async function deleteWanted(postId, cardEl){
   if(!currentUser){ sA('Please open via Telegram to delete.'); return; }
   try {
-    var res = await fetch(SUPA_URL + '/rest/v1/wanted_posts?id=eq.' + postId + '&user_id=eq.' + currentUser.id, {
+    var userId = currentUser ? currentUser.id : 999999;
+    var res = await fetch(SUPA_URL + '/rest/v1/wanted_posts?id=eq.' + postId + '&user_id=eq.' + userId, {
       method: 'DELETE',
       headers: supaHeaders(),
       mode: 'cors'
