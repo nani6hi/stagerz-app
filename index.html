@@ -481,7 +481,7 @@ html,body{width:100%;height:100%;background:#1a1628;font-family:Inter,sans-serif
   </div>
   
   </div>
-  <div class="nb"><div class="ni active" onclick="goTo(this,'home')"><div class="ni-icon">&#127968;</div><span>Home</span></div><div class="ni" onclick="goTo(this,'search')"><div class="ni-icon">&#128269;</div><span>Search</span></div><div class="ni" onclick="goTo(this,'public')"><div class="ni-icon">&#127917;</div><span>Stage</span></div><div class="ni" onclick="goTo(this,'wanted')"><div class="ni-icon">&#127919;</div><span>Wanted</span></div><div class="ni" onclick="goTo(this,'profile')"><div class="ni-icon">&#128100;</div><span>Profile</span></div></div>
+  <div class="nb"><div class="ni active" onclick="goTo(this,'home')"><div class="ni-icon">&#127968;</div><span>Home</span></div><div class="ni" onclick="goTo(this,'search')"><div class="ni-icon">&#128269;</div><span>Search</span></div><div class="ni" onclick="goTo(this,'public')"><div class="ni-icon">&#127917;</div><span>Stage</span></div><div class="ni" onclick="goTo(this,'wanted')"><div class="ni-icon">&#127919;</div><span>Wanted</span></div><div class="ni" onclick="goTo(this,'myprofile')"><div class="ni-icon">&#128100;</div><span>Profile</span></div></div>
 </div>
 
 <!-- SCREEN 3: SEARCH -->
@@ -513,7 +513,7 @@ html,body{width:100%;height:100%;background:#1a1628;font-family:Inter,sans-serif
     </div>
   </div>
   
-  <div class="nb"><div class="ni" onclick="goTo(this,'home')"><div class="ni-icon">&#127968;</div><span>Home</span></div><div class="ni active" onclick="goTo(this,'search')"><div class="ni-icon">&#128269;</div><span>Search</span></div><div class="ni" onclick="goTo(this,'public')"><div class="ni-icon">&#127917;</div><span>Stage</span></div><div class="ni" onclick="goTo(this,'wanted')"><div class="ni-icon">&#127919;</div><span>Wanted</span></div><div class="ni" onclick="goTo(this,'profile')"><div class="ni-icon">&#128100;</div><span>Profile</span></div></div>
+  <div class="nb"><div class="ni" onclick="goTo(this,'home')"><div class="ni-icon">&#127968;</div><span>Home</span></div><div class="ni active" onclick="goTo(this,'search')"><div class="ni-icon">&#128269;</div><span>Search</span></div><div class="ni" onclick="goTo(this,'public')"><div class="ni-icon">&#127917;</div><span>Stage</span></div><div class="ni" onclick="goTo(this,'wanted')"><div class="ni-icon">&#127919;</div><span>Wanted</span></div><div class="ni" onclick="goTo(this,'myprofile')"><div class="ni-icon">&#128100;</div><span>Profile</span></div></div>
 </div>
 
 <!-- SCREEN 4: WANTED -->
@@ -854,7 +854,7 @@ html,body{width:100%;height:100%;background:#1a1628;font-family:Inter,sans-serif
     </div>
   </div>
   
-  <div class="nb"><div class="ni" onclick="goTo(this,'home')"><div class="ni-icon">&#127968;</div><span>Home</span></div><div class="ni" onclick="goTo(this,'search')"><div class="ni-icon">&#128269;</div><span>Search</span></div><div class="ni" onclick="goTo(this,'public')"><div class="ni-icon">&#127917;</div><span>Stage</span></div><div class="ni active" onclick="goTo(this,'wanted')"><div class="ni-icon">&#127919;</div><span>Wanted</span></div><div class="ni" onclick="goTo(this,'profile')"><div class="ni-icon">&#128100;</div><span>Profile</span></div></div>
+  <div class="nb"><div class="ni" onclick="goTo(this,'home')"><div class="ni-icon">&#127968;</div><span>Home</span></div><div class="ni" onclick="goTo(this,'search')"><div class="ni-icon">&#128269;</div><span>Search</span></div><div class="ni" onclick="goTo(this,'public')"><div class="ni-icon">&#127917;</div><span>Stage</span></div><div class="ni active" onclick="goTo(this,'wanted')"><div class="ni-icon">&#127919;</div><span>Wanted</span></div><div class="ni" onclick="goTo(this,'myprofile')"><div class="ni-icon">&#128100;</div><span>Profile</span></div></div>
 </div>
 
 <!-- SCREEN 5: PROFILE -->
@@ -952,6 +952,107 @@ html,body{width:100%;height:100%;background:#1a1628;font-family:Inter,sans-serif
     </div>
   </div>
   <div class="nb"><div class="ni" onclick="goTo(this,'home')"><div class="ni-icon">&#127968;</div><span>Home</span></div><div class="ni" onclick="goTo(this,'search')"><div class="ni-icon">&#128269;</div><span>Search</span></div><div class="ni" onclick="goTo(this,'public')"><div class="ni-icon">&#127917;</div><span>Stage</span></div><div class="ni" onclick="goTo(this,'wanted')"><div class="ni-icon">&#127919;</div><span>Wanted</span></div><div class="ni active" onclick="goTo(this,'profile')"><div class="ni-icon">&#128100;</div><span>Profile</span></div></div>
+</div>
+
+<div class="screen" id="screen-myprofile">
+  <div class="sa">
+    <!-- Cover -->
+    <div class="cv" id="myCoverBg" style="background:linear-gradient(135deg,#1a0840,#280c50,#0a0820);">
+      <div style="position:absolute;top:-5px;left:20%;width:1px;height:100%;background:linear-gradient(180deg,rgba(80,60,255,.5),transparent);transform:rotate(-12deg);transform-origin:top center;"></div>
+      <div style="position:absolute;top:-5px;left:50%;width:1.5px;height:100%;background:linear-gradient(180deg,rgba(255,220,100,.4),transparent);transform-origin:top center;"></div>
+      <div style="position:absolute;top:-5px;left:80%;width:1px;height:100%;background:linear-gradient(180deg,rgba(80,60,255,.5),transparent);transform:rotate(12deg);transform-origin:top center;"></div>
+      <div class="csil" id="myProfileIcon">&#127928;</div>
+      <div class="cfd"></div>
+    </div>
+    <div class="pd">
+      <div style="margin-top:-26px;margin-bottom:10px;">
+        <!-- Avatar + actions -->
+        <div style="display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:10px;">
+          <div class="pav" id="myAvatar" style="background:linear-gradient(135deg,#1a0840,#280c50);">
+            <span id="myAvatarIcon">&#127928;</span>
+            <div style="position:absolute;bottom:-1px;right:-1px;width:18px;height:18px;border-radius:50%;background:linear-gradient(135deg,#1a0840,#280c50);border:2px solid #1a1628;display:flex;align-items:center;justify-content:center;font-size:8px;">&#10022;</div>
+          </div>
+          <div style="display:flex;gap:8px;padding-top:8px;">
+            <button onclick="showMyProfileEdit()" style="padding:8px 14px;border-radius:4px;font-family:'Bebas Neue',sans-serif;font-size:11px;letter-spacing:2px;cursor:pointer;background:rgba(255,255,255,.05);color:rgba(200,180,255,.7);border:1px solid rgba(100,80,255,.2);">&#9998; EDIT</button>
+            <button onclick="shareStagerz()" style="padding:8px 14px;border-radius:4px;font-family:'Bebas Neue',sans-serif;font-size:11px;letter-spacing:2px;cursor:pointer;background:linear-gradient(135deg,#3020a0,#5040c8);color:#fff;border:none;">&#8599; SHARE</button>
+          </div>
+        </div>
+
+        <!-- Name + handle -->
+        <div style="font-family:'Playfair Display',serif;font-weight:900;font-size:22px;color:#fff;margin-bottom:2px;" id="myDisplayName">Your Name</div>
+        <div style="font-size:11px;color:rgba(255,255,255,.3);margin-bottom:5px;" id="myHandle">@username</div>
+
+        <!-- Role badge -->
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;flex-wrap:wrap;">
+          <div id="myRoleBadge" style="display:inline-flex;align-items:center;gap:5px;padding:3px 10px;background:rgba(100,80,255,.12);border:1px solid rgba(100,80,255,.2);border-radius:20px;font-size:9px;letter-spacing:2px;text-transform:uppercase;color:rgba(180,160,255,.8);">&#127928; Artist</div>
+          <div style="display:inline-flex;align-items:center;gap:4px;padding:2px 9px;background:rgba(40,200,80,.08);border:1px solid rgba(40,200,80,.2);border-radius:20px;">
+            <div style="width:6px;height:6px;border-radius:50%;background:#40c850;animation:bk 2s ease-in-out infinite;"></div>
+            <span style="font-size:8px;color:rgba(40,200,80,.85);">Available</span>
+          </div>
+        </div>
+
+        <!-- Location -->
+        <div style="font-size:9px;color:rgba(255,255,255,.35);margin-bottom:8px;" id="myLocation">&#128205; Worldwide</div>
+
+        <!-- Bio -->
+        <div style="font-size:11px;color:rgba(255,255,255,.45);line-height:1.6;margin-bottom:12px;" id="myBio">Tap EDIT to set up your artist profile and get discovered worldwide.</div>
+      </div>
+
+      <!-- Stats -->
+      <div class="strow" style="margin-bottom:14px;">
+        <div class="stc"><span class="stn" id="myProjects">0</span><span class="stl">Projects</span></div>
+        <div class="stc"><span class="stn" id="myFollowers">0</span><span class="stl">Followers</span></div>
+        <div class="stc"><span class="stn" id="myCollabs">0</span><span class="stl">Collabs</span></div>
+        <div class="stc"><span class="stn">5.0</span><span class="stl">Rating</span></div>
+      </div>
+
+      <!-- Setup prompt -->
+      <div id="mySetupPrompt" style="background:linear-gradient(135deg,rgba(100,80,255,.08),rgba(212,168,64,.05));border:1px solid rgba(212,168,64,.2);border-radius:10px;padding:16px;margin-bottom:14px;text-align:center;">
+        <div style="font-size:28px;margin-bottom:8px;">&#127775;</div>
+        <div style="font-family:'Playfair Display',serif;font-size:15px;font-weight:700;color:#fff;margin-bottom:6px;">Set up your Artist Profile</div>
+        <div style="font-size:9px;color:rgba(255,255,255,.3);line-height:1.6;margin-bottom:12px;">Tell the world who you are.<br>Get discovered by artists worldwide.</div>
+        <button onclick="showMyProfileEdit()" style="padding:10px 20px;background:linear-gradient(135deg,#8a6018,#e8b830);color:#06040e;border:none;border-radius:4px;font-family:'Bebas Neue',sans-serif;font-size:14px;letter-spacing:2px;cursor:pointer;">&#9998; BUILD MY PROFILE</button>
+      </div>
+
+      <!-- Skills section -->
+      <div id="mySkillsSection" style="display:none;">
+        <div class="st">Skills</div>
+        <div id="mySkillsList" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px;"></div>
+      </div>
+
+      <!-- Actions -->
+      <button class="bp" style="margin-bottom:10px;" onclick="goTo(this,'wanted')">&#127919; POST A WANTED</button>
+      <button class="bg" style="margin-bottom:14px;" onclick="goTo(this,'famemaker')">&#127916; CREATE / FAMEMAKER</button>
+
+      <!-- My WANTED posts -->
+      <div class="st">My WANTED Posts</div>
+      <div id="myWantedList" style="margin-bottom:14px;">
+        <div style="background:rgba(100,80,255,.04);border:1px solid rgba(100,80,255,.1);border-radius:8px;padding:16px;text-align:center;cursor:pointer;" onclick="showPostWanted()">
+          <div style="font-size:9px;color:rgba(255,255,255,.25);">No posts yet</div>
+          <div style="font-size:8px;color:rgba(212,168,64,.5);margin-top:4px;">Tap to post your first WANTED</div>
+        </div>
+      </div>
+
+      <!-- Backstage CTA -->
+      <div onclick="goTo(this,'backstage')" style="background:linear-gradient(135deg,rgba(30,15,80,.6),rgba(15,8,40,.8));border:1px solid rgba(212,168,64,.2);border-radius:10px;padding:12px 14px;cursor:pointer;display:flex;align-items:center;gap:10px;margin-bottom:14px;">
+        <div style="font-size:22px;">&#11088;</div>
+        <div>
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:14px;letter-spacing:2px;color:rgba(212,168,64,.9);">GO BACKSTAGE</div>
+          <div style="font-size:8px;color:rgba(255,255,255,.3);">Unlock unlimited projects and NACKL mining</div>
+        </div>
+        <div style="margin-left:auto;font-size:16px;color:rgba(212,168,64,.5);">&#8250;</div>
+      </div>
+
+      <div class="gap"></div>
+    </div>
+  </div>
+  <div class="nb">
+    <div class="ni" onclick="goTo(this,'home')"><div class="ni-icon">&#127968;</div><span>Home</span></div>
+    <div class="ni" onclick="goTo(this,'search')"><div class="ni-icon">&#128269;</div><span>Search</span></div>
+    <div class="ni" onclick="goTo(this,'public')"><div class="ni-icon">&#127917;</div><span>Stage</span></div>
+    <div class="ni" onclick="goTo(this,'wanted')"><div class="ni-icon">&#127919;</div><span>Wanted</span></div>
+    <div class="ni active" onclick="goTo(this,'myprofile')"><div class="ni-icon">&#128100;</div><span>Profile</span></div>
+  </div>
 </div>
 
 <div class="screen" id="screen-profile2">
@@ -1999,7 +2100,7 @@ html,body{width:100%;height:100%;background:#1a1628;font-family:Inter,sans-serif
     <div style="margin-top:14px;"><button class="bs" onclick="goTo(this,'famemaker')">&#127916; Open FameMaker</button></div>
   </div></div>
   
-  <div class="nb"><div class="ni" onclick="goTo(this,'home')"><div class="ni-icon">&#127968;</div><span>Home</span></div><div class="ni" onclick="goTo(this,'search')"><div class="ni-icon">&#128269;</div><span>Search</span></div><div class="ni active" onclick="goTo(this,'public')"><div class="ni-icon">&#127917;</div><span>Stage</span></div><div class="ni" onclick="goTo(this,'wanted')"><div class="ni-icon">&#127919;</div><span>Wanted</span></div><div class="ni" onclick="goTo(this,'profile')"><div class="ni-icon">&#128100;</div><span>Profile</span></div></div>
+  <div class="nb"><div class="ni" onclick="goTo(this,'home')"><div class="ni-icon">&#127968;</div><span>Home</span></div><div class="ni" onclick="goTo(this,'search')"><div class="ni-icon">&#128269;</div><span>Search</span></div><div class="ni active" onclick="goTo(this,'public')"><div class="ni-icon">&#127917;</div><span>Stage</span></div><div class="ni" onclick="goTo(this,'wanted')"><div class="ni-icon">&#127919;</div><span>Wanted</span></div><div class="ni" onclick="goTo(this,'myprofile')"><div class="ni-icon">&#128100;</div><span>Profile</span></div></div>
 </div>
 
 <!-- SCREEN 7: FAMEMAKER -->
@@ -2152,7 +2253,7 @@ html,body{width:100%;height:100%;background:#1a1628;font-family:Inter,sans-serif
     </div>
   </div>
   
-  <div class="nb"><div class="ni" onclick="goTo(this,'home')"><div class="ni-icon">&#127968;</div><span>Home</span></div><div class="ni" onclick="goTo(this,'search')"><div class="ni-icon">&#128269;</div><span>Search</span></div><div class="ni active" onclick="goTo(this,'public')"><div class="ni-icon">&#127917;</div><span>Stage</span></div><div class="ni" onclick="goTo(this,'wanted')"><div class="ni-icon">&#127919;</div><span>Wanted</span></div><div class="ni" onclick="goTo(this,'profile')"><div class="ni-icon">&#128100;</div><span>Profile</span></div></div>
+  <div class="nb"><div class="ni" onclick="goTo(this,'home')"><div class="ni-icon">&#127968;</div><span>Home</span></div><div class="ni" onclick="goTo(this,'search')"><div class="ni-icon">&#128269;</div><span>Search</span></div><div class="ni active" onclick="goTo(this,'public')"><div class="ni-icon">&#127917;</div><span>Stage</span></div><div class="ni" onclick="goTo(this,'wanted')"><div class="ni-icon">&#127919;</div><span>Wanted</span></div><div class="ni" onclick="goTo(this,'myprofile')"><div class="ni-icon">&#128100;</div><span>Profile</span></div></div>
 </div>
 
 <!-- SCREEN 8: PUBLIC STAGE -->
@@ -2320,7 +2421,7 @@ html,body{width:100%;height:100%;background:#1a1628;font-family:Inter,sans-serif
       <div class="gap"></div>
     </div>
   </div>
-  <div class="nb"><div class="ni" onclick="goTo(this,'home')"><div class="ni-icon">&#127968;</div><span>Home</span></div><div class="ni" onclick="goTo(this,'search')"><div class="ni-icon">&#128269;</div><span>Search</span></div><div class="ni" onclick="goTo(this,'public')"><div class="ni-icon">&#127917;</div><span>Stage</span></div><div class="ni" onclick="goTo(this,'wanted')"><div class="ni-icon">&#127919;</div><span>Wanted</span></div><div class="ni" onclick="goTo(this,'profile')"><div class="ni-icon">&#128100;</div><span>Profile</span></div></div>
+  <div class="nb"><div class="ni" onclick="goTo(this,'home')"><div class="ni-icon">&#127968;</div><span>Home</span></div><div class="ni" onclick="goTo(this,'search')"><div class="ni-icon">&#128269;</div><span>Search</span></div><div class="ni" onclick="goTo(this,'public')"><div class="ni-icon">&#127917;</div><span>Stage</span></div><div class="ni" onclick="goTo(this,'wanted')"><div class="ni-icon">&#127919;</div><span>Wanted</span></div><div class="ni" onclick="goTo(this,'myprofile')"><div class="ni-icon">&#128100;</div><span>Profile</span></div></div>
 </div>
 
 <!-- SCREEN 9: BACKSTAGE -->
@@ -2826,6 +2927,8 @@ function collabSoon(){
 function goTo(el,id){
   var pwm=document.getElementById("postWantedModal");
   if(pwm)pwm.style.display="none";
+  var mpm=document.getElementById("myProfileModal");
+  if(mpm)mpm.style.display="none";
   var pwModal=document.getElementById("postWantedModal");
   if(pwModal)pwModal.style.display="none";
   var cur=document.querySelector(".screen.active");
@@ -3717,6 +3820,184 @@ function requestTelegramContact(){
   }
 }
 
+
+var myRole = 'Musician';
+var myRoleIcon = '&#127928;';
+var myRoleCat = 'music';
+
+function showMyProfileEdit(){
+  var modal = document.getElementById('myProfileModal');
+  if(!modal) return;
+  // Pre-fill current values
+  var name = document.getElementById('myDisplayName');
+  var loc = document.getElementById('myLocation');
+  var bio = document.getElementById('myBio');
+  var skills = document.getElementById('mySkillsList');
+  var nameInput = document.getElementById('myEditName');
+  var locInput = document.getElementById('myEditLocation');
+  var bioInput = document.getElementById('myEditBio');
+  var skillsInput = document.getElementById('myEditSkills');
+  if(nameInput && name && name.textContent !== 'Your Name') nameInput.value = name.textContent;
+  if(locInput && loc) locInput.value = loc.textContent.replace('&#128205; ','').replace('Worldwide','');
+  if(bioInput && bio && bio.textContent !== 'Tap EDIT to set up your artist profile and get discovered worldwide.') bioInput.value = bio.textContent;
+  if(skillsInput && skills){
+    var chips = skills.querySelectorAll('.skc');
+    if(chips.length) skillsInput.value = Array.from(chips).map(function(c){return c.textContent.trim();}).join(', ');
+  }
+  modal.style.display = 'block';
+  if(tg && tg.HapticFeedback) tg.HapticFeedback.impactOccurred('light');
+}
+
+function hideMyProfileEdit(){
+  var modal = document.getElementById('myProfileModal');
+  if(modal) modal.style.display = 'none';
+}
+
+function myPickRole(el, role, icon, cat){
+  document.querySelectorAll('#myRolePicker .roleChip').forEach(function(c){c.className='roleChip off';});
+  el.className = 'roleChip on';
+  myRole = role;
+  myRoleIcon = icon;
+  myRoleCat = cat;
+}
+
+async function saveMyProfile(){
+  var name = document.getElementById('myEditName').value.trim();
+  var location = document.getElementById('myEditLocation').value.trim();
+  var bio = document.getElementById('myEditBio').value.trim();
+  var skillsRaw = document.getElementById('myEditSkills').value.trim();
+
+  if(!name){ sA('Please enter your display name!'); return; }
+
+  // Update UI immediately
+  var nameEl = document.getElementById('myDisplayName');
+  if(nameEl) nameEl.textContent = name;
+
+  var locEl = document.getElementById('myLocation');
+  if(locEl) locEl.textContent = '&#128205; ' + (location || 'Worldwide');
+
+  var bioEl = document.getElementById('myBio');
+  if(bioEl) bioEl.textContent = bio || '';
+
+  // Update role badge
+  var badge = document.getElementById('myRoleBadge');
+  if(badge) badge.innerHTML = myRoleIcon + ' ' + myRole;
+
+  // Update avatar icon
+  var icon = document.getElementById('myAvatarIcon');
+  if(icon) icon.innerHTML = myRoleIcon;
+
+  // Update skills
+  if(skillsRaw){
+    var skillsArr = skillsRaw.split(',').map(function(s){return s.trim();}).filter(Boolean);
+    var skillsList = document.getElementById('mySkillsList');
+    var skillsSection = document.getElementById('mySkillsSection');
+    if(skillsList){
+      skillsList.innerHTML = skillsArr.map(function(s,i){
+        return '<div class="skc ' + (i<3?'gold':'') + '">' + s + '</div>';
+      }).join('');
+    }
+    if(skillsSection) skillsSection.style.display = 'block';
+  }
+
+  // Hide setup prompt
+  var prompt = document.getElementById('mySetupPrompt');
+  if(prompt) prompt.style.display = 'none';
+
+  hideMyProfileEdit();
+
+  // Save to Supabase
+  var userId = currentUser ? currentUser.id : 999999;
+  var result = await supaUpsert('profiles', {
+    user_id: userId,
+    display_name: name,
+    role: myRole,
+    category: myRoleCat,
+    location: location || 'Worldwide',
+    bio: bio || ''
+  });
+
+  if(result){
+    console.log('Profile saved to Supabase!');
+    if(tg && tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
+    sA('Profile saved!\n\nYou are now visible to artists worldwide.');
+  }
+
+  // Load My WANTED posts
+  loadMyWantedPosts();
+}
+
+async function loadMyWantedPosts(){
+  var userId = currentUser ? currentUser.id : 999999;
+  var data = await supaSelect('wanted_posts', 'user_id=eq.' + userId + '&status=eq.open&order=created_at.desc');
+  var container = document.getElementById('myWantedList');
+  if(!container) return;
+  container.innerHTML = '';
+  if(!data || !data.length){
+    var empty = document.createElement('div');
+    empty.style.cssText = 'background:rgba(100,80,255,.04);border:1px solid rgba(100,80,255,.1);border-radius:8px;padding:16px;text-align:center;cursor:pointer;';
+    empty.onclick = function(){ showPostWanted(); };
+    empty.innerHTML = '<div style="font-size:9px;color:rgba(255,255,255,.25);">No posts yet</div><div style="font-size:8px;color:rgba(212,168,64,.5);margin-top:4px;">Tap to post your first WANTED</div>';
+    container.appendChild(empty);
+    return;
+  }
+  data.forEach(function(post){
+    var card = document.createElement('div');
+    card.style.cssText = 'background:rgba(42,36,64,.9);border:1px solid rgba(212,168,64,.2);border-radius:8px;padding:10px 12px;margin-bottom:8px;';
+    var header = document.createElement('div');
+    header.style.cssText = 'display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;';
+    var title = document.createElement('div');
+    title.style.cssText = 'font-size:10px;font-weight:600;color:#fff;';
+    title.textContent = post.title;
+    var delBtn = document.createElement('button');
+    delBtn.style.cssText = 'padding:2px 8px;background:rgba(255,60,60,.1);border:1px solid rgba(255,60,60,.25);border-radius:8px;font-size:8px;color:rgba(255,100,100,.8);cursor:pointer;';
+    delBtn.textContent = 'Delete';
+    delBtn.onclick = (function(id, c){ return function(){ deleteWanted(id, c); }; })(post.id, card);
+    var meta = document.createElement('div');
+    meta.style.cssText = 'font-size:8px;color:rgba(255,255,255,.3);';
+    meta.textContent = post.role_needed + ' - ' + (post.location || 'Remote');
+    header.appendChild(title);
+    header.appendChild(delBtn);
+    card.appendChild(header);
+    card.appendChild(meta);
+    container.appendChild(card);
+  });
+}
+
+
+
+// Load profile from Supabase when screen opens
+async function loadMyProfile(){
+  var userId = currentUser ? currentUser.id : 999999;
+  var data = await supaSelect('profiles', 'user_id=eq.' + userId + '&limit=1');
+  if(data && data.length > 0){
+    var p = data[0];
+    if(p.display_name){
+      var nameEl = document.getElementById('myDisplayName');
+      if(nameEl) nameEl.textContent = p.display_name;
+      var prompt = document.getElementById('mySetupPrompt');
+      if(prompt) prompt.style.display = 'none';
+    }
+    if(p.role){
+      var badge = document.getElementById('myRoleBadge');
+      var icons = {'Musician':'&#127928;','Filmmaker':'&#127916;','Dancer':'&#128131;','Photographer':'&#128247;','Visual Artist':'&#127912;','AI Creator':'&#129302;','Singer':'&#127908;','Producer':'&#127911;'};
+      if(badge) badge.innerHTML = (icons[p.role]||'&#127928;') + ' ' + p.role;
+      var icon = document.getElementById('myAvatarIcon');
+      if(icon) icon.innerHTML = icons[p.role]||'&#127928;';
+      myRole = p.role;
+    }
+    if(p.location){
+      var locEl = document.getElementById('myLocation');
+      if(locEl) locEl.textContent = '&#128205; ' + p.location;
+    }
+    if(p.bio){
+      var bioEl = document.getElementById('myBio');
+      if(bioEl) bioEl.textContent = p.bio;
+    }
+  }
+  loadMyWantedPosts();
+}
+
 </script>
 
 
@@ -3777,6 +4058,42 @@ function requestTelegramContact(){
     <!-- Post button -->
     <button onclick="submitWanted()" style="width:100%;padding:14px;background:linear-gradient(135deg,#8a6018,#e8b830);color:#06040e;border:none;border-radius:4px;font-family:'Bebas Neue',sans-serif;font-size:16px;letter-spacing:3px;cursor:pointer;">&#127919; POST TO THE WORLD</button>
     <div style="font-size:8px;color:rgba(255,255,255,.2);text-align:center;margin-top:8px;">Visible to all artists worldwide instantly</div>
+  </div>
+</div>
+
+<!-- My Profile Edit Modal -->
+<div id="myProfileModal" onclick="hideMyProfileEdit()" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.85);z-index:9999;overflow-y:auto;">
+  <div onclick="event.stopPropagation()" style="background:#1a1628;border-radius:16px 16px 0 0;position:absolute;bottom:0;left:0;right:0;padding:20px;max-height:92vh;overflow-y:auto;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+      <div style="font-family:'Playfair Display',serif;font-size:18px;font-weight:700;color:#fff;">Edit My Profile</div>
+      <button onclick="hideMyProfileEdit()" style="width:28px;height:28px;border-radius:50%;background:rgba(255,255,255,.08);border:none;color:rgba(255,255,255,.5);font-size:14px;cursor:pointer;">&#10005;</button>
+    </div>
+
+    <div style="font-size:9px;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.3);margin-bottom:6px;">Display Name</div>
+    <input id="myEditName" type="text" placeholder="Your artist name" style="width:100%;padding:10px 12px;background:rgba(255,255,255,.05);border:1px solid rgba(100,80,255,.2);border-radius:6px;color:#fff;font-size:13px;margin-bottom:12px;box-sizing:border-box;"/>
+
+    <div style="font-size:9px;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.3);margin-bottom:6px;">I am a...</div>
+    <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px;" id="myRolePicker">
+      <div class="roleChip on" onclick="myPickRole(this,'Musician','&#127928;','music')">&#127928; Musician</div>
+      <div class="roleChip off" onclick="myPickRole(this,'Filmmaker','&#127916;','film')">&#127916; Filmmaker</div>
+      <div class="roleChip off" onclick="myPickRole(this,'Dancer','&#128131;','dance')">&#128131; Dancer</div>
+      <div class="roleChip off" onclick="myPickRole(this,'Photographer','&#128247;','photo')">&#128247; Photographer</div>
+      <div class="roleChip off" onclick="myPickRole(this,'Visual Artist','&#127912;','art')">&#127912; Visual Artist</div>
+      <div class="roleChip off" onclick="myPickRole(this,'AI Creator','&#129302;','ai')">&#129302; AI Creator</div>
+      <div class="roleChip off" onclick="myPickRole(this,'Singer','&#127908;','music')">&#127908; Singer</div>
+      <div class="roleChip off" onclick="myPickRole(this,'Producer','&#127911;','music')">&#127911; Producer</div>
+    </div>
+
+    <div style="font-size:9px;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.3);margin-bottom:6px;">Location</div>
+    <input id="myEditLocation" type="text" placeholder="City, Country" style="width:100%;padding:10px 12px;background:rgba(255,255,255,.05);border:1px solid rgba(100,80,255,.2);border-radius:6px;color:#fff;font-size:13px;margin-bottom:12px;box-sizing:border-box;"/>
+
+    <div style="font-size:9px;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.3);margin-bottom:6px;">Bio</div>
+    <textarea id="myEditBio" placeholder="Tell the world about yourself and your art..." style="width:100%;padding:10px 12px;background:rgba(255,255,255,.05);border:1px solid rgba(100,80,255,.2);border-radius:6px;color:#fff;font-size:12px;line-height:1.5;min-height:80px;resize:none;margin-bottom:12px;box-sizing:border-box;"></textarea>
+
+    <div style="font-size:9px;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.3);margin-bottom:6px;">Skills (comma separated)</div>
+    <input id="myEditSkills" type="text" placeholder="e.g. Guitar, Vocals, Songwriting" style="width:100%;padding:10px 12px;background:rgba(255,255,255,.05);border:1px solid rgba(100,80,255,.2);border-radius:6px;color:#fff;font-size:13px;margin-bottom:16px;box-sizing:border-box;"/>
+
+    <button onclick="saveMyProfile()" style="width:100%;padding:14px;background:linear-gradient(135deg,#8a6018,#e8b830);color:#06040e;border:none;border-radius:4px;font-family:'Bebas Neue',sans-serif;font-size:16px;letter-spacing:3px;cursor:pointer;">SAVE PROFILE</button>
   </div>
 </div>
 </body>
