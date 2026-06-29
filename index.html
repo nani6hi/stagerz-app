@@ -272,6 +272,24 @@ html,body{width:100%;height:100%;background:#1a1628;font-family:Inter,sans-serif
 .ct{font-size:11px;font-weight:600;color:#fff;margin-bottom:4px;}
 .cd2{font-size:9px;color:rgba(255,255,255,.4);line-height:1.5;margin-bottom:6px;}
 .tg2{padding:2px 7px;border-radius:8px;font-size:8px;background:rgba(100,80,255,.08);border:1px solid rgba(100,80,255,.2);color:rgba(180,160,255,.6);}
+
+.chCard{background:rgba(42,36,64,.9);border:1px solid rgba(120,100,255,.15);border-radius:10px;padding:10px 6px;text-align:center;cursor:pointer;transition:all .15s ease;}
+.chCard:active{transform:scale(.96);}
+.chCard.active{border-color:rgba(212,168,64,.4);background:rgba(212,168,64,.06);}
+.chIcon{font-size:22px;margin-bottom:4px;}
+.chName{font-size:10px;font-weight:600;color:#fff;margin-bottom:2px;}
+.chCount{font-size:8px;color:rgba(212,168,64,.5);}
+.chFeedCard{background:rgba(42,36,64,.9);border:1px solid rgba(120,100,255,.15);border-radius:10px;overflow:hidden;margin-bottom:10px;cursor:pointer;transition:transform .15s ease;}
+.chFeedCard:active{transform:scale(.98);}
+.chFeedThumb{height:70px;display:flex;align-items:center;justify-content:center;font-size:28px;opacity:.7;position:relative;}
+.chFeedBadge{position:absolute;top:6px;left:8px;padding:2px 8px;border-radius:8px;font-size:7px;}
+.chFeedInfo{padding:10px 12px;}
+.chFeedArtist{display:flex;align-items:center;gap:6px;margin-bottom:5px;}
+.chFeedAv{width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;flex-shrink:0;}
+.chFeedName{font-size:9px;font-weight:600;color:#fff;}
+.chFeedLoc{font-size:7px;color:rgba(180,160,255,.45);}
+.chFeedTitle{font-size:11px;font-weight:700;color:#fff;margin-bottom:4px;}
+.chFeedMeta{font-size:8px;color:rgba(255,255,255,.3);}
 </style>
 </head>
 <body>
@@ -425,6 +443,7 @@ html,body{width:100%;height:100%;background:#1a1628;font-family:Inter,sans-serif
       <div class="ftb off" onclick="sFT(this)">&#128101; Following</div>
       <div class="ftb off" onclick="sFT(this)">&#127919; Wanted</div>
       <div class="ftb off" onclick="sFT(this)">&#128293; Trending</div>
+        <div class="ftb off" onclick="sFT(this)">&#128250; Channels</div>
     </div>
   </div>
   <div class="sa">
@@ -2422,6 +2441,71 @@ html,body{width:100%;height:100%;background:#1a1628;font-family:Inter,sans-serif
     </div>
   </div>
   
+<!-- SCREEN: CHANNELS -->
+<div class="screen" id="screen-channels">
+  <div class="tb">
+    <div class="tr">
+      <div class="logo">Chan<em>n</em>els</div>
+      <div style="font-size:9px;letter-spacing:2px;color:rgba(255,255,255,.35);">STAGERZ</div>
+    </div>
+  </div>
+  <div class="sa">
+    <div class="pd pt">
+
+      <!-- Channel grid -->
+      <div style="font-size:7px;letter-spacing:2.5px;text-transform:uppercase;color:rgba(255,255,255,.25);margin-bottom:10px;">Browse by discipline</div>
+      <div id="channelGrid" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:16px;">
+        <div class="chCard active" onclick="openChannel(this,'music','&#127925;','Music')" data-cat="music">
+          <div class="chIcon">&#127925;</div>
+          <div class="chName">Music</div>
+          <div class="chCount">142 posts</div>
+        </div>
+        <div class="chCard" onclick="openChannel(this,'film','&#127916;','Film')" data-cat="film">
+          <div class="chIcon">&#127916;</div>
+          <div class="chName">Film</div>
+          <div class="chCount">89 posts</div>
+        </div>
+        <div class="chCard" onclick="openChannel(this,'dance','&#128131;','Dance')" data-cat="dance">
+          <div class="chIcon">&#128131;</div>
+          <div class="chName">Dance</div>
+          <div class="chCount">64 posts</div>
+        </div>
+        <div class="chCard" onclick="openChannel(this,'photo','&#128247;','Photo')" data-cat="photo">
+          <div class="chIcon">&#128247;</div>
+          <div class="chName">Photo</div>
+          <div class="chCount">71 posts</div>
+        </div>
+        <div class="chCard" onclick="openChannel(this,'ai','&#129302;','AI')" data-cat="ai">
+          <div class="chIcon">&#129302;</div>
+          <div class="chName">AI</div>
+          <div class="chCount">38 posts</div>
+        </div>
+        <div class="chCard" onclick="openChannel(this,'art','&#127912;','Art')" data-cat="art">
+          <div class="chIcon">&#127912;</div>
+          <div class="chName">Art</div>
+          <div class="chCount">29 posts</div>
+        </div>
+      </div>
+
+      <!-- Active channel feed -->
+      <div id="channelFeedTitle" style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
+        <div style="font-size:7px;letter-spacing:2.5px;text-transform:uppercase;color:rgba(255,255,255,.25);">&#127925; Music Channel</div>
+        <div style="flex:1;height:1px;background:rgba(255,255,255,.06);"></div>
+      </div>
+      <div id="channelFeed"></div>
+
+      <div class="gap"></div>
+    </div>
+  </div>
+  <div class="nb">
+    <div class="ni" onclick="goTo(this,'home')"><div class="ni-icon">&#127968;</div><span>Home</span></div>
+    <div class="ni" onclick="goTo(this,'search')"><div class="ni-icon">&#128269;</div><span>Search</span></div>
+    <div class="ni active" onclick="goTo(this,'public')"><div class="ni-icon">&#127917;</div><span>Stage</span></div>
+    <div class="ni" onclick="goTo(this,'wanted')"><div class="ni-icon">&#127919;</div><span>Wanted</span></div>
+    <div class="ni" onclick="goTo(this,'myprofile')"><div class="ni-icon">&#128100;</div><span>Profile</span></div>
+  </div>
+</div>
+
 <!-- SCREEN 9: BACKSTAGE -->
 <div class="screen" id="screen-backstage">
   <div class="sa">
@@ -3994,6 +4078,143 @@ async function loadMyProfile(){
     }
   }
   loadMyWantedPosts();
+}
+
+
+var channelData = {
+  music: [
+    {type:'perf',icon:'&#127908;',bg:'linear-gradient(135deg,#201018,#0a1040)',av:'linear-gradient(135deg,#201018,#301820)',avIcon:'&#127908;',artist:'Leila Mensah',loc:'Lagos',dest:'profile4',title:'Midnight in Lagos',meta:'4:18 &middot; Afrobeat &middot; Soul',likes:'2.1k',badge:'&#127925; Performance',badgeBg:'rgba(100,80,255,.2)',badgeColor:'rgba(180,160,255,.9)'},
+    {type:'wanted',icon:'&#127928;',bg:'linear-gradient(135deg,#1a0840,#0a1040)',av:'linear-gradient(135deg,#1a0840,#280c50)',avIcon:'&#127928;',artist:'Maya Rivera',loc:'Berlin',dest:'profile',title:'Producer / Beatmaker needed',meta:'Remote &middot; Rev Share',likes:'',badge:'&#127919; Wanted',badgeBg:'rgba(212,168,64,.15)',badgeColor:'rgba(212,168,64,.9)'},
+    {type:'perf',icon:'&#127928;',bg:'linear-gradient(135deg,#1a0840,#0a1040)',av:'linear-gradient(135deg,#1a0840,#280c50)',avIcon:'&#127928;',artist:'Maya Rivera',loc:'Berlin',dest:'profile',title:'Golden Hours -- Track 01',meta:'3:42 &middot; Singer-Songwriter',likes:'2.1k',badge:'&#127925; Performance',badgeBg:'rgba(100,80,255,.2)',badgeColor:'rgba(180,160,255,.9)'},
+    {type:'wanted',icon:'&#127908;',bg:'linear-gradient(135deg,#0a1040,#0a1828)',av:'linear-gradient(135deg,#0a2018,#102818)',avIcon:'&#127927;',artist:'Amir Hashim',loc:'Tokyo',dest:'profile6',title:'Vocalist for Film Score',meta:'Tokyo &middot; Paid',likes:'',badge:'&#127919; Wanted',badgeBg:'rgba(212,168,64,.15)',badgeColor:'rgba(212,168,64,.9)'},
+    {type:'perf',icon:'&#127927;',bg:'linear-gradient(135deg,#0a2018,#0a1040)',av:'linear-gradient(135deg,#0a2018,#102818)',avIcon:'&#127927;',artist:'Amir Hashim',loc:'Tokyo',dest:'profile6',title:'East Meets West -- Preview',meta:'2:15 &middot; Jazz &middot; Ambient',likes:'445',badge:'&#127925; Performance',badgeBg:'rgba(100,80,255,.2)',badgeColor:'rgba(180,160,255,.9)'}
+  ],
+  film: [
+    {type:'perf',icon:'&#127916;',bg:'linear-gradient(135deg,#0a1040,#0a1828)',av:'linear-gradient(135deg,#0a1840,#142850)',avIcon:'&#127916;',artist:'James Kofi',loc:'New York',dest:'profile2',title:'The Last Take -- Trailer',meta:'8:42 &middot; Drama &middot; Short Film',likes:'1.8k',badge:'&#127916; Performance',badgeBg:'rgba(100,80,255,.2)',badgeColor:'rgba(180,160,255,.9)'},
+    {type:'wanted',icon:'&#127909;',bg:'linear-gradient(135deg,#0a1020,#0a1828)',av:'linear-gradient(135deg,#0a1020,#0a1828)',avIcon:'&#127909;',artist:'Yuki Tanaka',loc:'Osaka',dest:'profile7',title:'Sound Designer for Documentary',meta:'Remote &middot; Paid',likes:'',badge:'&#127919; Wanted',badgeBg:'rgba(212,168,64,.15)',badgeColor:'rgba(212,168,64,.9)'},
+    {type:'perf',icon:'&#9986;',bg:'linear-gradient(135deg,#100828,#200840)',av:'linear-gradient(135deg,#100828,#200840)',avIcon:'&#9986;',artist:'Lena Bauer',loc:'Munich',dest:'profile8',title:'Echo -- Director Cut',meta:'12:30 &middot; Drama',likes:'672',badge:'&#127916; Performance',badgeBg:'rgba(100,80,255,.2)',badgeColor:'rgba(180,160,255,.9)'},
+    {type:'wanted',icon:'&#127916;',bg:'linear-gradient(135deg,#0a1818,#102820)',av:'linear-gradient(135deg,#0a1818,#102820)',avIcon:'&#127916;',artist:'Olena Kovalenko',loc:'Kyiv',dest:'profile',title:'Dancer for Experimental Film',meta:'Kyiv &middot; Credit',likes:'',badge:'&#127919; Wanted',badgeBg:'rgba(212,168,64,.15)',badgeColor:'rgba(212,168,64,.9)'}
+  ],
+  dance: [
+    {type:'perf',icon:'&#128131;',bg:'linear-gradient(135deg,#1a0830,#0a0840)',av:'linear-gradient(135deg,#1a0830,#2a0840)',avIcon:'&#128131;',artist:'Sofia Lima',loc:'Sao Paulo',dest:'profile3',title:'Rhythm of the City',meta:'0:28 &middot; Hip-Hop &middot; Latin',likes:'890',badge:'&#128131; Performance',badgeBg:'rgba(100,80,255,.2)',badgeColor:'rgba(180,160,255,.9)'},
+    {type:'wanted',icon:'&#128131;',bg:'linear-gradient(135deg,#200818,#300820)',av:'linear-gradient(135deg,#200818,#300820)',avIcon:'&#128131;',artist:'Amara Diallo',loc:'Paris',dest:'profile9',title:'Musician for Live Dance Show',meta:'Paris &middot; Paid',likes:'',badge:'&#127919; Wanted',badgeBg:'rgba(212,168,64,.15)',badgeColor:'rgba(212,168,64,.9)'},
+    {type:'perf',icon:'&#128131;',bg:'linear-gradient(135deg,#200818,#300820)',av:'linear-gradient(135deg,#200818,#300820)',avIcon:'&#128131;',artist:'Amara Diallo',loc:'Paris',dest:'profile9',title:'Roots -- Dance Film Excerpt',meta:'1:45 &middot; Afro Contemporary',likes:'324',badge:'&#128131; Performance',badgeBg:'rgba(100,80,255,.2)',badgeColor:'rgba(180,160,255,.9)'}
+  ],
+  photo: [
+    {type:'perf',icon:'&#128247;',bg:'linear-gradient(135deg,#101828,#0a1020)',av:'linear-gradient(135deg,#101828,#182030)',avIcon:'&#128247;',artist:'Chen Wei',loc:'Shanghai',dest:'profile5',title:'Faces of the Underground',meta:'24 photos &middot; Concert &middot; Portrait',likes:'672',badge:'&#128247; Performance',badgeBg:'rgba(100,80,255,.2)',badgeColor:'rgba(180,160,255,.9)'},
+    {type:'wanted',icon:'&#128247;',bg:'linear-gradient(135deg,#181010,#281820)',av:'linear-gradient(135deg,#181010,#281820)',avIcon:'&#128247;',artist:'Sara Nkosi',loc:'Cape Town',dest:'profile10',title:'Musician to Shoot',meta:'Cape Town &middot; Credit',likes:'',badge:'&#127919; Wanted',badgeBg:'rgba(212,168,64,.15)',badgeColor:'rgba(212,168,64,.9)'},
+    {type:'perf',icon:'&#128247;',bg:'linear-gradient(135deg,#181010,#281820)',av:'linear-gradient(135deg,#181010,#281820)',avIcon:'&#128247;',artist:'Sara Nkosi',loc:'Cape Town',dest:'profile10',title:'Ubuntu -- Exhibition Preview',meta:'40 prints &middot; Fine Art',likes:'891',badge:'&#128247; Performance',badgeBg:'rgba(100,80,255,.2)',badgeColor:'rgba(180,160,255,.9)'}
+  ],
+  ai: [
+    {type:'perf',icon:'&#129302;',bg:'linear-gradient(135deg,#0a1828,#101830)',av:'linear-gradient(135deg,#201018,#281020)',avIcon:'&#129302;',artist:'Zara AI',loc:'London',dest:'profile11',title:'Digital Soul -- Vol. 3',meta:'1:05 &middot; AI Generated &middot; Ambient',likes:'445',badge:'&#129302; Performance',badgeBg:'rgba(100,80,255,.2)',badgeColor:'rgba(180,160,255,.9)'},
+    {type:'wanted',icon:'&#129302;',bg:'linear-gradient(135deg,#180828,#281038)',av:'linear-gradient(135deg,#180828,#281038)',avIcon:'&#129302;',artist:'Aria Santos',loc:'Sao Paulo',dest:'profile',title:'AI Artist for Album Visual Identity',meta:'Remote &middot; Credit + Rev Share',likes:'',badge:'&#127919; Wanted',badgeBg:'rgba(212,168,64,.15)',badgeColor:'rgba(212,168,64,.9)'},
+    {type:'perf',icon:'&#129302;',bg:'linear-gradient(135deg,#101820,#181028)',av:'linear-gradient(135deg,#101820,#181028)',avIcon:'&#129302;',artist:'Dev Sharma',loc:'Bangalore',dest:'profile12',title:'Neural Visions -- Series 1',meta:'AI Art &middot; Experimental',likes:'218',badge:'&#129302; Performance',badgeBg:'rgba(100,80,255,.2)',badgeColor:'rgba(180,160,255,.9)'}
+  ],
+  art: [
+    {type:'perf',icon:'&#127912;',bg:'linear-gradient(135deg,#181010,#201418)',av:'linear-gradient(135deg,#181010,#201418)',avIcon:'&#127912;',artist:'Marco Rossi',loc:'Milan',dest:'profile13',title:'La Dolce Arte -- Collection Preview',meta:'Digital Painting &middot; NFT',likes:'334',badge:'&#127912; Performance',badgeBg:'rgba(100,80,255,.2)',badgeColor:'rgba(180,160,255,.9)'},
+    {type:'wanted',icon:'&#127911;',bg:'linear-gradient(135deg,#1a0828,#2a1040)',av:'linear-gradient(135deg,#1a0828,#2a1040)',avIcon:'&#127911;',artist:'Marco Rossi',loc:'Milan',dest:'profile13',title:'Composer for Short Film Score',meta:'Milan / Remote &middot; Rev Share',likes:'',badge:'&#127919; Wanted',badgeBg:'rgba(212,168,64,.15)',badgeColor:'rgba(212,168,64,.9)'}
+  ]
+};
+
+var currentChannel = 'music';
+
+function openChannel(el, cat, icon, name){
+  currentChannel = cat;
+  // Update chips
+  document.querySelectorAll('.chCard').forEach(function(c){c.className='chCard';});
+  el.className = 'chCard active';
+  // Update title
+  var title = document.getElementById('channelFeedTitle');
+  if(title) title.innerHTML = '<div style="font-size:7px;letter-spacing:2.5px;text-transform:uppercase;color:rgba(255,255,255,.25);">' + icon + ' ' + name + ' Channel</div><div style="flex:1;height:1px;background:rgba(255,255,255,.06);"></div>';
+  // Build feed
+  buildChannelFeed(cat);
+  if(tg && tg.HapticFeedback) tg.HapticFeedback.impactOccurred('light');
+}
+
+function buildChannelFeed(cat, container){
+  if(!container) container = document.getElementById('channelFeed');
+  if(!container) return;
+  container.innerHTML = '';
+  var items = channelData[cat] || [];
+  items.forEach(function(item){
+    var card = document.createElement('div');
+    card.className = 'chFeedCard';
+    card.innerHTML =
+      '<div class="chFeedThumb" style="background:' + item.bg + ';">' +
+        '<span style="font-size:28px;opacity:.6;">' + item.icon + '</span>' +
+        '<div class="chFeedBadge" style="background:' + item.badgeBg + ';color:' + item.badgeColor + ';">' + item.badge + '</div>' +
+      '</div>' +
+      '<div class="chFeedInfo">' +
+        '<div class="chFeedArtist">' +
+          '<div class="chFeedAv" style="background:' + item.av + ';">' + item.avIcon + '</div>' +
+          '<div><div class="chFeedName">' + item.artist + '</div><div class="chFeedLoc">' + item.loc + '</div></div>' +
+          (item.likes ? '<div style="margin-left:auto;font-size:8px;color:rgba(255,255,255,.3);">&#10084; ' + item.likes + '</div>' : '<div style="margin-left:auto;padding:2px 8px;background:rgba(212,168,64,.1);border:1px solid rgba(212,168,64,.2);border-radius:8px;font-size:7px;color:rgba(212,168,64,.7);">OPEN</div>') +
+        '</div>' +
+        '<div class="chFeedTitle">' + item.title + '</div>' +
+        '<div class="chFeedMeta">' + item.meta + '</div>' +
+      '</div>';
+    card.onclick = (function(dest){ return function(){ goTo(card, dest); }; })(item.dest);
+    container.appendChild(card);
+  });
+}
+
+
+function getChannelsFeed(container){
+  container.innerHTML = '';
+
+  // Channel tiles header
+  var header = document.createElement('div');
+  header.style.cssText = 'font-size:7px;letter-spacing:2.5px;text-transform:uppercase;color:rgba(255,255,255,.25);margin-bottom:10px;';
+  header.textContent = 'Browse by discipline';
+  container.appendChild(header);
+
+  // Channel grid
+  var grid = document.createElement('div');
+  grid.style.cssText = 'display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:14px;';
+  var channels = [
+    {cat:'music',icon:'&#127925;',name:'Music',count:'142'},
+    {cat:'film',icon:'&#127916;',name:'Film',count:'89'},
+    {cat:'dance',icon:'&#128131;',name:'Dance',count:'64'},
+    {cat:'photo',icon:'&#128247;',name:'Photo',count:'71'},
+    {cat:'ai',icon:'&#129302;',name:'AI',count:'38'},
+    {cat:'art',icon:'&#127912;',name:'Art',count:'29'}
+  ];
+  channels.forEach(function(ch){
+    var tile = document.createElement('div');
+    tile.className = 'chCard';
+    tile.innerHTML = '<div class="chIcon">' + ch.icon + '</div><div class="chName">' + ch.name + '</div><div class="chCount">' + ch.count + ' posts</div>';
+    tile.onclick = (function(c,i,n){ return function(){
+      showChannelInFeed(container, c, i, n);
+    };})(ch.cat, ch.icon, ch.name);
+    grid.appendChild(tile);
+  });
+  container.appendChild(grid);
+
+  // Show music by default
+  var feedTitle = document.createElement('div');
+  feedTitle.id = 'channelFeedTitle';
+  feedTitle.style.cssText = 'font-size:7px;letter-spacing:2.5px;text-transform:uppercase;color:rgba(255,255,255,.25);margin-bottom:10px;';
+  feedTitle.innerHTML = '&#127925; Music Channel';
+  container.appendChild(feedTitle);
+
+  var feedItems = document.createElement('div');
+  feedItems.id = 'channelFeedItems';
+  container.appendChild(feedItems);
+
+  buildChannelFeed('music', feedItems);
+}
+
+function showChannelInFeed(container, cat, icon, name){
+  // Update active chip
+  container.querySelectorAll('.chCard').forEach(function(c){c.className='chCard';});
+  event.currentTarget.className='chCard active';
+  // Update title
+  var title = document.getElementById('channelFeedTitle');
+  if(title) title.innerHTML = icon + ' ' + name + ' Channel';
+  // Rebuild feed
+  var items = document.getElementById('channelFeedItems');
+  if(items) buildChannelFeed(cat, items);
+  if(tg && tg.HapticFeedback) tg.HapticFeedback.impactOccurred('light');
 }
 
 </script>
