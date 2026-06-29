@@ -3983,6 +3983,130 @@ function sFC(el){
   filterArtists(el.textContent.trim());
 }
 
+
+var currentCat = "all";
+
+var artistDB = [
+  {n:"Maya Rivera",t:"Musician - Singer",tags:"Guitar Vocals Songwriting",loc:"Berlin",flag:"DE",status:"Online",sc:"rgba(40,200,80,.7)",icon:"&#127928;",bg:"#1a0840",cat:"music",p:"profile"},
+  {n:"Leila Mensah",t:"Singer - Songwriter",tags:"Afrobeat RnB Soul",loc:"Lagos",flag:"NG",status:"Online",sc:"rgba(40,200,80,.7)",icon:"&#127908;",bg:"#201018",cat:"music",p:"profile4"},
+  {n:"Amir Hashim",t:"Musician - Producer",tags:"Jazz Production Sax",loc:"Tokyo",flag:"JP",status:"Offline",sc:"rgba(255,255,255,.2)",icon:"&#127927;",bg:"#0a2018",cat:"music",p:"profile6"},
+  {n:"Carlos Mendez",t:"Guitarist - Composer",tags:"Classical Flamenco Film",loc:"Madrid",flag:"ES",status:"Online",sc:"rgba(40,200,80,.7)",icon:"&#127928;",bg:"#180820",cat:"music"},
+  {n:"James Kofi",t:"Filmmaker - Director",tags:"Directing Editing DOP",loc:"New York",flag:"US",status:"Online",sc:"rgba(40,200,80,.7)",icon:"&#127916;",bg:"#0a1840",cat:"film",p:"profile2"},
+  {n:"Yuki Tanaka",t:"Cinematographer",tags:"DOP Color Drone",loc:"Osaka",flag:"JP",status:"Away",sc:"rgba(255,160,40,.7)",icon:"&#127909;",bg:"#0a1020",cat:"film",p:"profile7"},
+  {n:"Lena Bauer",t:"Film Editor - Director",tags:"Editing Grading VFX",loc:"Munich",flag:"DE",status:"Online",sc:"rgba(40,200,80,.7)",icon:"&#9986;",bg:"#101828",cat:"film",p:"profile8"},
+  {n:"Sofia Lima",t:"Dancer - Choreographer",tags:"Ballet Hip-Hop Latin",loc:"Sao Paulo",flag:"BR",status:"Away",sc:"rgba(255,160,40,.7)",icon:"&#128131;",bg:"#1a0830",cat:"dance",p:"profile3"},
+  {n:"Amara Diallo",t:"Dancer - Performer",tags:"Afro Contemporary Acro",loc:"Paris",flag:"FR",status:"Online",sc:"rgba(40,200,80,.7)",icon:"&#128131;",bg:"#200818",cat:"dance",p:"profile9"},
+  {n:"Chen Wei",t:"Photographer",tags:"Portrait Concert Editorial",loc:"Shanghai",flag:"CN",status:"Online",sc:"rgba(40,200,80,.7)",icon:"&#128247;",bg:"#101828",cat:"photo",p:"profile5"},
+  {n:"Sara Nkosi",t:"Visual Artist - Photographer",tags:"Fine Art Fashion Street",loc:"Cape Town",flag:"ZA",status:"Online",sc:"rgba(40,200,80,.7)",icon:"&#128247;",bg:"#181020",cat:"photo",p:"profile10"},
+  {n:"Zara AI",t:"AI Creator - Designer",tags:"Generative Motion 3D",loc:"London",flag:"GB",status:"Online",sc:"rgba(40,200,80,.7)",icon:"&#129302;",bg:"#201018",cat:"ai",p:"profile11"},
+  {n:"Dev Sharma",t:"AI Artist - Coder",tags:"Stable-Diff Midjourney ML",loc:"Bangalore",flag:"IN",status:"Away",sc:"rgba(255,160,40,.7)",icon:"&#129302;",bg:"#101820",cat:"ai",p:"profile12"},
+  {n:"Marco Rossi",t:"Visual Artist - Painter",tags:"Digital Illustration NFT",loc:"Milan",flag:"IT",status:"Offline",sc:"rgba(255,255,255,.2)",icon:"&#127912;",bg:"#181020",cat:"art",p:"profile13"},
+  {n:"Kwame Asante",t:"Filmmaker - Director",tags:"Documentary Editing Afrobeats",loc:"Accra",flag:"GH",status:"Online",sc:"rgba(40,200,80,.7)",icon:"&#127909;",bg:"#0a1020",cat:"film"},
+  {n:"Yuna Park",t:"Videographer - Director",tags:"K-Pop Music Video Visual",loc:"Seoul",flag:"KR",status:"Online",sc:"rgba(40,200,80,.7)",icon:"&#128247;",bg:"#181018",cat:"photo"},
+  {n:"Aria Santos",t:"AI Artist - Designer",tags:"Generative Visual Identity Branding",loc:"Sao Paulo",flag:"BR",status:"Online",sc:"rgba(40,200,80,.7)",icon:"&#129302;",bg:"#180828",cat:"ai"},
+  {n:"Tariq Hassan",t:"Musician - Producer",tags:"Arabic Electronic Ambient",loc:"Dubai",flag:"AE",status:"Away",sc:"rgba(255,160,40,.7)",icon:"&#127928;",bg:"#101828",cat:"music"},
+  {n:"Olena Kovalenko",t:"Filmmaker - Director",tags:"Experimental Art Film Dance",loc:"Kyiv",flag:"UA",status:"Online",sc:"rgba(40,200,80,.7)",icon:"&#127916;",bg:"#0a1818",cat:"film"}
+];
+
+function initSearch(){
+  var input = document.getElementById("searchInput");
+  if(input){
+    input.value = "";
+    input.oninput = function(){ doSearch(this.value); };
+  }
+  currentCat = "all";
+  doSearch("");
+}
+
+function doSearch(query){
+  var q = query.toLowerCase().trim();
+  var list = artistDB.filter(function(a){
+    var catOk = currentCat === "all" || a.cat === currentCat;
+    var tags = a.tags || "";
+    var qOk = !q || a.n.toLowerCase().indexOf(q) > -1 || a.t.toLowerCase().indexOf(q) > -1 || a.loc.toLowerCase().indexOf(q) > -1 || tags.toLowerCase().indexOf(q) > -1;
+    return catOk && qOk;
+  });
+  var rc = document.getElementById("resultCount");
+  if(rc) rc.textContent = list.length;
+  var container = document.getElementById("searchResults");
+  if(!container) return;
+  if(!list.length){
+    container.innerHTML = "<div style='text-align:center;padding:40px;color:rgba(255,255,255,.25);font-size:11px;'>No artists found</div>";
+    return;
+  }
+  container.innerHTML = "";
+  list.forEach(function(a){
+    var dest = a.p || "profile";
+    var tags = a.tags ? a.tags.split(" ") : [];
+    var el = document.createElement("div");
+    el.className = "ai"; el.style.marginBottom = "7px"; el.style.cursor = "pointer";
+    el.innerHTML =
+      "<div class='av' style='background:linear-gradient(135deg," + a.bg + ",#280c50);'>" + a.icon + "</div>" +
+      "<div class='an'>" +
+        "<div style='font-size:12px;font-weight:600;color:#fff;margin-bottom:1px;'>" + a.n + "</div>" +
+        "<div class='at'>" + a.t + "</div>" +
+        "<div class='atg'>" + tags.map(function(t){ return "<div class='atag'>" + t + "</div>"; }).join("") + "</div>" +
+      "</div>" +
+      "<div class='ar'>" +
+        "<div class='aloc'>" + a.flag + " " + a.loc + "<br><span style='color:" + a.sc + ";'>&#9679; " + a.status + "</span></div>" +
+        "<button class='cb'>Collab</button>" +
+      "</div>";
+    el.onclick = (function(d){ return function(){ goTo(el, d); }; })(dest);
+    var cb = el.querySelector(".cb");
+    if(cb) cb.addEventListener("click", function(e){ e.stopPropagation(); collabSoon(); });
+    container.appendChild(el);
+  });
+}
+
+function filterArtists(cat){
+  var filter = cat.toLowerCase().replace(/[^a-z]/g, "");
+  if(filter === "" || filter === "all") filter = "all";
+  currentCat = filter;
+  doSearch("");
+}
+
+function setSearchCat(cat){
+  currentCat = cat;
+  var chips = document.querySelectorAll("#catChips .cc");
+  chips.forEach(function(c){
+    c.className = c.getAttribute("data-cat") === cat ? "cc on" : "cc off";
+  });
+  var inp = document.getElementById("searchInput");
+  if(inp) inp.value = "";
+  doSearch("");
+  if(tg && tg.HapticFeedback) tg.HapticFeedback.impactOccurred("light");
+}
+
+function sBill(type){
+  var m = type === "monthly";
+  var mb = document.getElementById("mB");
+  var yb = document.getElementById("yB");
+  if(mb) mb.className = "blb " + (m ? "on" : "off");
+  if(yb) yb.className = "blb " + (m ? "off" : "on");
+  var bp = document.getElementById("bP");
+  if(bp) bp.innerHTML = m ? "EUR 9.99" : "EUR 5.99";
+  var bper = document.getElementById("bPer");
+  if(bper) bper.textContent = m ? "per month - billed monthly" : "per month - billed yearly";
+  var save = document.getElementById("bSave");
+  if(save) save.textContent = m ? "" : "Save EUR 48 per year";
+  if(tg && tg.HapticFeedback) tg.HapticFeedback.impactOccurred("light");
+}
+
+function testSupabase(){
+  fetch('https://edxicnafggnnvcdvxemk.supabase.co/rest/v1/wanted_posts?select=id,title&limit=3', {
+    method: 'GET',
+    headers: {
+      'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVkeGljbmFmZ2dubnZjZHZ4ZW1rIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI0MDcxOTcsImV4cCI6MjA5Nzk4MzE5N30.RDe1DRdhz6EmHbctEGJOsMjU39p6-bxYCfROd7yBVAo',
+      'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVkeGljbmFmZ2dubnZjZHZ4ZW1rIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI0MDcxOTcsImV4cCI6MjA5Nzk4MzE5N30.RDe1DRdhz6EmHbctEGJOsMjU39p6-bxYCfROd7yBVAo'
+    }
+  }).then(function(res){ return res.json(); }).then(function(data){
+    console.log('Supabase test OK! Posts:', JSON.stringify(data).substring(0,100));
+  }).catch(function(e){
+    console.log('Supabase test FAILED:', e.message);
+  });
+}
+setTimeout(testSupabase, 2000);
+
 </script>
 
 
