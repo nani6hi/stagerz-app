@@ -439,11 +439,7 @@ html,body{width:100%;height:100%;background:#1a1628;font-family:Inter,sans-serif
       </div>
     </div>
     <div class="ft">
-      <div class="ftb on" onclick="sFT(this)">&#127757; For You</div>
-      <div class="ftb off" onclick="sFT(this)">&#128101; Following</div>
-      <div class="ftb off" onclick="sFT(this)">&#127919; Wanted</div>
-      <div class="ftb off" onclick="sFT(this)">&#128293; Trending</div>
-        <div class="ftb off" onclick="sFT(this)">&#128250; Channels</div>
+      <div class="ftb on" onclick="sFT(this)">&#127757; For You</div><div class="ftb off" onclick="sFT(this)">&#128250; Channels</div><div class="ftb off" onclick="sFT(this)">&#128293; Trending</div>
     </div>
   </div>
   <div class="sa">
@@ -3048,11 +3044,6 @@ function sFT(el){
   var tab=el.textContent.trim().toLowerCase();
   var feed=document.getElementById("homeFeed");
   if(!feed)return;
-
-  // Save For You content on first load
-  if(!window.forYouHTML){
-    window.forYouHTML=feed.innerHTML;
-  }
 
   feed.style.transition="opacity .2s ease";
   feed.style.opacity="0";
