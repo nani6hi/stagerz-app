@@ -2922,15 +2922,8 @@ async function realFollow(targetUserId) {
 
 // Init when app loads
 document.addEventListener('DOMContentLoaded', function() {
-  // Build For You feed on load
-  setTimeout(function(){
-    try {
-      var feed = document.getElementById("homeFeed");
-      if(feed) buildForYouFeed(feed);
-    } catch(e) {
-      console.log("Feed build error:", e.message);
-    }
-  }, 200);
+  // Build For You feed on load - only when home screen is opened
+  // setTimeout disabled to prevent startup issues
 
   if(tg && tg.initData && tg.initData.length > 0){
     setTimeout(initUser, 300);
@@ -3034,6 +3027,12 @@ function goTo(el,id){
       },10);
     }
     if(id==="search"){setTimeout(function(){initSearch();},50);}
+    if(id==="home"){setTimeout(function(){
+      try{var f=document.getElementById("homeFeed");if(f&&!f.hasChildNodes())buildForYouFeed(f);}catch(e){console.log("home feed err:",e.message);}
+    },100);}
+    if(id==="myprofile"){setTimeout(function(){loadMyProfile();},50);}
+    if(id==="public"){setTimeout(function(){buildPerfCards("all");},50);}
+    if(id==="channels"){setTimeout(function(){try{buildChannelFeed(currentChannel);}catch(e){}},50);}
   },cur?150:0);
   if(tg&&tg.HapticFeedback)tg.HapticFeedback.impactOccurred("light");
 }
