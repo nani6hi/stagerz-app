@@ -2926,11 +2926,15 @@ async function realFollow(targetUserId) {
 
 // Init when app loads
 document.addEventListener('DOMContentLoaded', function() {
+  // Build For You feed on load
+  setTimeout(function(){
+    var feed = document.getElementById("homeFeed");
+    if(feed) buildForYouFeed(feed);
+  }, 200);
+
   if(tg && tg.initData && tg.initData.length > 0){
-    // Telegram data already available
     setTimeout(initUser, 300);
   } else {
-    // Wait longer for Telegram to inject data
     setTimeout(initUser, 2000);
   }
 });
@@ -3055,14 +3059,9 @@ function sFT(el){
 
   setTimeout(function(){
     if(tab.indexOf("you")>-1){
-      feed.innerHTML=window.forYouHTML||"";
-    } else if(tab.indexOf("following")>-1){
-      getFollowingFeed(feed);
-    } else if(tab.indexOf("wanted")>-1){
-      feed.innerHTML=window.forYouHTML||"";
-      feed.style.opacity="1";
-      goTo(el,"wanted");
-      return;
+      buildForYouFeed(feed);
+    } else if(tab.indexOf("channel")>-1){
+      getChannelsFeed(feed);
     } else if(tab.indexOf("trending")>-1){
       getTrendingFeed(feed);
     }
@@ -3070,381 +3069,6 @@ function sFT(el){
   },200);
 
   if(tg&&tg.HapticFeedback)tg.HapticFeedback.impactOccurred("light");
-}
-function tLike(el){
-  var ic=document.getElementById("heartIcon");
-  var ct=document.getElementById("nL");
-  var liked=el.getAttribute("data-liked")==="1";
-  if(!liked){
-    el.setAttribute("data-liked","1");
-    if(ic)ic.textContent="\u2764\uFE0F";
-    if(ct){ct.textContent="2.5k";ct.style.color="rgba(255,80,100,.8)";}
-  } else {
-    el.setAttribute("data-liked","0");
-    if(ic)ic.textContent="\u{1F90D}";
-    if(ct){ct.textContent="2.4k";ct.style.color="rgba(255,255,255,.25)";}
-  }
-  if(tg&&tg.HapticFeedback)tg.HapticFeedback.impactOccurred("light");
-}
-function sPT(el,tab){
-  document.querySelectorAll(".ptab").forEach(function(t){t.className="ptab";});
-  el.className="ptab act";
-  var container=document.getElementById("pjc");
-  container.innerHTML="<div style='padding-top:12px;'></div>";
-  var inner=container.firstChild;
-
-  if(tab==="crew"){
-    var members=[
-      {icon:"&#127928;",bg:"linear-gradient(135deg,#1a0840,#280c50)",name:"Maya Rivera",role:"Lead Artist",status:"Owner",sc:"rgba(212,168,64,.7)"},
-      {icon:"&#127903;",bg:"linear-gradient(135deg,#0a1840,#142850)",name:"Tom Fischer",role:"Producer",status:"Online",sc:"rgba(40,200,80,.7)"},
-      {icon:"&#128247;",bg:"linear-gradient(135deg,#1a0830,#2a0840)",name:"Anna Muller",role:"Photographer",status:"Away",sc:"rgba(255,160,40,.7)"}
-    ];
-    members.forEach(function(m){
-      var d=document.createElement("div");
-      d.style.cssText="display:flex;align-items:center;gap:8px;padding:10px 0;border-bottom:1px solid rgba(255,255,255,.13);";
-      d.innerHTML="<div style='width:38px;height:38px;border-radius:50%;background:"+m.bg+";display:flex;align-items:center;justify-content:center;font-size:20px;'>"+m.icon+"</div>"+
-        "<div style='flex:1;'><div style='font-size:11px;font-weight:600;color:#fff;'>"+m.name+"</div><div style='font-size:8px;color:rgba(180,160,255,.45);'>"+m.role+"</div></div>"+
-        "<div style='font-size:8px;color:"+m.sc+";'>"+m.status+"</div>";
-      inner.appendChild(d);
-    });
-    var btn=document.createElement("button");
-    btn.style.cssText="width:100%;padding:14px;background:rgba(255,255,255,.03);color:rgba(200,180,255,.6);border:1px solid rgba(100,80,255,.18);border-radius:4px;font-size:14px;cursor:pointer;margin-top:14px;";
-    btn.textContent="Open FameMaker";
-    btn.onclick=function(){goTo(btn,"famemaker");};
-    inner.appendChild(btn);
-  }
-
-  else if(tab==="files"){
-    var files=[{icon:"&#127925;",name:"Track_01_Demo.wav",meta:"24MB"},{icon:"&#128196;",name:"Lyrics_GoldenHours.pdf",meta:"120KB"}];
-    files.forEach(function(f){
-      var d=document.createElement("div");
-      d.style.cssText="display:flex;align-items:center;gap:8px;padding:8px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.1);border-radius:6px;margin-bottom:5px;";
-      d.innerHTML="<div style='font-size:16px;'>"+f.icon+"</div><div><div style='font-size:9px;color:#fff;'>"+f.name+"</div><div style='font-size:7px;color:rgba(255,255,255,.4);'>"+f.meta+"</div></div>";
-      inner.appendChild(d);
-    });
-    var btn=document.createElement("button");
-    btn.style.cssText="width:100%;padding:14px;background:linear-gradient(135deg,#9a7020,#e8b830);color:#06040e;border:none;border-radius:4px;font-size:14px;cursor:pointer;margin-top:10px;";
-    btn.textContent="Open FameMaker";
-    btn.onclick=function(){goTo(btn,"famemaker");};
-    inner.appendChild(btn);
-  }
-
-  else if(tab==="chat"){
-    var msgs=[
-      {icon:"&#127903;",bg:"linear-gradient(135deg,#0a1840,#142850)",txt:"Guitar track is amazing!",mine:false},
-      {icon:"",bg:"",txt:"Finalizing track 1 this week!",mine:true}
-    ];
-    var wrap=document.createElement("div");
-    wrap.style.marginBottom="14px";
-    msgs.forEach(function(m){
-      var d=document.createElement("div");
-      d.style.cssText="display:flex;"+(m.mine?"justify-content:flex-end;":"")+"gap:8px;margin-bottom:8px;";
-      if(m.mine){
-        d.innerHTML="<div style='background:linear-gradient(135deg,#3020a0,#5040c8);border-radius:10px 0 10px 10px;padding:8px 12px;'><div style='font-size:10px;color:#fff;'>"+m.txt+"</div></div>";
-      } else {
-        d.innerHTML="<div style='width:28px;height:28px;border-radius:50%;background:"+m.bg+";display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;'>"+m.icon+"</div>"+
-          "<div style='background:rgba(120,100,255,.15);border-radius:0 10px 10px 10px;padding:8px 12px;'><div style='font-size:10px;color:rgba(255,255,255,.6);'>"+m.txt+"</div></div>";
-      }
-      wrap.appendChild(d);
-    });
-    inner.appendChild(wrap);
-  }
-
-  else if(tab==="wanted"){
-    var w=document.createElement("div");
-    w.innerHTML="<div style='font-size:8px;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.35);margin-bottom:10px;'>Open Roles</div>"+
-      "<div style='background:rgba(212,168,64,.05);border:1px solid rgba(212,168,64,.18);border-radius:10px;padding:12px 14px;margin-bottom:14px;'>"+
-        "<div style='font-family:Bebas Neue,sans-serif;font-size:13px;color:#e8b830;margin-bottom:5px;'>Drummer Wanted</div>"+
-        "<div style='font-size:10px;color:rgba(255,255,255,.4);'>Looking for drummer for EP sessions.</div>"+
-      "</div>";
-    inner.appendChild(w);
-  }
-}
-
-
-function sFM(tab){
-  document.getElementById("fmQV").style.display="none";
-  document.getElementById("fmUV").style.display="none";
-  document.getElementById("fmSV").style.display="none";
-  document.getElementById("fm"+tab.charAt(0).toUpperCase()+"V").style.display="block";
-  document.getElementById("fmQ").className="fmb "+(tab==="quick"?"q":"off");
-  document.getElementById("fmU").className="fmb "+(tab==="upload"?"u":"off");
-  document.getElementById("fmS").className="fmb "+(tab==="showcase"?"s":"off");
-}
-
-var rec=false,rTimer=null,rSec=30;
-function tRec(){rec?stpRec():strRec();}
-function strRec(){
-  rec=true;rSec=30;
-  var d=document.getElementById("rD");
-  if(d){d.style.borderRadius="4px";d.style.width="16px";d.style.height="16px";}
-  var ri=document.getElementById("rI");if(ri)ri.style.display="flex";
-  var tr=document.getElementById("tR");if(tr){tr.style.borderColor="rgba(255,60,30,.8)";tr.classList.add("ring-pulse");}
-  var rw=document.getElementById("recWave");if(rw)rw.style.display="flex";
-  var rh=document.getElementById("rH");
-  if(rh)rh.innerHTML="<div style='font-size:13px;color:rgba(255,100,80,.8);margin-bottom:3px;'>RECORDING...</div><div style='font-size:9px;color:rgba(255,255,255,.32);'>Tap again to stop</div>";
-  rTimer=setInterval(function(){
-    rSec--;
-    var tc=document.getElementById("tC");
-    if(tc){tc.textContent=rSec;tc.style.color=rSec<=5?"rgba(255,80,80,.9)":"#fff";}
-    if(rSec<=0)stpRec();
-  },1000);
-  if(tg&&tg.HapticFeedback)tg.HapticFeedback.impactOccurred("heavy");
-}
-function stpRec(){
-  rec=false;clearInterval(rTimer);
-  var d=document.getElementById("rD");
-  if(d){d.style.borderRadius="50%";d.style.width="18px";d.style.height="18px";}
-  var ri=document.getElementById("rI");if(ri)ri.style.display="none";
-  var tr=document.getElementById("tR");if(tr){tr.style.borderColor="rgba(40,200,80,.5)";tr.classList.remove("ring-pulse");}
-  var rw=document.getElementById("recWave");if(rw)rw.style.display="none";
-  var tc=document.getElementById("tC");if(tc){tc.textContent="\u2713";tc.style.fontSize="22px";tc.style.color="rgba(40,200,80,.9)";}
-  var rh=document.getElementById("rH");if(rh)rh.style.display="none";
-  var ra=document.getElementById("rA");if(ra)ra.style.display="flex";
-  if(tg&&tg.HapticFeedback)tg.HapticFeedback.notificationOccurred("success");
-}
-function retRec(){
-  rec=false;clearInterval(rTimer);rSec=30;
-  var d=document.getElementById("rD");
-  if(d){d.style.borderRadius="50%";d.style.width="18px";d.style.height="18px";}
-  var ri=document.getElementById("rI");if(ri)ri.style.display="none";
-  var tr=document.getElementById("tR");if(tr){tr.style.borderColor="rgba(255,60,30,.3)";tr.classList.remove("ring-pulse");}
-  var rw=document.getElementById("recWave");if(rw)rw.style.display="none";
-  var tc=document.getElementById("tC");if(tc){tc.textContent="30";tc.style.fontSize="26px";tc.style.color="#fff";}
-  var rh=document.getElementById("rH");
-  if(rh){rh.style.display="block";rh.innerHTML="<div style='font-size:13px;color:rgba(255,255,255,.4);margin-bottom:3px;'>TAP TO RECORD</div><div style='font-size:9px;color:rgba(255,255,255,.32);'>Max 30 seconds</div>";}
-  var ra=document.getElementById("rA");if(ra)ra.style.display="none";
-}
-
-var playing=false,pProg=0,pInt=null;
-function tPlay(){
-  playing=!playing;
-  var pb=document.getElementById("pB");if(pb)pb.textContent=playing?"||":">";
-  if(playing){
-    pInt=setInterval(function(){
-      pProg=Math.min(100,pProg+0.4);
-      var tf=document.getElementById("tF");if(tf)tf.style.width=pProg+"%";
-      var s=Math.round(pProg*2.22),m=Math.floor(s/60),sec=s%60;
-      var pt=document.getElementById("pT");if(pt)pt.textContent=m+":"+(sec<10?"0":"")+sec+" / 3:42";
-      if(pProg>=100){clearInterval(pInt);playing=false;if(pb)pb.textContent=">";pProg=0;}
-    },80);
-  } else clearInterval(pInt);
-}
-function sTimeline(e){
-  var b=e.currentTarget,r=b.getBoundingClientRect();
-  pProg=((e.clientX-r.left)/r.width)*100;
-  var tf=document.getElementById("tF");if(tf)tf.style.width=pProg+"%";
-}
-function sTL(name,hint){
-  ["Cut","Trim","Volume","Loop","Undo"].forEach(function(t){
-    var el=document.getElementById("tl"+t);
-    if(el)el.className=t===name?"toolt at":"toolt it";
-  });
-  var th=document.getElementById("tH");if(th)th.textContent=hint;
-}
-function sPub(el){
-  document.querySelectorAll(".popt").forEach(function(o){
-    o.className="popt uns";
-    var pr=o.querySelector(".pr");if(pr)pr.innerHTML="";
-  });
-  el.className="popt sel";
-  var pr=el.querySelector(".pr");if(pr)pr.innerHTML="<div class='prd'></div>";
-}
-
-function showCelebration(){
-  var s=document.getElementById("celebScreen");
-  if(s)s.style.display="flex";
-  retRec();
-  var count=1,maxCount=Math.floor(Math.random()*80)+20;
-  var ct=setInterval(function(){
-    count+=Math.floor(Math.random()*3)+1;
-    if(count>=maxCount){count=maxCount;clearInterval(ct);}
-    var vc=document.getElementById("viewCount");if(vc)vc.textContent=count;
-  },80);
-  var stars=["&#11088;","&#127775;","&#127917;","&#10024;","&#127928;","&#127757;"];
-  var container=document.getElementById("celebStars");
-  if(container){
-    container.innerHTML="";
-    for(var i=0;i<8;i++){
-      (function(i){
-        setTimeout(function(){
-          var star=document.createElement("div");
-          star.className="star-float";
-          star.innerHTML=stars[Math.floor(Math.random()*stars.length)];
-          star.style.left=(10+Math.random()*80)+"%";
-          star.style.top=(20+Math.random()*60)+"%";
-          container.appendChild(star);
-          setTimeout(function(){if(star.parentNode)star.remove();},1500);
-        },i*200);
-      })(i);
-    }
-  }
-  if(tg&&tg.HapticFeedback)tg.HapticFeedback.notificationOccurred("success");
-}
-function hideCelebration(){
-  var s=document.getElementById("celebScreen");if(s)s.style.display="none";
-}
-
-function filterArtists(cat){
-  var filter=cat.toLowerCase().replace(/[^a-z]/g,"");
-  if(filter===""||filter==="all")filter="all";
-  currentCat=filter;
-  doSearch("");
-}
-
-function renderArtists(list,count){
-  var rc=document.getElementById("resultCount");if(rc)rc.textContent=count;
-  var container=document.getElementById("searchResults");
-  if(!container)return;
-  container.innerHTML="";
-  if(!list.length){
-    container.innerHTML="<div style='text-align:center;padding:40px;color:rgba(255,255,255,.4);font-size:11px;'>No artists found</div>";
-    return;
-  }
-  list.forEach(function(a){
-    var name=a.n||a.name||"";
-    var type=a.t||a.type||"";
-    var tags=Array.isArray(a.tags)?a.tags:(a.tags?a.tags.split(" "):[]);
-    var sc=a.sc||a.statusColor||"rgba(255,255,255,.2)";
-    var flag=a.flag||"";
-    var dest=a.p||a.profile||"profile";
-    var el=document.createElement("div");
-    el.className="ai";el.style.marginBottom="7px";el.style.cursor="pointer";
-    el.innerHTML=
-      "<div class='av' style='background:linear-gradient(135deg,"+a.bg+",#280c50);'>"+a.icon+"</div>"+
-      "<div class='an'>"+
-        "<div style='font-size:12px;font-weight:600;color:#fff;margin-bottom:1px;'>"+name+"</div>"+
-        "<div class='at'>"+type+"</div>"+
-        "<div class='atg'>"+tags.map(function(t){return "<div class='atag'>"+t+"</div>";}).join("")+"</div>"+
-      "</div>"+
-      "<div class='ar'>"+
-        "<div class='aloc'>"+flag+" "+a.loc+"<br><span style='color:"+sc+";'>&#9679; "+a.status+"</span></div>"+
-        "<button class='cb'>Collab</button>"+
-      "</div>";
-    el.onclick=function(){goTo(el,dest);};
-    var cb=el.querySelector(".cb");
-    if(cb)cb.addEventListener("click",function(e){e.stopPropagation();collabSoon();});
-    container.appendChild(el);
-  });
-}
-function sW(v){
-  var myV=document.getElementById("myV");
-  var commV=document.getElementById("commV");
-  var myBtn=document.getElementById("myBtn");
-  var commBtn=document.getElementById("commBtn");
-  if(myV)myV.style.display=v==="my"?"block":"none";
-  if(commV)commV.style.display=v==="comm"?"block":"none";
-  if(myBtn)myBtn.className="tb2 "+(v==="my"?"on":"off");
-  if(commBtn)commBtn.className="tb2 "+(v==="comm"?"on":"off");
-}
-
-function sFC(el){
-  document.querySelectorAll(".fc").forEach(function(c){c.className="fc off";});
-  el.className="fc on";
-  filterArtists(el.textContent.trim());
-}
-
-function sBill(type){
-  var m=type==="monthly";
-  var mb=document.getElementById("mB");
-  var yb=document.getElementById("yB");
-  if(mb)mb.className="blb "+(m?"on":"off");
-  if(yb)yb.className="blb "+(m?"off":"on");
-  var bp=document.getElementById("bP");
-  if(bp)bp.innerHTML=m?"EUR 9.99":"EUR 5.99";
-  var bper=document.getElementById("bPer");
-  if(bper)bper.textContent=m?"per month - billed monthly":"per month - billed yearly";
-  var save=document.getElementById("bSave");
-  if(save)save.textContent=m?"":"Save EUR 48 per year";
-  if(tg&&tg.HapticFeedback)tg.HapticFeedback.impactOccurred("light");
-}
-
-var currentCat="all";
-
-function setSearchCat(cat){
-  currentCat=cat;
-  var chips=document.querySelectorAll("#catChips .cc");
-  chips.forEach(function(c){
-    c.className=c.getAttribute("data-cat")===cat?"cc on":"cc off";
-  });
-  var inp=document.getElementById("searchInput");
-  if(inp)inp.value="";
-  doSearch("");
-  if(tg&&tg.HapticFeedback)tg.HapticFeedback.impactOccurred("light");
-}
-
-function initSearch(){
-  var input=document.getElementById("searchInput");
-  if(input){
-    input.value="";
-    input.oninput=function(){doSearch(this.value);};
-    input.onkeyup=function(){doSearch(this.value);};
-  }
-  currentCat="all";
-  doSearch("");
-}
-
-var artistDB=[
-  {n:"Maya Rivera",t:"Musician - Singer",tags:"Guitar Vocals Songwriting",loc:"Berlin",flag:"DE",status:"Online",sc:"rgba(40,200,80,.7)",icon:"&#127928;",bg:"#1a0840",cat:"music",p:"profile"},
-  {n:"Leila Mensah",t:"Singer - Songwriter",tags:"Afrobeat RnB Soul",loc:"Lagos",flag:"NG",status:"Online",sc:"rgba(40,200,80,.7)",icon:"&#127908;",bg:"#201018",cat:"music",p:"profile4"},
-  {n:"Amir Hashim",t:"Musician - Producer",tags:"Jazz Production Sax",loc:"Tokyo",flag:"JP",status:"Offline",sc:"rgba(255,255,255,.2)",icon:"&#127927;",bg:"#0a2018",cat:"music",p:"profile6"},
-  {n:"Carlos Mendez",t:"Guitarist - Composer",tags:"Classical Flamenco Film",loc:"Madrid",flag:"ES",status:"Online",sc:"rgba(40,200,80,.7)",icon:"&#127928;",bg:"#180820",cat:"music"},
-  {n:"James Kofi",t:"Filmmaker - Director",tags:"Directing Editing DOP",loc:"New York",flag:"US",status:"Online",sc:"rgba(40,200,80,.7)",icon:"&#127916;",bg:"#0a1840",cat:"film",p:"profile2"},
-  {n:"Yuki Tanaka",p:"profile7",t:"Cinematographer",tags:"DOP Color Drone",loc:"Osaka",flag:"JP",status:"Away",sc:"rgba(255,160,40,.7)",icon:"&#127909;",bg:"#0a1020",cat:"film"},
-  {n:"Lena Bauer",p:"profile8",t:"Film Editor - Director",tags:"Editing Grading VFX",loc:"Munich",flag:"DE",status:"Online",sc:"rgba(40,200,80,.7)",icon:"&#9986;",bg:"#101828",cat:"film"},
-  {n:"Sofia Lima",t:"Dancer - Choreographer",tags:"Ballet Hip-Hop Latin",loc:"Sao Paulo",flag:"BR",status:"Away",sc:"rgba(255,160,40,.7)",icon:"&#128131;",bg:"#1a0830",cat:"dance",p:"profile3"},
-  {n:"Amara Diallo",p:"profile9",t:"Dancer - Performer",tags:"Afro Contemporary Acro",loc:"Paris",flag:"FR",status:"Online",sc:"rgba(40,200,80,.7)",icon:"&#128131;",bg:"#200818",cat:"dance"},
-  {n:"Chen Wei",t:"Photographer",tags:"Portrait Concert Editorial",loc:"Shanghai",flag:"CN",status:"Online",sc:"rgba(40,200,80,.7)",icon:"&#128247;",bg:"#101828",cat:"photo",p:"profile5"},
-  {n:"Sara Nkosi",p:"profile10",t:"Visual Artist - Photographer",tags:"Fine Art Fashion Street",loc:"Cape Town",flag:"ZA",status:"Online",sc:"rgba(40,200,80,.7)",icon:"&#128247;",bg:"#181020",cat:"photo"},
-  {n:"Zara AI",p:"profile11",t:"AI Creator - Designer",tags:"Generative Motion 3D",loc:"London",flag:"GB",status:"Online",sc:"rgba(40,200,80,.7)",icon:"&#129302;",bg:"#201018",cat:"ai"},
-  {n:"Dev Sharma",p:"profile12",t:"AI Artist - Coder",tags:"Stable-Diff Midjourney ML",loc:"Bangalore",flag:"IN",status:"Away",sc:"rgba(255,160,40,.7)",icon:"&#129302;",bg:"#101820",cat:"ai"},
-  {n:"Marco Rossi",p:"profile13",t:"Visual Artist - Painter",tags:"Digital Illustration NFT",loc:"Milan",flag:"IT",status:"Offline",sc:"rgba(255,255,255,.2)",icon:"&#127912;",bg:"#181020",cat:"art"}
-,
-  {n:"Kwame Asante",t:"Filmmaker - Director",tags:"Documentary Editing Afrobeats",loc:"Accra",flag:"GH",status:"Online",sc:"rgba(40,200,80,.7)",icon:"&#127909;",bg:"#0a1020",cat:"film"},
-  {n:"Yuna Park",t:"Videographer - Director",tags:"K-Pop Music Video Visual",loc:"Seoul",flag:"KR",status:"Online",sc:"rgba(40,200,80,.7)",icon:"&#128247;",bg:"#181018",cat:"photo"},
-  {n:"Aria Santos",t:"AI Artist - Designer",tags:"Generative Visual Identity Branding",loc:"Sao Paulo",flag:"BR",status:"Online",sc:"rgba(40,200,80,.7)",icon:"&#129302;",bg:"#180828",cat:"ai"},
-  {n:"Tariq Hassan",t:"Musician - Producer",tags:"Arabic Electronic Ambient",loc:"Dubai",flag:"AE",status:"Away",sc:"rgba(255,160,40,.7)",icon:"&#127928;",bg:"#101828",cat:"music"},
-  {n:"Olena Kovalenko",t:"Filmmaker - Director",tags:"Experimental Art Film Dance",loc:"Kyiv",flag:"UA",status:"Online",sc:"rgba(40,200,80,.7)",icon:"&#127916;",bg:"#0a1818",cat:"film"}
-];
-
-function doSearch(query){
-  var q=query.toLowerCase().trim();
-  var list=artistDB.filter(function(a){
-    var catOk=currentCat==="all"||a.cat===currentCat;
-    var tags=a.tags||"";
-    var qOk=!q||a.n.toLowerCase().indexOf(q)>-1||a.t.toLowerCase().indexOf(q)>-1||a.loc.toLowerCase().indexOf(q)>-1||tags.toLowerCase().indexOf(q)>-1;
-    return catOk&&qOk;
-  });
-  var rc=document.getElementById("resultCount");
-  if(rc)rc.textContent=list.length;
-  var container=document.getElementById("searchResults");
-  if(!container)return;
-  if(!list.length){
-    container.innerHTML="<div style='text-align:center;padding:40px;color:rgba(255,255,255,.4);font-size:11px;'>No artists found</div>";
-    return;
-  }
-  container.innerHTML="";
-  list.forEach(function(a){
-    var dest=a.p||"profile";
-    var tags=a.tags?a.tags.split(" "):[];
-    var el=document.createElement("div");
-    el.className="ai";el.style.marginBottom="7px";el.style.cursor="pointer";
-    el.innerHTML=
-      "<div class='av' style='background:linear-gradient(135deg,"+a.bg+",#280c50);'>"+a.icon+"</div>"+
-      "<div class='an'>"+
-        "<div style='font-size:12px;font-weight:600;color:#fff;margin-bottom:1px;'>"+a.n+"</div>"+
-        "<div class='at'>"+a.t+"</div>"+
-        "<div class='atg'>"+tags.map(function(t){return "<div class='atag'>"+t+"</div>";}).join("")+"</div>"+
-      "</div>"+
-      "<div class='ar'>"+
-        "<div class='aloc'>"+a.flag+" "+a.loc+"<br><span style='color:"+a.sc+";'>&#9679; "+a.status+"</span></div>"+
-        "<button class='cb'>Collab</button>"+
-      "</div>";
-    el.onclick=(function(d){return function(){goTo(el,d);};})(dest);
-    var cb=el.querySelector(".cb");
-    if(cb)cb.addEventListener("click",function(e){e.stopPropagation();collabSoon();});
-    container.appendChild(el);
-  });
 }
 
 
@@ -3457,10 +3081,11 @@ function getFollowingFeed(container){
   container.innerHTML="<div style='text-align:center;padding-bottom:14px;'><div style='font-size:32px;margin-bottom:8px;'>&#128101;</div><div style='font-family:Playfair Display,serif;font-size:15px;font-weight:700;color:#fff;margin-bottom:4px;'>Following Feed</div><div style='font-size:10px;color:rgba(255,255,255,.3);margin-bottom:14px;'>Latest from artists you follow</div></div>";
   artists.forEach(function(a){
     var el=document.createElement("div");
-    el.style.cssText="background:rgba(42,36,64,.9);border:1px solid rgba(120,100,255,.15);border-radius:10px;padding:10px 12px;display:flex;align-items:center;gap:8px;cursor:pointer;margin-bottom:8px;";
-    el.innerHTML="<div style='width:36px;height:36px;border-radius:50%;background:"+a.bg+";display:flex;align-items:center;justify-content:center;font-size:18px;'>"+a.icon+"</div>"+
-      "<div style='flex:1;'><div style='font-size:11px;font-weight:600;color:#fff;'>"+a.name+"</div><div style='font-size:8px;color:rgba(255,255,255,.3);'>"+a.action+"</div></div>"+
-      "<div style='font-size:9px;color:rgba(212,168,64,.7);'>"+a.time+"</div>";
+    el.style.cssText="background:rgba(42,36,64,.9);border:1px solid rgba(100,80,255,.15);border-radius:10px;padding:10px;min-width:100px;text-align:center;cursor:pointer;flex-shrink:0;";
+    el.innerHTML=
+      "<div style=\'width:44px;height:44px;border-radius:50%;background:"+a.bg+";display:flex;align-items:center;justify-content:center;font-size:22px;margin:0 auto 6px;\'>"+ a.icon+"</div>"+
+      "<div style=\'font-size:9px;font-weight:600;color:#fff;margin-bottom:2px;\'>"+ a.name+"</div>"+
+      "<div style=\'font-size:7px;color:rgba(180,160,255,.45);\'>"+ a.role+"</div>";
     el.onclick=(function(d){return function(){goTo(el,d);};})(a.dest);
     container.appendChild(el);
   });
@@ -4183,9 +3808,9 @@ function getChannelsFeed(container){
     var tile = document.createElement('div');
     tile.className = 'chCard';
     tile.innerHTML = '<div class="chIcon">' + ch.icon + '</div><div class="chName">' + ch.name + '</div><div class="chCount">' + ch.count + ' posts</div>';
-    tile.onclick = (function(c,i,n){ return function(){
-      showChannelInFeed(container, c, i, n);
-    };})(ch.cat, ch.icon, ch.name);
+    tile.onclick = (function(c,i,n,t){ return function(){
+      showChannelInFeed(container, c, i, n, t);
+    };})(ch.cat, ch.icon, ch.name, tile);
     grid.appendChild(tile);
   });
   container.appendChild(grid);
@@ -4204,10 +3829,10 @@ function getChannelsFeed(container){
   buildChannelFeed('music', feedItems);
 }
 
-function showChannelInFeed(container, cat, icon, name){
+function showChannelInFeed(container, cat, icon, name, el){
   // Update active chip
   container.querySelectorAll('.chCard').forEach(function(c){c.className='chCard';});
-  event.currentTarget.className='chCard active';
+  if(el) el.className='chCard active';
   // Update title
   var title = document.getElementById('channelFeedTitle');
   if(title) title.innerHTML = icon + ' ' + name + ' Channel';
@@ -4215,6 +3840,128 @@ function showChannelInFeed(container, cat, icon, name){
   var items = document.getElementById('channelFeedItems');
   if(items) buildChannelFeed(cat, items);
   if(tg && tg.HapticFeedback) tg.HapticFeedback.impactOccurred('light');
+}
+
+
+function getForYouContent(){
+  return '<p style="color:rgba(255,255,255,.3);font-size:11px;">Loading...</p>';
+}
+
+function buildForYouFeed(container){
+  if(!container) return;
+  container.innerHTML = '';
+
+  // Section: Featured today
+  var s1 = document.createElement('div');
+  s1.style.cssText = 'font-size:7px;letter-spacing:2.5px;text-transform:uppercase;color:rgba(255,255,255,.25);margin-bottom:8px;';
+  s1.textContent = 'Featured Today';
+  container.appendChild(s1);
+
+  var featCard = document.createElement('div');
+  featCard.style.cssText = 'background:rgba(42,36,64,.9);border:1px solid rgba(212,168,64,.2);border-radius:12px;overflow:hidden;margin-bottom:12px;cursor:pointer;';
+  featCard.innerHTML =
+    '<div style="height:100px;background:linear-gradient(135deg,#201018,#0a1040);display:flex;align-items:center;justify-content:center;position:relative;">' +
+      '<div style="font-size:40px;opacity:.6;">&#127908;</div>' +
+      '<div style="position:absolute;top:8px;left:10px;padding:2px 8px;background:rgba(212,168,64,.2);border:1px solid rgba(212,168,64,.3);border-radius:8px;font-size:7px;color:rgba(212,168,64,.9);">&#11088; Featured Today</div>' +
+      '<div style="position:absolute;bottom:8px;right:10px;padding:2px 8px;background:rgba(0,0,0,.5);border-radius:8px;font-size:8px;color:rgba(255,255,255,.6);">4:18</div>' +
+    '</div>' +
+    '<div style="padding:10px 12px;">' +
+      '<div style="font-family:Playfair Display,serif;font-size:14px;font-weight:700;color:#fff;margin-bottom:3px;">Midnight in Lagos</div>' +
+      '<div style="font-size:9px;color:rgba(180,160,255,.5);margin-bottom:6px;">Leila Mensah &middot; Lagos &middot; Afrobeat</div>' +
+      '<div style="display:flex;gap:12px;"><div style="font-size:8px;color:rgba(255,255,255,.3);">&#10084; 2.1k</div><div style="font-size:8px;color:rgba(255,255,255,.3);">&#128172; 94</div><div style="font-size:8px;color:rgba(212,168,64,.6);">&#128293; Trending</div></div>' +
+    '</div>';
+  featCard.onclick = function(){ goTo(featCard,'profile4'); };
+  container.appendChild(featCard);
+
+  // Section: WANTED matches
+  var s2 = document.createElement('div');
+  s2.style.cssText = 'font-size:7px;letter-spacing:2.5px;text-transform:uppercase;color:rgba(255,255,255,.25);margin-bottom:8px;';
+  s2.textContent = 'Matches Your Skills';
+  container.appendChild(s2);
+
+  var matches = [
+    {title:'Guitarist for Afrobeat EP', artist:'Leila Mensah', loc:'Lagos', pct:'98', dest:'wanted'},
+    {title:'Composer for Short Film Score', artist:'Marco Rossi', loc:'Milan', pct:'94', dest:'wanted'}
+  ];
+  matches.forEach(function(m){
+    var card = document.createElement('div');
+    card.style.cssText = 'background:rgba(42,36,64,.9);border:1px solid rgba(100,80,255,.15);border-radius:10px;padding:10px 12px;margin-bottom:8px;cursor:pointer;';
+    var badge = document.createElement('div');
+    badge.style.cssText = 'display:flex;align-items:center;justify-content:space-between;margin-bottom:5px;';
+    badge.innerHTML = '<div style="padding:2px 8px;background:rgba(212,168,64,.15);border-radius:8px;font-size:7px;color:rgba(212,168,64,.8);">&#11088; ' + m.pct + '% Match</div>';
+    var title = document.createElement('div');
+    title.style.cssText = 'font-size:11px;font-weight:600;color:#fff;margin-bottom:3px;';
+    title.textContent = m.title;
+    var sub = document.createElement('div');
+    sub.style.cssText = 'font-size:8px;color:rgba(255,255,255,.35);';
+    sub.textContent = m.artist + ' - ' + m.loc + ' - Remote - Rev Share';
+    card.appendChild(badge);
+    card.appendChild(title);
+    card.appendChild(sub);
+    card.onclick = (function(d){ return function(){ goTo(card,d); }; })(m.dest);
+    container.appendChild(card);
+  });
+
+  // Section: Collab request
+  var s3 = document.createElement('div');
+  s3.style.cssText = 'font-size:7px;letter-spacing:2.5px;text-transform:uppercase;color:rgba(255,255,255,.25);margin-bottom:8px;margin-top:4px;';
+  s3.textContent = 'Collab Requests';
+  container.appendChild(s3);
+
+  var collabCard = document.createElement('div');
+  collabCard.style.cssText = 'background:rgba(42,36,64,.9);border:1px solid rgba(100,80,255,.15);border-radius:10px;padding:10px 12px;margin-bottom:12px;cursor:pointer;';
+  var row = document.createElement('div');
+  row.style.cssText = 'display:flex;align-items:center;gap:8px;margin-bottom:8px;';
+  row.innerHTML = '<div style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#0a1840,#142850);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;">&#127916;</div><div><div style="font-size:11px;font-weight:600;color:#fff;">James Kofi wants to collaborate</div><div style="font-size:8px;color:rgba(255,255,255,.35);">Short Film Soundtrack - Guitarist role - New York</div></div>';
+  var btns = document.createElement('div');
+  btns.style.cssText = 'display:flex;gap:6px;';
+  var acceptBtn = document.createElement('button');
+  acceptBtn.style.cssText = 'flex:1;padding:6px;background:linear-gradient(135deg,#3020a0,#5040c8);border:none;border-radius:4px;font-family:Bebas Neue,sans-serif;font-size:10px;letter-spacing:1px;color:#fff;cursor:pointer;';
+  acceptBtn.textContent = 'ACCEPT';
+  acceptBtn.onclick = function(e){ e.stopPropagation(); sA('Accepted! Coming soon.'); };
+  var declineBtn = document.createElement('button');
+  declineBtn.style.cssText = 'flex:1;padding:6px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);border-radius:4px;font-family:Bebas Neue,sans-serif;font-size:10px;letter-spacing:1px;color:rgba(255,255,255,.4);cursor:pointer;';
+  declineBtn.textContent = 'DECLINE';
+  declineBtn.onclick = function(e){ e.stopPropagation(); sA('Declined.'); };
+  btns.appendChild(acceptBtn);
+  btns.appendChild(declineBtn);
+  collabCard.appendChild(row);
+  collabCard.appendChild(btns);
+  collabCard.onclick = function(){ goTo(collabCard,'profile2'); };
+  container.appendChild(collabCard);
+
+  // Section: Discover artists
+  var s4 = document.createElement('div');
+  s4.style.cssText = 'font-size:7px;letter-spacing:2.5px;text-transform:uppercase;color:rgba(255,255,255,.25);margin-bottom:8px;';
+  s4.textContent = 'Artists Near You';
+  container.appendChild(s4);
+
+  var discoverRow = document.createElement('div');
+  discoverRow.style.cssText = 'display:flex;gap:8px;overflow-x:auto;padding-bottom:4px;margin-bottom:16px;';
+  var discArtists = [
+    {icon:'&#127908;',bg:'linear-gradient(135deg,#201018,#301820)',name:'Leila Mensah',role:'Singer - Lagos',dest:'profile4'},
+    {icon:'&#128131;',bg:'linear-gradient(135deg,#1a0830,#2a0840)',name:'Sofia Lima',role:'Dancer - Sao Paulo',dest:'profile3'},
+    {icon:'&#128247;',bg:'linear-gradient(135deg,#101828,#182030)',name:'Chen Wei',role:'Photo - Shanghai',dest:'profile5'}
+  ];
+  discArtists.forEach(function(a){
+    var tile = document.createElement('div');
+    tile.style.cssText = 'background:rgba(42,36,64,.9);border:1px solid rgba(100,80,255,.15);border-radius:10px;padding:10px;min-width:100px;text-align:center;cursor:pointer;flex-shrink:0;';
+    var av = document.createElement('div');
+    av.style.cssText = 'width:44px;height:44px;border-radius:50%;background:' + a.bg + ';display:flex;align-items:center;justify-content:center;font-size:22px;margin:0 auto 6px;';
+    av.innerHTML = a.icon;
+    var nm = document.createElement('div');
+    nm.style.cssText = 'font-size:9px;font-weight:600;color:#fff;margin-bottom:2px;';
+    nm.textContent = a.name;
+    var rl = document.createElement('div');
+    rl.style.cssText = 'font-size:7px;color:rgba(180,160,255,.45);';
+    rl.textContent = a.role;
+    tile.appendChild(av);
+    tile.appendChild(nm);
+    tile.appendChild(rl);
+    tile.onclick = (function(d){ return function(){ goTo(tile,d); }; })(a.dest);
+    discoverRow.appendChild(tile);
+  });
+  container.appendChild(discoverRow);
 }
 
 </script>
