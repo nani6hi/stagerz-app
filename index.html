@@ -4115,6 +4115,69 @@ function testSupabase(){
 }
 setTimeout(testSupabase, 2000);
 
+
+function sFM(tab){
+  var qv=document.getElementById("fmQV");
+  var uv=document.getElementById("fmUV");
+  var sv=document.getElementById("fmSV");
+  if(qv)qv.style.display="none";
+  if(uv)uv.style.display="none";
+  if(sv)sv.style.display="none";
+  var t=document.getElementById("fm"+tab.charAt(0).toUpperCase()+tab.slice(1)+"V");
+  if(t)t.style.display="block";
+  var fmQ=document.getElementById("fmQ");
+  var fmU=document.getElementById("fmU");
+  var fmS=document.getElementById("fmS");
+  if(fmQ)fmQ.className="fmb "+(tab==="quick"?"q":"off");
+  if(fmU)fmU.className="fmb "+(tab==="upload"?"u":"off");
+  if(fmS)fmS.className="fmb "+(tab==="showcase"?"s":"off");
+  if(tg&&tg.HapticFeedback)tg.HapticFeedback.impactOccurred("light");
+}
+
+var rec=false,rTimer=null,rSec=30;
+function tRec(){rec?stpRec():strRec();}
+function strRec(){
+  rec=true;rSec=30;
+  var d=document.getElementById("rD");
+  if(d){d.style.borderRadius="4px";d.style.width="16px";d.style.height="16px";}
+  var ri=document.getElementById("rI");if(ri)ri.style.display="flex";
+  var tr=document.getElementById("tR");if(tr){tr.style.borderColor="rgba(255,60,30,.8)";tr.classList.add("ring-pulse");}
+  var rw=document.getElementById("recWave");if(rw)rw.style.display="flex";
+  var rh=document.getElementById("rH");
+  if(rh)rh.innerHTML="<div style='font-size:13px;color:rgba(255,100,80,.8);margin-bottom:3px;'>RECORDING...</div><div style='font-size:9px;color:rgba(255,255,255,.18);'>Tap again to stop</div>";
+  rTimer=setInterval(function(){
+    rSec--;
+    var tc=document.getElementById("tC");
+    if(tc){tc.textContent=rSec;tc.style.color=rSec<=5?"rgba(255,80,80,.9)":"#fff";}
+    if(rSec<=0)stpRec();
+  },1000);
+  if(tg&&tg.HapticFeedback)tg.HapticFeedback.impactOccurred("heavy");
+}
+function stpRec(){
+  rec=false;clearInterval(rTimer);
+  var d=document.getElementById("rD");
+  if(d){d.style.borderRadius="50%";d.style.width="18px";d.style.height="18px";}
+  var ri=document.getElementById("rI");if(ri)ri.style.display="none";
+  var tr=document.getElementById("tR");if(tr){tr.style.borderColor="rgba(40,200,80,.5)";tr.classList.remove("ring-pulse");}
+  var rw=document.getElementById("recWave");if(rw)rw.style.display="none";
+  var tc=document.getElementById("tC");if(tc){tc.textContent="&#10003;";tc.style.fontSize="22px";tc.style.color="rgba(40,200,80,.9)";}
+  var rh=document.getElementById("rH");if(rh)rh.style.display="none";
+  var ra=document.getElementById("rA");if(ra)ra.style.display="flex";
+  if(tg&&tg.HapticFeedback)tg.HapticFeedback.notificationOccurred("success");
+}
+function retRec(){
+  rec=false;clearInterval(rTimer);rSec=30;
+  var d=document.getElementById("rD");
+  if(d){d.style.borderRadius="50%";d.style.width="18px";d.style.height="18px";}
+  var ri=document.getElementById("rI");if(ri)ri.style.display="none";
+  var tr=document.getElementById("tR");if(tr){tr.style.borderColor="rgba(255,60,30,.3)";tr.classList.remove("ring-pulse");}
+  var rw=document.getElementById("recWave");if(rw)rw.style.display="none";
+  var tc=document.getElementById("tC");if(tc){tc.textContent="30";tc.style.fontSize="26px";tc.style.color="#fff";}
+  var rh=document.getElementById("rH");
+  if(rh){rh.style.display="block";rh.innerHTML="<div style='font-size:13px;color:rgba(255,255,255,.4);margin-bottom:3px;'>TAP TO RECORD</div><div style='font-size:9px;color:rgba(255,255,255,.18);'>Max 30 seconds</div>";}
+  var ra=document.getElementById("rA");if(ra)ra.style.display="none";
+}
+
 </script>
 
 
