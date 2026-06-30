@@ -3022,29 +3022,21 @@ function collabSoon(){
 
 function goTo(el,id){
   var cur=document.querySelector(".screen.active");
-  if(cur){cur.style.opacity="0";cur.style.transform="scale(.98)";}
-  setTimeout(function(){
-    document.querySelectorAll(".screen").forEach(function(s){
-      s.classList.remove("active");
-      s.style.opacity="";s.style.transform="";
-    });
-    var t=document.getElementById("screen-"+id);
-    if(t){
-      t.classList.add("active");
-      t.style.opacity="0";t.style.transform="scale(.98)";
-      var sa=t.querySelector(".sa");if(sa)sa.scrollTop=0;
-      setTimeout(function(){t.style.transition="opacity .25s ease,transform .25s ease";t.style.opacity="1";t.style.transform="scale(1)";
-        setTimeout(function(){t.style.transition="";},300);
-      },10);
-    }
-    if(id==="search"){setTimeout(function(){initSearch();},50);}
-    if(id==="home"){setTimeout(function(){
-      try{var f=document.getElementById("homeFeed");if(f&&!f.hasChildNodes())buildForYouFeed(f);}catch(e){console.log("home feed err:",e.message);}
-    },100);}
-    if(id==="myprofile"){setTimeout(function(){loadMyProfile();},50);}
-    if(id==="public"){setTimeout(function(){buildPerfCards("all");},50);}
-    if(id==="channels"){setTimeout(function(){try{buildChannelFeed(currentChannel);}catch(e){}},50);}
-  },cur?150:0);
+  document.querySelectorAll(".screen").forEach(function(s){
+    s.classList.remove("active");
+  });
+  var t=document.getElementById("screen-"+id);
+  if(t){
+    t.classList.add("active");
+    var sa=t.querySelector(".sa");if(sa)sa.scrollTop=0;
+  }
+  if(id==="search"){setTimeout(function(){initSearch();},50);}
+  if(id==="home"){setTimeout(function(){
+    try{var f=document.getElementById("homeFeed");if(f&&!f.hasChildNodes())buildForYouFeed(f);}catch(e){console.log("home feed err:",e.message);}
+  },100);}
+  if(id==="myprofile"){setTimeout(function(){loadMyProfile();},50);}
+  if(id==="public"){setTimeout(function(){buildPerfCards("all");},50);}
+  if(id==="channels"){setTimeout(function(){try{buildChannelFeed(currentChannel);}catch(e){}},50);}
   haptic('light');
 }
 
@@ -4189,66 +4181,6 @@ function sPub(el){
 
 </script>
 
-
-<!-- Post WANTED Modal -->
-<div id="postWantedModal" onclick="hidePostWanted()" style="display:none;position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(0,0,0,.85);z-index:99999;overflow-y:auto;-webkit-overflow-scrolling:touch;">
-  <div onclick="event.stopPropagation()" style="background:#1a1628;border-radius:16px 16px 0 0;position:absolute;bottom:0;left:0;right:0;padding:20px;max-height:92vh;overflow-y:auto;">
-
-    <!-- Header -->
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
-      <div style="font-family:'Playfair Display',serif;font-size:18px;font-weight:700;color:#fff;">Post a WANTED</div>
-      <button onclick="hidePostWanted()" style="width:28px;height:28px;border-radius:50%;background:rgba(255,255,255,.08);border:none;color:rgba(255,255,255,.5);font-size:14px;cursor:pointer;">&#10005;</button>
-    </div>
-
-    <!-- Title -->
-    <div style="font-size:9px;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.3);margin-bottom:6px;">What are you looking for?</div>
-    <input id="pwTitle" type="text" placeholder="e.g. Guitarist for Afrobeat EP" style="width:100%;padding:10px 12px;background:rgba(255,255,255,.05);border:1px solid rgba(100,80,255,.2);border-radius:6px;color:#fff;font-size:13px;margin-bottom:12px;box-sizing:border-box;" />
-
-    <!-- Role -->
-    <div style="font-size:9px;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.3);margin-bottom:6px;">Role needed</div>
-    <input id="pwRole" type="text" placeholder="e.g. Guitarist, Cinematographer, Dancer..." style="width:100%;padding:10px 12px;background:rgba(255,255,255,.05);border:1px solid rgba(100,80,255,.2);border-radius:6px;color:#fff;font-size:13px;margin-bottom:12px;box-sizing:border-box;" />
-
-    <!-- Category -->
-    <div style="font-size:9px;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.3);margin-bottom:6px;">Category</div>
-    <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px;" id="pwCatPicker">
-      <div class="roleChip on" onclick="pwPickCat(this,'music')">&#127925; Music</div>
-      <div class="roleChip off" onclick="pwPickCat(this,'film')">&#127916; Film</div>
-      <div class="roleChip off" onclick="pwPickCat(this,'dance')">&#128131; Dance</div>
-      <div class="roleChip off" onclick="pwPickCat(this,'photo')">&#128247; Photo</div>
-      <div class="roleChip off" onclick="pwPickCat(this,'ai')">&#129302; AI</div>
-      <div class="roleChip off" onclick="pwPickCat(this,'art')">&#127912; Art</div>
-    </div>
-
-    <!-- Location -->
-    <div style="font-size:9px;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.3);margin-bottom:6px;">Location</div>
-    <input id="pwLocation" type="text" placeholder="City, Country" style="width:100%;padding:10px 12px;background:rgba(255,255,255,.05);border:1px solid rgba(100,80,255,.2);border-radius:6px;color:#fff;font-size:13px;margin-bottom:8px;box-sizing:border-box;" />
-
-    <!-- Remote toggle -->
-    <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
-      <div style="font-size:11px;color:rgba(255,255,255,.4);">Remote OK?</div>
-      <div id="pwRemoteToggle" onclick="pwToggleRemote()" style="width:44px;height:24px;border-radius:12px;background:linear-gradient(135deg,#3020a0,#5040c8);cursor:pointer;position:relative;transition:background .2s;">
-        <div id="pwRemoteDot" style="position:absolute;top:3px;right:3px;width:18px;height:18px;border-radius:50%;background:#fff;transition:right .2s;"></div>
-      </div>
-      <div id="pwRemoteLabel" style="font-size:11px;color:rgba(40,200,80,.7);">Yes</div>
-    </div>
-
-    <!-- Compensation -->
-    <div style="font-size:9px;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.3);margin-bottom:6px;">Compensation</div>
-    <div style="display:flex;gap:6px;margin-bottom:12px;" id="pwCompPicker">
-      <div class="roleChip on" onclick="pwPickComp(this,'paid')" style="flex:1;text-align:center;">&#128181; Paid</div>
-      <div class="roleChip off" onclick="pwPickComp(this,'rev_share')" style="flex:1;text-align:center;">&#129309; Rev Share</div>
-      <div class="roleChip off" onclick="pwPickComp(this,'credit')" style="flex:1;text-align:center;">&#127775; Credit</div>
-    </div>
-
-    <!-- Description -->
-    <div style="font-size:9px;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.3);margin-bottom:6px;">Description</div>
-    <textarea id="pwDesc" placeholder="Tell artists what the project is about, timeline, what you expect..." style="width:100%;padding:10px 12px;background:rgba(255,255,255,.05);border:1px solid rgba(100,80,255,.2);border-radius:6px;color:#fff;font-size:12px;line-height:1.5;min-height:80px;resize:none;margin-bottom:16px;box-sizing:border-box;"></textarea>
-
-    <!-- Post button -->
-    <button onclick="submitWanted()" style="width:100%;padding:14px;background:linear-gradient(135deg,#8a6018,#e8b830);color:#06040e;border:none;border-radius:4px;font-family:'Bebas Neue',sans-serif;font-size:16px;letter-spacing:3px;cursor:pointer;">&#127919; POST TO THE WORLD</button>
-    <div style="font-size:8px;color:rgba(255,255,255,.2);text-align:center;margin-top:8px;">Visible to all artists worldwide instantly</div>
-  </div>
-</div>
 
 <!-- SCREEN: EDIT MY PROFILE -->
 <div class="screen" id="screen-editprofile">
