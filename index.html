@@ -983,14 +983,14 @@ html,body{width:100%;height:100%;background:#1a1628;font-family:Inter,sans-serif
     <div class="pd">
       <div style="margin-top:-26px;margin-bottom:10px;">
         <!-- Avatar + actions -->
-        <div style="display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:10px;position:relative;z-index:10;">
+        <div style="display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:10px;">
           <div class="pav" id="myAvatar" style="background:linear-gradient(135deg,#1a0840,#280c50);">
             <span id="myAvatarIcon">&#127928;</span>
-            <div style="position:absolute;bottom:-1px;right:-1px;width:18px;height:18px;border-radius:50%;background:linear-gradient(135deg,#1a0840,#280c50);border:2px solid #1a1628;display:flex;align-items:center;justify-content:center;font-size:8px;pointer-events:none;">&#10022;</div>
+            <div style="position:absolute;bottom:-1px;right:-1px;width:18px;height:18px;border-radius:50%;background:linear-gradient(135deg,#1a0840,#280c50);border:2px solid #1a1628;display:flex;align-items:center;justify-content:center;font-size:8px;">&#10022;</div>
           </div>
-          <div style="display:flex;gap:8px;padding-top:8px;position:relative;z-index:11;">
-            <button type="button" onclick="showMyProfileEdit(); return false;" style="position:relative;z-index:12;padding:8px 14px;border-radius:4px;font-family:'Bebas Neue',sans-serif;font-size:11px;letter-spacing:2px;cursor:pointer;background:rgba(255,255,255,.05);color:rgba(200,180,255,.7);border:1px solid rgba(100,80,255,.2);">&#9998; EDIT</button>
-            <button type="button" onclick="shareStagerz(); return false;" style="position:relative;z-index:12;padding:8px 14px;border-radius:4px;font-family:'Bebas Neue',sans-serif;font-size:11px;letter-spacing:2px;cursor:pointer;background:linear-gradient(135deg,#3020a0,#5040c8);color:#fff;border:none;">&#8599; SHARE</button>
+          <div style="display:flex;gap:8px;padding-top:8px;">
+            <button onclick="showMyProfileEdit()" style="padding:8px 14px;border-radius:4px;font-family:'Bebas Neue',sans-serif;font-size:11px;letter-spacing:2px;cursor:pointer;background:rgba(255,255,255,.05);color:rgba(200,180,255,.7);border:1px solid rgba(100,80,255,.2);">&#9998; EDIT</button>
+            <button onclick="shareStagerz()" style="padding:8px 14px;border-radius:4px;font-family:'Bebas Neue',sans-serif;font-size:11px;letter-spacing:2px;cursor:pointer;background:linear-gradient(135deg,#3020a0,#5040c8);color:#fff;border:none;">&#8599; SHARE</button>
           </div>
         </div>
 
@@ -1050,13 +1050,13 @@ html,body{width:100%;height:100%;background:#1a1628;font-family:Inter,sans-serif
       </div>
 
       <!-- Backstage CTA -->
-      <div onclick="goTo(this,'backstage'); return false;" style="position:relative;z-index:5;background:linear-gradient(135deg,rgba(30,15,80,.6),rgba(15,8,40,.8));border:1px solid rgba(212,168,64,.2);border-radius:10px;padding:12px 14px;cursor:pointer;display:flex;align-items:center;gap:10px;margin-bottom:14px;">
-        <div style="font-size:22px;pointer-events:none;">&#11088;</div>
-        <div style="pointer-events:none;">
+      <div onclick="goTo(this,'backstage')" style="background:linear-gradient(135deg,rgba(30,15,80,.6),rgba(15,8,40,.8));border:1px solid rgba(212,168,64,.2);border-radius:10px;padding:12px 14px;cursor:pointer;display:flex;align-items:center;gap:10px;margin-bottom:14px;">
+        <div style="font-size:22px;">&#11088;</div>
+        <div>
           <div style="font-family:'Bebas Neue',sans-serif;font-size:14px;letter-spacing:2px;color:rgba(212,168,64,.9);">GO BACKSTAGE</div>
           <div style="font-size:8px;color:rgba(255,255,255,.3);">Unlock unlimited projects and NACKL mining</div>
         </div>
-        <div style="margin-left:auto;font-size:16px;color:rgba(212,168,64,.5);pointer-events:none;">&#8250;</div>
+        <div style="margin-left:auto;font-size:16px;color:rgba(212,168,64,.5);">&#8250;</div>
       </div>
 
       <div class="gap"></div>
@@ -2504,7 +2504,6 @@ html,body{width:100%;height:100%;background:#1a1628;font-family:Inter,sans-serif
 
 <!-- SCREEN 9: BACKSTAGE -->
 <div class="screen" id="screen-backstage">
-  <div style="background:red;color:white;padding:20px;font-size:20px;text-align:center;">TEST BACKSTAGE VISIBLE</div>
   <div class="sa">
 
     <!-- Hero -->
