@@ -2135,7 +2135,7 @@ html,body{width:100%;height:100%;background:#1a1628;font-family:Inter,sans-serif
     </div>
   </div>
   <div class="sa">
-    <div id="fmQV" class="pd pt">
+    <div id="fmQV" class="pd pt" style="display:block;">
       <div class="ra" id="recArea">
         <div id="recWave" style="position:absolute;bottom:0;left:0;right:0;height:40px;display:none;align-items:flex-end;justify-content:center;gap:3px;padding:0 20px 8px;">
           <div class="wb2 wave-rec" style="--d:.4s;height:30%;"></div>
@@ -3383,12 +3383,10 @@ var pwComp = 'paid';
 var pwRemote = true;
 
 function showPostWanted(){
-  console.log('showPostWanted called');
   var modal = document.getElementById('postWantedModal');
-  console.log('modal found:', !!modal);
   if(modal){
-    modal.style.cssText = 'display:block;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.85);z-index:9999;overflow-y:auto;';
-    console.log('modal shown');
+    document.body.appendChild(modal);
+    modal.style.cssText = 'display:block;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.9);z-index:999999;overflow-y:auto;-webkit-overflow-scrolling:touch;';
   }
   haptic('light');
 }
@@ -3550,13 +3548,10 @@ var myRoleIcon = '&#127928;';
 var myRoleCat = 'music';
 
 function showMyProfileEdit(){
-  console.log('EDIT BUTTON TAPPED');
   var modal = document.getElementById('myProfileModal');
-  console.log('modal found:', !!modal);
   if(!modal) return;
-  modal.style.cssText = 'display:block !important;position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(0,0,0,.9);z-index:999999;overflow-y:auto;-webkit-overflow-scrolling:touch;';
-  console.log('modal display set, computed style:', window.getComputedStyle(modal).display);
-  console.log('modal rect:', JSON.stringify(modal.getBoundingClientRect()));
+  document.body.appendChild(modal);
+  modal.style.cssText = 'display:block;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.9);z-index:999999;overflow-y:auto;-webkit-overflow-scrolling:touch;';
   // Pre-fill current values
   var name = document.getElementById('myDisplayName');
   var loc = document.getElementById('myLocation');
@@ -4134,11 +4129,9 @@ function sFM(tab){
   var qv=document.getElementById("fmQV");
   var uv=document.getElementById("fmUV");
   var sv=document.getElementById("fmSV");
-  if(qv)qv.style.display="none";
-  if(uv)uv.style.display="none";
-  if(sv)sv.style.display="none";
-  var t=document.getElementById("fm"+tab.charAt(0).toUpperCase()+tab.slice(1)+"V");
-  if(t)t.style.display="block";
+  if(qv)qv.setAttribute("style", qv.getAttribute("style").replace(/display:\s*\w+;?/,"")+";display:"+(tab==="quick"?"block":"none")+";");
+  if(uv)uv.setAttribute("style", (uv.getAttribute("style")||"").replace(/display:\s*\w+;?/,"")+";display:"+(tab==="upload"?"block":"none")+";");
+  if(sv)sv.setAttribute("style", (sv.getAttribute("style")||"").replace(/display:\s*\w+;?/,"")+";display:"+(tab==="showcase"?"block":"none")+";");
   var fmQ=document.getElementById("fmQ");
   var fmU=document.getElementById("fmU");
   var fmS=document.getElementById("fmS");
@@ -4174,7 +4167,7 @@ function stpRec(){
   var ri=document.getElementById("rI");if(ri)ri.style.display="none";
   var tr=document.getElementById("tR");if(tr){tr.style.borderColor="rgba(40,200,80,.5)";tr.classList.remove("ring-pulse");}
   var rw=document.getElementById("recWave");if(rw)rw.style.display="none";
-  var tc=document.getElementById("tC");if(tc){tc.textContent="&#10003;";tc.style.fontSize="22px";tc.style.color="rgba(40,200,80,.9)";}
+  var tc=document.getElementById("tC");if(tc){tc.innerHTML="&#10003;";tc.style.fontSize="22px";tc.style.color="rgba(40,200,80,.9)";}
   var rh=document.getElementById("rH");if(rh)rh.style.display="none";
   var ra=document.getElementById("rA");if(ra)ra.style.display="flex";
   haptic('success');
