@@ -2941,9 +2941,20 @@ document.addEventListener('DOMContentLoaded', function() {
 
 var tg=window.Telegram&&window.Telegram.WebApp;
 if(tg){
-  tg.ready();
-  tg.expand();
+  try{tg.ready();}catch(e){}
+  try{tg.expand();}catch(e){}
   console.log('TG SDK loaded. initData length:', tg.initData ? tg.initData.length : 0);
+}
+function haptic(type){
+  try{
+    if(tg&&tg.HapticFeedback){
+      if(type==='success'||type==='error'||type==='warning'){
+        tg.HapticFeedback.notificationOccurred(type);
+      } else {
+        tg.HapticFeedback.impactOccurred(type||'light');
+      }
+    }
+  }catch(e){}
 }
 
 function shareStagerz(){
@@ -2987,7 +2998,7 @@ function nextSlide(){
   if(currentSlide===3){
     document.getElementById("nextBtn").style.display="none";
   }
-  if(tg&&tg.HapticFeedback)tg.HapticFeedback.impactOccurred("light");
+  haptic('light');
 }
 
 function skipOnboard(){
@@ -2996,7 +3007,7 @@ function skipOnboard(){
   ob.style.opacity="0";
   setTimeout(function(){ob.style.display="none";},400);
   onboardDone=true;
-  if(tg&&tg.HapticFeedback)tg.HapticFeedback.impactOccurred("medium");
+  haptic('medium');
 }
 
 function switchCat(el,cat){
@@ -3041,7 +3052,7 @@ function goTo(el,id){
     if(id==="public"){setTimeout(function(){buildPerfCards("all");},50);}
     if(id==="channels"){setTimeout(function(){try{buildChannelFeed(currentChannel);}catch(e){}},50);}
   },cur?150:0);
-  if(tg&&tg.HapticFeedback)tg.HapticFeedback.impactOccurred("light");
+  haptic('light');
 }
 
 function sA(msg){
@@ -3074,7 +3085,7 @@ function sFT(el){
     feed.style.opacity="1";
   },200);
 
-  if(tg&&tg.HapticFeedback)tg.HapticFeedback.impactOccurred("light");
+  haptic('light');
 }
 
 
@@ -3202,7 +3213,7 @@ function filterStage(el,cat){
   document.querySelectorAll("#pubChips .cc").forEach(function(c){c.className="cc off";});
   el.className="cc on";
   buildPerfCards(cat);
-  if(tg&&tg.HapticFeedback)tg.HapticFeedback.impactOccurred("light");
+  haptic('light');
 }
 
 
@@ -3218,7 +3229,7 @@ function filterWanted(el,cat){
       card.style.display="none";
     }
   });
-  if(tg&&tg.HapticFeedback)tg.HapticFeedback.impactOccurred("light");
+  haptic('light');
 }
 
 var uploadedTracks=[];
@@ -3233,7 +3244,7 @@ function triggerUpload(){
   var name=names[uploadedTracks.length%names.length];
   var size=["2.4MB","18MB","340KB","4.1MB","42MB"][uploadedTracks.length%5];
   addTrack(type,name,size);
-  if(tg&&tg.HapticFeedback)tg.HapticFeedback.impactOccurred("medium");
+  haptic('medium');
 }
 
 function addTrack(type,name,size){
@@ -3277,7 +3288,7 @@ function clearNotifs(){
   var list=document.getElementById("notifList");
   if(!list)return;
   list.innerHTML="<div style='text-align:center;padding:60px 20px;'><div style='font-size:40px;margin-bottom:12px;opacity:.4;'>&#128276;</div><div style='font-family:Playfair Display,serif;font-size:16px;font-weight:700;color:rgba(255,255,255,.4);margin-bottom:6px;'>All caught up!</div><div style='font-size:10px;color:rgba(255,255,255,.35);'>No new notifications</div></div>";
-  if(tg&&tg.HapticFeedback)tg.HapticFeedback.notificationOccurred("success");
+  haptic('success');
 }
 
 function removeTrack(el){var t=el;for(var i=0;i<5;i++){if(t&&t.className&&t.className.indexOf("tk")>=0){t.remove();return;}t=t&&t.parentNode;}}
@@ -3317,7 +3328,7 @@ async function saveProfile() {
     });
     if (result) {
       console.log('Profile saved!');
-      if (tg && tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
+      haptic('success');
       sA('Profile saved! You are now visible to artists worldwide.');
     }
   } else {
@@ -3379,7 +3390,7 @@ function showPostWanted(){
     modal.style.cssText = 'display:block;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.85);z-index:9999;overflow-y:auto;';
     console.log('modal shown');
   }
-  if(tg && tg.HapticFeedback) tg.HapticFeedback.impactOccurred('light');
+  haptic('light');
 }
 
 function hidePostWanted(){
@@ -3448,7 +3459,7 @@ async function submitWanted(){
     document.getElementById('pwLocation').value = '';
     document.getElementById('pwDesc').value = '';
     loadWantedPosts();
-    if(tg && tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
+    haptic('success');
     sA('Your WANTED post is live!\n\nArtists worldwide can now see and apply.');
   } else {
     if(btn){ btn.innerHTML = '&#127919; POST TO THE WORLD'; btn.style.opacity = '1'; }
@@ -3469,7 +3480,7 @@ async function deleteWanted(postId, cardEl){
     });
     if(res.ok){
       if(cardEl) cardEl.remove();
-      if(tg && tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
+      haptic('success');
     } else {
       sA('Could not delete. Only your own posts can be deleted.');
     }
@@ -3563,7 +3574,7 @@ function showMyProfileEdit(){
     if(chips.length) skillsInput.value = Array.from(chips).map(function(c){return c.textContent.trim();}).join(', ');
   }
   modal.style.display = 'block';
-  if(tg && tg.HapticFeedback) tg.HapticFeedback.impactOccurred('light');
+  haptic('light');
 }
 
 function hideMyProfileEdit(){
@@ -3637,7 +3648,7 @@ async function saveMyProfile(){
 
   if(result){
     console.log('Profile saved to Supabase!');
-    if(tg && tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
+    haptic('success');
     sA('Profile saved!\n\nYou are now visible to artists worldwide.');
   }
 
@@ -3764,7 +3775,7 @@ function openChannel(el, cat, icon, name){
   if(title) title.innerHTML = '<div style="font-size:7px;letter-spacing:2.5px;text-transform:uppercase;color:rgba(255,255,255,.25);">' + icon + ' ' + name + ' Channel</div><div style="flex:1;height:1px;background:rgba(255,255,255,.06);"></div>';
   // Build feed
   buildChannelFeed(cat);
-  if(tg && tg.HapticFeedback) tg.HapticFeedback.impactOccurred('light');
+  haptic('light');
 }
 
 function buildChannelFeed(cat, container){
@@ -3850,7 +3861,7 @@ function showChannelInFeed(container, cat, icon, name, el){
   // Rebuild feed
   var items = document.getElementById('channelFeedItems');
   if(items) buildChannelFeed(cat, items);
-  if(tg && tg.HapticFeedback) tg.HapticFeedback.impactOccurred('light');
+  haptic('light');
 }
 
 
@@ -3985,7 +3996,7 @@ function sW(v){
   if(commV)commV.style.display=v==="comm"?"block":"none";
   if(myBtn)myBtn.className="tb2 "+(v==="my"?"on":"off");
   if(commBtn)commBtn.className="tb2 "+(v==="comm"?"on":"off");
-  if(tg&&tg.HapticFeedback)tg.HapticFeedback.impactOccurred("light");
+  haptic('light');
 }
 
 function sFC(el){
@@ -4085,7 +4096,7 @@ function setSearchCat(cat){
   var inp = document.getElementById("searchInput");
   if(inp) inp.value = "";
   doSearch("");
-  if(tg && tg.HapticFeedback) tg.HapticFeedback.impactOccurred("light");
+  haptic('light');
 }
 
 function sBill(type){
@@ -4100,7 +4111,7 @@ function sBill(type){
   if(bper) bper.textContent = m ? "per month - billed monthly" : "per month - billed yearly";
   var save = document.getElementById("bSave");
   if(save) save.textContent = m ? "" : "Save EUR 48 per year";
-  if(tg && tg.HapticFeedback) tg.HapticFeedback.impactOccurred("light");
+  haptic('light');
 }
 
 function testSupabase(){
@@ -4134,7 +4145,7 @@ function sFM(tab){
   if(fmQ)fmQ.className="fmb "+(tab==="quick"?"q":"off");
   if(fmU)fmU.className="fmb "+(tab==="upload"?"u":"off");
   if(fmS)fmS.className="fmb "+(tab==="showcase"?"s":"off");
-  if(tg&&tg.HapticFeedback)tg.HapticFeedback.impactOccurred("light");
+  haptic('light');
 }
 
 var rec=false,rTimer=null,rSec=30;
@@ -4154,7 +4165,7 @@ function strRec(){
     if(tc){tc.textContent=rSec;tc.style.color=rSec<=5?"rgba(255,80,80,.9)":"#fff";}
     if(rSec<=0)stpRec();
   },1000);
-  if(tg&&tg.HapticFeedback)tg.HapticFeedback.impactOccurred("heavy");
+  haptic('heavy');
 }
 function stpRec(){
   rec=false;clearInterval(rTimer);
@@ -4166,7 +4177,7 @@ function stpRec(){
   var tc=document.getElementById("tC");if(tc){tc.textContent="&#10003;";tc.style.fontSize="22px";tc.style.color="rgba(40,200,80,.9)";}
   var rh=document.getElementById("rH");if(rh)rh.style.display="none";
   var ra=document.getElementById("rA");if(ra)ra.style.display="flex";
-  if(tg&&tg.HapticFeedback)tg.HapticFeedback.notificationOccurred("success");
+  haptic('success');
 }
 function retRec(){
   rec=false;clearInterval(rTimer);rSec=30;
