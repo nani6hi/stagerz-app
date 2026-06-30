@@ -3535,28 +3535,24 @@ var myRoleIcon = '&#127928;';
 var myRoleCat = 'music';
 
 function showMyProfileEdit(){
-  var modal = document.getElementById('myProfileModal');
-  if(!modal) return;
-  document.body.appendChild(modal);
-  modal.style.cssText = 'display:block;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.9);z-index:999999;overflow-y:auto;-webkit-overflow-scrolling:touch;';
-  // Pre-fill current values
   var name = document.getElementById('myDisplayName');
   var loc = document.getElementById('myLocation');
   var bio = document.getElementById('myBio');
   var skills = document.getElementById('mySkillsList');
-  var nameInput = document.getElementById('myEditName');
-  var locInput = document.getElementById('myEditLocation');
-  var bioInput = document.getElementById('myEditBio');
-  var skillsInput = document.getElementById('myEditSkills');
-  if(nameInput && name && name.textContent !== 'Your Name') nameInput.value = name.textContent;
-  if(locInput && loc) locInput.value = loc.textContent.replace('&#128205; ','').replace('Worldwide','');
-  if(bioInput && bio && bio.textContent !== 'Tap EDIT to set up your artist profile and get discovered worldwide.') bioInput.value = bio.textContent;
-  if(skillsInput && skills){
-    var chips = skills.querySelectorAll('.skc');
-    if(chips.length) skillsInput.value = Array.from(chips).map(function(c){return c.textContent.trim();}).join(', ');
-  }
-  modal.style.display = 'block';
-  haptic('light');
+  goTo(null, 'editprofile');
+  setTimeout(function(){
+    var nameInput = document.getElementById('myEditName');
+    var locInput = document.getElementById('myEditLocation');
+    var bioInput = document.getElementById('myEditBio');
+    var skillsInput = document.getElementById('myEditSkills');
+    if(nameInput && name && name.textContent !== 'Your Name') nameInput.value = name.textContent;
+    if(locInput && loc) locInput.value = loc.textContent.replace('&#128205; ','').replace('Worldwide','');
+    if(bioInput && bio && bio.textContent !== 'Tap EDIT to set up your artist profile and get discovered worldwide.') bioInput.value = bio.textContent;
+    if(skillsInput && skills){
+      var chips = skills.querySelectorAll('.skc');
+      if(chips.length) skillsInput.value = Array.from(chips).map(function(c){return c.textContent.trim();}).join(', ');
+    }
+  }, 200);
 }
 
 function hideMyProfileEdit(){
@@ -4169,6 +4165,26 @@ function retRec(){
   var rh=document.getElementById("rH");
   if(rh){rh.style.display="block";rh.innerHTML="<div style='font-size:13px;color:rgba(255,255,255,.4);margin-bottom:3px;'>TAP TO RECORD</div><div style='font-size:9px;color:rgba(255,255,255,.18);'>Max 30 seconds</div>";}
   var ra=document.getElementById("rA");if(ra)ra.style.display="none";
+}
+
+
+function sTL(name,hint){
+  ["Cut","Trim","Volume","Loop","Undo"].forEach(function(t){
+    var el=document.getElementById("tl"+t);
+    if(el)el.className=t===name?"toolt at":"toolt it";
+  });
+  var th=document.getElementById("tH");if(th)th.textContent=hint;
+  haptic('light');
+}
+
+function sPub(el){
+  document.querySelectorAll(".popt").forEach(function(o){
+    o.className="popt uns";
+    var pr=o.querySelector(".pr");if(pr)pr.innerHTML="";
+  });
+  el.className="popt sel";
+  var pr=el.querySelector(".pr");if(pr)pr.innerHTML="<div class='prd'></div>";
+  haptic('light');
 }
 
 </script>
