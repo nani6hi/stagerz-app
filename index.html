@@ -3021,13 +3021,6 @@ function collabSoon(){
 }
 
 function goTo(el,id){
-  console.log('goTo called with id:', id);
-  var pwm=document.getElementById("postWantedModal");
-  if(pwm)pwm.style.display="none";
-  var mpm=document.getElementById("myProfileModal");
-  if(mpm)mpm.style.display="none";
-  var pwModal=document.getElementById("postWantedModal");
-  if(pwModal)pwModal.style.display="none";
   var cur=document.querySelector(".screen.active");
   if(cur){cur.style.opacity="0";cur.style.transform="scale(.98)";}
   setTimeout(function(){
@@ -3383,17 +3376,11 @@ var pwComp = 'paid';
 var pwRemote = true;
 
 function showPostWanted(){
-  var modal = document.getElementById('postWantedModal');
-  if(modal){
-    document.body.appendChild(modal);
-    modal.style.cssText = 'display:block;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.9);z-index:999999;overflow-y:auto;-webkit-overflow-scrolling:touch;';
-  }
-  haptic('light');
+  goTo(null, 'postwanted');
 }
 
 function hidePostWanted(){
-  var modal = document.getElementById('postWantedModal');
-  if(modal) modal.style.display = 'none';
+  goTo(null, 'wanted');
 }
 
 function pwPickCat(el, cat){
@@ -3451,7 +3438,7 @@ async function submitWanted(){
   });
 
   if(result){
-    hidePostWanted();
+    goTo(null,'wanted');
     document.getElementById('pwTitle').value = '';
     document.getElementById('pwRole').value = '';
     document.getElementById('pwLocation').value = '';
@@ -3573,8 +3560,7 @@ function showMyProfileEdit(){
 }
 
 function hideMyProfileEdit(){
-  var modal = document.getElementById('myProfileModal');
-  if(modal) modal.style.display = 'none';
+  goTo(null, 'myprofile');
 }
 
 function myPickRole(el, role, icon, cat){
@@ -3628,7 +3614,7 @@ async function saveMyProfile(){
   var prompt = document.getElementById('mySetupPrompt');
   if(prompt) prompt.style.display = 'none';
 
-  hideMyProfileEdit();
+  goTo(null,'myprofile');
 
   // Save to Supabase
   var userId = currentUser ? currentUser.id : 999999;
@@ -4248,40 +4234,113 @@ function retRec(){
   </div>
 </div>
 
-<!-- My Profile Edit Modal -->
-<div id="myProfileModal" onclick="hideMyProfileEdit()" style="display:none;position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(0,0,0,.85);z-index:99999;overflow-y:auto;-webkit-overflow-scrolling:touch;">
-  <div onclick="event.stopPropagation()" style="background:#1a1628;border-radius:16px 16px 0 0;position:absolute;bottom:0;left:0;right:0;padding:20px;max-height:92vh;overflow-y:auto;">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
-      <div style="font-family:'Playfair Display',serif;font-size:18px;font-weight:700;color:#fff;">Edit My Profile</div>
-      <button onclick="hideMyProfileEdit()" style="width:28px;height:28px;border-radius:50%;background:rgba(255,255,255,.08);border:none;color:rgba(255,255,255,.5);font-size:14px;cursor:pointer;">&#10005;</button>
+<!-- SCREEN: EDIT MY PROFILE -->
+<div class="screen" id="screen-editprofile">
+  <div class="tb">
+    <div class="tr">
+      <div class="bk" style="position:relative;top:auto;left:auto;margin-right:10px;" onclick="goTo(this,'myprofile')">&#8249;</div>
+      <div class="logo">Edit Pro<em>f</em>ile</div>
     </div>
+  </div>
+  <div class="sa">
+    <div class="pd pt">
+      <div style="font-size:9px;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.3);margin-bottom:6px;">Display Name</div>
+      <input id="myEditName" type="text" placeholder="Your artist name" style="width:100%;padding:10px 12px;background:rgba(255,255,255,.05);border:1px solid rgba(100,80,255,.2);border-radius:6px;color:#fff;font-size:13px;margin-bottom:12px;box-sizing:border-box;"/>
 
-    <div style="font-size:9px;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.3);margin-bottom:6px;">Display Name</div>
-    <input id="myEditName" type="text" placeholder="Your artist name" style="width:100%;padding:10px 12px;background:rgba(255,255,255,.05);border:1px solid rgba(100,80,255,.2);border-radius:6px;color:#fff;font-size:13px;margin-bottom:12px;box-sizing:border-box;"/>
+      <div style="font-size:9px;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.3);margin-bottom:6px;">I am a...</div>
+      <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px;" id="myRolePicker">
+        <div class="roleChip on" onclick="myPickRole(this,'Musician','&#127928;','music')">&#127928; Musician</div>
+        <div class="roleChip off" onclick="myPickRole(this,'Filmmaker','&#127916;','film')">&#127916; Filmmaker</div>
+        <div class="roleChip off" onclick="myPickRole(this,'Dancer','&#128131;','dance')">&#128131; Dancer</div>
+        <div class="roleChip off" onclick="myPickRole(this,'Photographer','&#128247;','photo')">&#128247; Photographer</div>
+        <div class="roleChip off" onclick="myPickRole(this,'Visual Artist','&#127912;','art')">&#127912; Visual Artist</div>
+        <div class="roleChip off" onclick="myPickRole(this,'AI Creator','&#129302;','ai')">&#129302; AI Creator</div>
+        <div class="roleChip off" onclick="myPickRole(this,'Singer','&#127908;','music')">&#127908; Singer</div>
+        <div class="roleChip off" onclick="myPickRole(this,'Producer','&#127911;','music')">&#127911; Producer</div>
+      </div>
 
-    <div style="font-size:9px;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.3);margin-bottom:6px;">I am a...</div>
-    <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px;" id="myRolePicker">
-      <div class="roleChip on" onclick="myPickRole(this,'Musician','&#127928;','music')">&#127928; Musician</div>
-      <div class="roleChip off" onclick="myPickRole(this,'Filmmaker','&#127916;','film')">&#127916; Filmmaker</div>
-      <div class="roleChip off" onclick="myPickRole(this,'Dancer','&#128131;','dance')">&#128131; Dancer</div>
-      <div class="roleChip off" onclick="myPickRole(this,'Photographer','&#128247;','photo')">&#128247; Photographer</div>
-      <div class="roleChip off" onclick="myPickRole(this,'Visual Artist','&#127912;','art')">&#127912; Visual Artist</div>
-      <div class="roleChip off" onclick="myPickRole(this,'AI Creator','&#129302;','ai')">&#129302; AI Creator</div>
-      <div class="roleChip off" onclick="myPickRole(this,'Singer','&#127908;','music')">&#127908; Singer</div>
-      <div class="roleChip off" onclick="myPickRole(this,'Producer','&#127911;','music')">&#127911; Producer</div>
+      <div style="font-size:9px;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.3);margin-bottom:6px;">Location</div>
+      <input id="myEditLocation" type="text" placeholder="City, Country" style="width:100%;padding:10px 12px;background:rgba(255,255,255,.05);border:1px solid rgba(100,80,255,.2);border-radius:6px;color:#fff;font-size:13px;margin-bottom:12px;box-sizing:border-box;"/>
+
+      <div style="font-size:9px;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.3);margin-bottom:6px;">Bio</div>
+      <textarea id="myEditBio" placeholder="Tell the world about yourself and your art..." style="width:100%;padding:10px 12px;background:rgba(255,255,255,.05);border:1px solid rgba(100,80,255,.2);border-radius:6px;color:#fff;font-size:12px;line-height:1.5;min-height:80px;resize:none;margin-bottom:12px;box-sizing:border-box;"></textarea>
+
+      <div style="font-size:9px;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.3);margin-bottom:6px;">Skills (comma separated)</div>
+      <input id="myEditSkills" type="text" placeholder="e.g. Guitar, Vocals, Songwriting" style="width:100%;padding:10px 12px;background:rgba(255,255,255,.05);border:1px solid rgba(100,80,255,.2);border-radius:6px;color:#fff;font-size:13px;margin-bottom:16px;box-sizing:border-box;"/>
+
+      <button onclick="saveMyProfile()" style="width:100%;padding:14px;background:linear-gradient(135deg,#8a6018,#e8b830);color:#06040e;border:none;border-radius:4px;font-family:'Bebas Neue',sans-serif;font-size:16px;letter-spacing:3px;cursor:pointer;">SAVE PROFILE</button>
+      <div class="gap"></div>
     </div>
-
-    <div style="font-size:9px;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.3);margin-bottom:6px;">Location</div>
-    <input id="myEditLocation" type="text" placeholder="City, Country" style="width:100%;padding:10px 12px;background:rgba(255,255,255,.05);border:1px solid rgba(100,80,255,.2);border-radius:6px;color:#fff;font-size:13px;margin-bottom:12px;box-sizing:border-box;"/>
-
-    <div style="font-size:9px;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.3);margin-bottom:6px;">Bio</div>
-    <textarea id="myEditBio" placeholder="Tell the world about yourself and your art..." style="width:100%;padding:10px 12px;background:rgba(255,255,255,.05);border:1px solid rgba(100,80,255,.2);border-radius:6px;color:#fff;font-size:12px;line-height:1.5;min-height:80px;resize:none;margin-bottom:12px;box-sizing:border-box;"></textarea>
-
-    <div style="font-size:9px;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.3);margin-bottom:6px;">Skills (comma separated)</div>
-    <input id="myEditSkills" type="text" placeholder="e.g. Guitar, Vocals, Songwriting" style="width:100%;padding:10px 12px;background:rgba(255,255,255,.05);border:1px solid rgba(100,80,255,.2);border-radius:6px;color:#fff;font-size:13px;margin-bottom:16px;box-sizing:border-box;"/>
-
-    <button onclick="saveMyProfile()" style="width:100%;padding:14px;background:linear-gradient(135deg,#8a6018,#e8b830);color:#06040e;border:none;border-radius:4px;font-family:'Bebas Neue',sans-serif;font-size:16px;letter-spacing:3px;cursor:pointer;">SAVE PROFILE</button>
+  </div>
+  <div class="nb">
+    <div class="ni" onclick="goTo(this,'home')"><div class="ni-icon">&#127968;</div><span>Home</span></div>
+    <div class="ni" onclick="goTo(this,'search')"><div class="ni-icon">&#128269;</div><span>Search</span></div>
+    <div class="ni" onclick="goTo(this,'public')"><div class="ni-icon">&#127917;</div><span>Stage</span></div>
+    <div class="ni" onclick="goTo(this,'wanted')"><div class="ni-icon">&#127919;</div><span>Wanted</span></div>
+    <div class="ni active" onclick="goTo(this,'myprofile')"><div class="ni-icon">&#128100;</div><span>Profile</span></div>
   </div>
 </div>
+
+<!-- SCREEN: POST WANTED -->
+<div class="screen" id="screen-postwanted">
+  <div class="tb">
+    <div class="tr">
+      <div class="bk" style="position:relative;top:auto;left:auto;margin-right:10px;" onclick="goTo(this,'wanted')">&#8249;</div>
+      <div class="logo">Post a WAN<em>T</em>ED</div>
+    </div>
+  </div>
+  <div class="sa">
+    <div class="pd pt">
+      <div style="font-size:9px;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.3);margin-bottom:6px;">What are you looking for?</div>
+      <input id="pwTitle" type="text" placeholder="e.g. Guitarist for Afrobeat EP" style="width:100%;padding:10px 12px;background:rgba(255,255,255,.05);border:1px solid rgba(100,80,255,.2);border-radius:6px;color:#fff;font-size:13px;margin-bottom:12px;box-sizing:border-box;"/>
+
+      <div style="font-size:9px;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.3);margin-bottom:6px;">Role needed</div>
+      <input id="pwRole" type="text" placeholder="e.g. Guitarist, Cinematographer, Dancer..." style="width:100%;padding:10px 12px;background:rgba(255,255,255,.05);border:1px solid rgba(100,80,255,.2);border-radius:6px;color:#fff;font-size:13px;margin-bottom:12px;box-sizing:border-box;"/>
+
+      <div style="font-size:9px;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.3);margin-bottom:6px;">Category</div>
+      <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px;" id="pwCatPicker">
+        <div class="roleChip on" onclick="pwPickCat(this,'music')">&#127925; Music</div>
+        <div class="roleChip off" onclick="pwPickCat(this,'film')">&#127916; Film</div>
+        <div class="roleChip off" onclick="pwPickCat(this,'dance')">&#128131; Dance</div>
+        <div class="roleChip off" onclick="pwPickCat(this,'photo')">&#128247; Photo</div>
+        <div class="roleChip off" onclick="pwPickCat(this,'ai')">&#129302; AI</div>
+        <div class="roleChip off" onclick="pwPickCat(this,'art')">&#127912; Art</div>
+      </div>
+
+      <div style="font-size:9px;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.3);margin-bottom:6px;">Location</div>
+      <input id="pwLocation" type="text" placeholder="City, Country" style="width:100%;padding:10px 12px;background:rgba(255,255,255,.05);border:1px solid rgba(100,80,255,.2);border-radius:6px;color:#fff;font-size:13px;margin-bottom:8px;box-sizing:border-box;"/>
+
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
+        <div style="font-size:11px;color:rgba(255,255,255,.4);">Remote OK?</div>
+        <div id="pwRemoteToggle" onclick="pwToggleRemote()" style="width:44px;height:24px;border-radius:12px;background:linear-gradient(135deg,#3020a0,#5040c8);cursor:pointer;position:relative;transition:background .2s;">
+          <div id="pwRemoteDot" style="position:absolute;top:3px;right:3px;width:18px;height:18px;border-radius:50%;background:#fff;transition:right .2s;"></div>
+        </div>
+        <div id="pwRemoteLabel" style="font-size:11px;color:rgba(40,200,80,.7);">Yes</div>
+      </div>
+
+      <div style="font-size:9px;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.3);margin-bottom:6px;">Compensation</div>
+      <div style="display:flex;gap:6px;margin-bottom:12px;" id="pwCompPicker">
+        <div class="roleChip on" onclick="pwPickComp(this,'paid')" style="flex:1;text-align:center;">&#128181; Paid</div>
+        <div class="roleChip off" onclick="pwPickComp(this,'rev_share')" style="flex:1;text-align:center;">&#129309; Rev Share</div>
+        <div class="roleChip off" onclick="pwPickComp(this,'credit')" style="flex:1;text-align:center;">&#127775; Credit</div>
+      </div>
+
+      <div style="font-size:9px;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.3);margin-bottom:6px;">Description</div>
+      <textarea id="pwDesc" placeholder="Tell artists what the project is about, timeline, what you expect..." style="width:100%;padding:10px 12px;background:rgba(255,255,255,.05);border:1px solid rgba(100,80,255,.2);border-radius:6px;color:#fff;font-size:12px;line-height:1.5;min-height:80px;resize:none;margin-bottom:16px;box-sizing:border-box;"></textarea>
+
+      <button onclick="submitWanted()" style="width:100%;padding:14px;background:linear-gradient(135deg,#8a6018,#e8b830);color:#06040e;border:none;border-radius:4px;font-family:'Bebas Neue',sans-serif;font-size:16px;letter-spacing:3px;cursor:pointer;">&#127919; POST TO THE WORLD</button>
+      <div style="font-size:8px;color:rgba(255,255,255,.2);text-align:center;margin-top:8px;">Visible to all artists worldwide instantly</div>
+      <div class="gap"></div>
+    </div>
+  </div>
+  <div class="nb">
+    <div class="ni" onclick="goTo(this,'home')"><div class="ni-icon">&#127968;</div><span>Home</span></div>
+    <div class="ni" onclick="goTo(this,'search')"><div class="ni-icon">&#128269;</div><span>Search</span></div>
+    <div class="ni" onclick="goTo(this,'public')"><div class="ni-icon">&#127917;</div><span>Stage</span></div>
+    <div class="ni active" onclick="goTo(this,'wanted')"><div class="ni-icon">&#127919;</div><span>Wanted</span></div>
+    <div class="ni" onclick="goTo(this,'myprofile')"><div class="ni-icon">&#128100;</div><span>Profile</span></div>
+  </div>
+</div>
+
 </body>
 </html>
