@@ -3543,6 +3543,9 @@ function showMyProfileEdit(){
   var modal = document.getElementById('myProfileModal');
   console.log('modal found:', !!modal);
   if(!modal) return;
+  modal.style.cssText = 'display:block !important;position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(0,0,0,.9);z-index:999999;overflow-y:auto;-webkit-overflow-scrolling:touch;';
+  console.log('modal display set, computed style:', window.getComputedStyle(modal).display);
+  console.log('modal rect:', JSON.stringify(modal.getBoundingClientRect()));
   // Pre-fill current values
   var name = document.getElementById('myDisplayName');
   var loc = document.getElementById('myLocation');
@@ -4182,7 +4185,7 @@ function retRec(){
 
 
 <!-- Post WANTED Modal -->
-<div id="postWantedModal" onclick="hidePostWanted()" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.85);z-index:9999;overflow-y:auto;">
+<div id="postWantedModal" onclick="hidePostWanted()" style="display:none;position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(0,0,0,.85);z-index:99999;overflow-y:auto;-webkit-overflow-scrolling:touch;">
   <div onclick="event.stopPropagation()" style="background:#1a1628;border-radius:16px 16px 0 0;position:absolute;bottom:0;left:0;right:0;padding:20px;max-height:92vh;overflow-y:auto;">
 
     <!-- Header -->
@@ -4242,7 +4245,7 @@ function retRec(){
 </div>
 
 <!-- My Profile Edit Modal -->
-<div id="myProfileModal" onclick="hideMyProfileEdit()" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.85);z-index:9999;overflow-y:auto;">
+<div id="myProfileModal" onclick="hideMyProfileEdit()" style="display:none;position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(0,0,0,.85);z-index:99999;overflow-y:auto;-webkit-overflow-scrolling:touch;">
   <div onclick="event.stopPropagation()" style="background:#1a1628;border-radius:16px 16px 0 0;position:absolute;bottom:0;left:0;right:0;padding:20px;max-height:92vh;overflow-y:auto;">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
       <div style="font-family:'Playfair Display',serif;font-size:18px;font-weight:700;color:#fff;">Edit My Profile</div>
