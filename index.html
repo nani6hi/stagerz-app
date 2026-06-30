@@ -3004,6 +3004,7 @@ function collabSoon(){
 }
 
 function goTo(el,id){
+  console.log('goTo called with id:', id);
   var pwm=document.getElementById("postWantedModal");
   if(pwm)pwm.style.display="none";
   var mpm=document.getElementById("myProfileModal");
@@ -3532,7 +3533,9 @@ var myRoleIcon = '&#127928;';
 var myRoleCat = 'music';
 
 function showMyProfileEdit(){
+  console.log('EDIT BUTTON TAPPED');
   var modal = document.getElementById('myProfileModal');
+  console.log('modal found:', !!modal);
   if(!modal) return;
   // Pre-fill current values
   var name = document.getElementById('myDisplayName');
