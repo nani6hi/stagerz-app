@@ -1,3 +1,61 @@
+<!-- ══════════════════════════════════════════
+     SCREEN 3: WANTED
+══════════════════════════════════════════ -->
+<div class="screen" id="screen-wanted">
+  <div class="tb">
+    <div class="logo">WAN<em>T</em>ED</div>
+    <div class="tb-icons">
+      <div class="tb-icon" onclick="goTo('postwanted')" style="font-size:18px;color:#e8b830;">+</div>
+    </div>
+  </div>
+  <!-- My / Community tabs -->
+  <div style="display:flex;padding:0 14px 0;gap:0;border-bottom:1px solid rgba(255,255,255,.06);flex-shrink:0;">
+    <div class="stage-tab on" id="wTabMy" onclick="switchWantedTab('my')">My Wanted</div>
+    <div class="stage-tab" id="wTabComm" onclick="switchWantedTab('community')">Community</div>
+  </div>
+  <!-- Category chips — only in Community tab -->
+  <div id="wCatChips" style="display:none;overflow-x:auto;padding:8px 14px;gap:8px;scrollbar-width:none;flex-shrink:0;border-bottom:1px solid rgba(255,255,255,.06);">
+    <div class="cat-chip on" onclick="setWantedCat(this,'all')">&#127757; All</div>
+    <div class="cat-chip" onclick="setWantedCat(this,'music')">&#127925; Music</div>
+    <div class="cat-chip" onclick="setWantedCat(this,'film')">&#127916; Film</div>
+    <div class="cat-chip" onclick="setWantedCat(this,'dance')">&#128131; Dance</div>
+    <div class="cat-chip" onclick="setWantedCat(this,'photo')">&#128247; Photo</div>
+    <div class="cat-chip" onclick="setWantedCat(this,'ai')">&#129302; AI</div>
+    <div class="cat-chip" onclick="setWantedCat(this,'art')">&#127912; Art</div>
+  </div>
+  <div class="sa">
+    <!-- My Wanted tab -->
+    <div id="wMyTab" style="padding:12px 14px 70px;">
+      <div class="w-post-btn" onclick="goTo('postwanted')">
+        <div class="w-post-icon">&#127919;</div>
+        <div>
+          <div class="w-post-label">POST A WANTED</div>
+          <div class="w-post-sub">Find your next collaborator worldwide</div>
+        </div>
+        <div class="w-post-plus">+</div>
+      </div>
+      <div id="wMyList">
+        <div style="background:#111118;border-radius:12px;padding:20px;text-align:center;">
+          <div style="font-size:24px;margin-bottom:8px;">&#127919;</div>
+          <div style="font-size:11px;font-weight:600;color:#fff;margin-bottom:4px;">No active posts yet</div>
+          <div style="font-size:9px;color:rgba(255,255,255,.25);">Post a WANTED to find collaborators worldwide</div>
+        </div>
+      </div>
+    </div>
+    <!-- Community tab -->
+    <div id="wCommTab" style="display:none;padding:8px 14px 70px;">
+      <div class="w-feed" id="wantedFeed" style="padding:0;"></div>
+    </div>
+  </div>
+  <div class="nb">
+    <div class="ni" onclick="goTo('stage')"><div class="ni-icon">&#127917;</div>Stage</div>
+    <div class="ni" onclick="goTo('search')"><div class="ni-icon">&#128269;</div>Search</div>
+    <div class="ni active" onclick="goTo('wanted')"><div class="ni-icon">&#127919;</div>Wanted<div class="ni-dot"></div></div>
+    <div class="ni" onclick="goTo('famemaker')"><div class="ni-icon">&#127916;</div>FameMaker</div>
+    <div class="ni" onclick="goTo('profile')"><div class="ni-icon">&#128100;</div>Profile</div>
+  </div>
+</div>
+
 <!DOCTYPE html>
 <html lang='en'>
 <head>
@@ -122,7 +180,7 @@ html,body{width:100%;height:100%;background:#08080f;color:#f0f0f5;font-family:'I
 .w-post-sub{font-size:8px;color:rgba(255,255,255,.3);}
 .w-post-plus{margin-left:auto;font-size:22px;color:rgba(232,184,48,.4);}
 .w-feed{padding:0 14px 70px;}
-.w-card{background:#111118;border-radius:14px;padding:14px;margin-bottom:10px;border-left:3px solid #e8b830;}
+.w-card{background:#111118;border-radius:14px;padding:10px 12px;margin-bottom:8px;border-left:3px solid #e8b830;}
 .w-card-alt{border-left-color:rgba(100,80,255,.5);}
 .w-badge{display:inline-block;padding:3px 8px;border-radius:6px;font-size:7px;font-weight:700;letter-spacing:.5px;margin-bottom:8px;}
 .w-badge-gold{background:rgba(232,184,48,.12);color:#e8b830;}
@@ -757,7 +815,7 @@ function goTo(id){
   }
   haptic('light');
   if(id==='search') setTimeout(function(){ renderArtists(); },50);
-  if(id==='wanted') loadWanted();
+  if(id==='wanted'){ switchWantedTab('my'); }
   if(id==='profile') loadMyProfile();
 }
 
@@ -1019,14 +1077,74 @@ function openArtist(a){
 
 // --- WANTED ---
 var wantedData = [
-  {id:'w1',title:'Guitarist for Afrobeat EP',role:'Guitarist',cat:'Music',loc:'Lagos',remote:true,comp:'Rev Share',badge:'match',badgeText:'&#11088; 98% Match',user:'Leila Mensah',time:'2h ago'},
-  {id:'w2',title:'Editor for Music Documentary',role:'Film Editor',cat:'Film',loc:'Accra',remote:true,comp:'Paid',badge:'hot',badgeText:'&#128293; Urgent',user:'Kwame Asante',time:'1h ago'},
-  {id:'w3',title:'Vocalist for Arabic Electronic Track',role:'Vocalist',cat:'Music',loc:'Dubai',remote:true,comp:'Paid',badge:'new',badgeText:'&#129001; New',user:'Tariq Hassan',time:'8h ago'},
-  {id:'w4',title:'Composer for Short Film Score',role:'Composer',cat:'Film',loc:'Milan',remote:true,comp:'Rev Share',badge:'new',badgeText:'&#129001; New',user:'Marco Rossi',time:'2h ago'},
-  {id:'w5',title:'Videographer for K-Pop Artist',role:'Videographer',cat:'Photo',loc:'Seoul',remote:false,comp:'Paid',badge:'hot',badgeText:'&#128293; Urgent',user:'Yuna Park',time:'3h ago'},
-  {id:'w6',title:'Dancer for Experimental Film',role:'Dancer',cat:'Dance',loc:'Kyiv',remote:false,comp:'Credit',badge:'new',badgeText:'&#129001; New',user:'Olena Kovalenko',time:'12h ago'},
-  {id:'w7',title:'AI Artist for Album Visual Identity',role:'AI Artist',cat:'AI',loc:'Remote',remote:true,comp:'Credit + Rev Share',badge:'match',badgeText:'&#11088; 94% Match',user:'Aria Santos',time:'6h ago'},
+  {id:'w1',title:'Guitarist for Afrobeat EP',role:'Guitarist',cat:'Music',loc:'Lagos',flag:'&#127475;&#127468;',remote:true,comp:'Rev Share',badge:'match',badgeText:'&#11088; 98% Match',user:'Leila Mensah',verified:true,time:'2h ago'},
+  {id:'w2',title:'Editor for Music Documentary',role:'Film Editor',cat:'Film',loc:'Accra',flag:'&#127468;&#127469;',remote:true,comp:'Paid',badge:'hot',badgeText:'&#128293; Urgent',user:'Kwame Asante',verified:true,time:'1h ago'},
+  {id:'w3',title:'Vocalist for Arabic Electronic Track',role:'Vocalist',cat:'Music',loc:'Dubai',flag:'&#127462;&#127466;',remote:true,comp:'Paid',badge:'new',badgeText:'&#129001; New',user:'Tariq Hassan',verified:true,time:'8h ago'},
+  {id:'w4',title:'Composer for Short Film Score',role:'Composer',cat:'Film',loc:'Milan',flag:'&#127470;&#127481;',remote:true,comp:'Rev Share',badge:'new',badgeText:'&#129001; New',user:'Marco Rossi',verified:true,time:'2h ago'},
+  {id:'w5',title:'Videographer for K-Pop Artist',role:'Videographer',cat:'Photo',loc:'Seoul',flag:'&#127472;&#127479;',remote:false,comp:'Paid',badge:'hot',badgeText:'&#128293; Urgent',user:'Yuna Park',verified:true,time:'3h ago'},
+  {id:'w6',title:'Dancer for Experimental Film',role:'Dancer',cat:'Dance',loc:'Kyiv',flag:'&#127482;&#127462;',remote:false,comp:'Credit',badge:'new',badgeText:'&#129001; New',user:'Olena Kovalenko',verified:true,time:'12h ago'},
+  {id:'w7',title:'AI Artist for Album Visual Identity',role:'AI Artist',cat:'AI',loc:'Remote',flag:'&#127757;',remote:true,comp:'Credit + Rev Share',badge:'match',badgeText:'&#11088; 94% Match',user:'Aria Santos',verified:true,time:'6h ago'},
 ];
+
+var currentWantedCat = 'all';
+var currentWantedTab = 'my';
+
+function switchWantedTab(tab){
+  currentWantedTab = tab;
+  var myTab = document.getElementById('wMyTab');
+  var commTab = document.getElementById('wCommTab');
+  var chips = document.getElementById('wCatChips');
+  var tabMy = document.getElementById('wTabMy');
+  var tabComm = document.getElementById('wTabComm');
+  if(tab === 'my'){
+    myTab.style.display = 'block';
+    commTab.style.display = 'none';
+    chips.style.display = 'none';
+    tabMy.classList.add('on'); tabComm.classList.remove('on');
+    loadMyWantedTab();
+  } else {
+    myTab.style.display = 'none';
+    commTab.style.display = 'block';
+    chips.style.display = 'flex';
+    tabMy.classList.remove('on'); tabComm.classList.add('on');
+    renderWanted(null);
+  }
+}
+
+function setWantedCat(el, cat){
+  currentWantedCat = cat;
+  document.querySelectorAll('#wCatChips .cat-chip').forEach(function(c){ c.classList.remove('on'); });
+  el.classList.add('on');
+  renderWanted(null);
+}
+
+async function loadMyWantedTab(){
+  var data = await supaSelect('wanted_posts','user_id=eq.999999&status=eq.open&order=created_at.desc');
+  var container = document.getElementById('wMyList');
+  if(!container) return;
+  if(!data || !data.length){
+    container.innerHTML = '<div style="background:#111118;border-radius:12px;padding:20px;text-align:center;"><div style="font-size:24px;margin-bottom:8px;">&#127919;</div><div style="font-size:11px;font-weight:600;color:#fff;margin-bottom:4px;">No active posts yet</div><div style="font-size:9px;color:rgba(255,255,255,.25);">Post a WANTED to find collaborators worldwide</div></div>';
+    return;
+  }
+  container.innerHTML = '';
+  data.forEach(function(p){
+    var card = document.createElement('div');
+    card.style.cssText = 'background:#111118;border-radius:12px;padding:12px;margin-bottom:8px;border-left:3px solid #e8b830;';
+    var title = document.createElement('div');
+    title.style.cssText = 'font-size:11px;font-weight:600;color:#fff;margin-bottom:4px;';
+    title.textContent = p.title;
+    var meta = document.createElement('div');
+    meta.style.cssText = 'font-size:8px;color:rgba(255,255,255,.3);margin-bottom:8px;';
+    meta.textContent = p.role_needed + ' - ' + (p.location||'Remote') + ' - ' + (p.compensation||'');
+    var note = document.createElement('div');
+    note.style.cssText = 'font-size:8px;color:rgba(255,255,255,.2);';
+    note.textContent = 'Edit and close available in Profile';
+    card.appendChild(title);
+    card.appendChild(meta);
+    card.appendChild(note);
+    container.appendChild(card);
+  });
+}
 
 async function loadWanted(){
   var data = await supaSelect('wanted_posts','status=eq.open&user_id=neq.999999&order=created_at.desc&limit=20');
@@ -1037,7 +1155,7 @@ function renderWanted(dbData){
   var feed = document.getElementById('wantedFeed');
   if(!feed) return;
   feed.innerHTML = '';
-  var items = wantedData.slice();
+  var items = currentWantedCat==='all' ? wantedData.slice() : wantedData.filter(function(d){ return d.cat.toLowerCase()===currentWantedCat; });
   if(dbData){
     dbData.forEach(function(p){
       items.unshift({id:p.id,title:p.title,role:p.role_needed,cat:p.category,loc:p.location,remote:p.remote,comp:p.compensation,badge:'new',badgeText:'&#129001; Live',user:'Artist',time:'Just now',fromDB:true,dbId:p.id});
@@ -1047,16 +1165,21 @@ function renderWanted(dbData){
   if(count) count.textContent = items.length+' open';
   items.forEach(function(item){
     var badgeClass = item.badge==='match' ? 'w-badge-gold' : item.badge==='hot' ? 'w-badge-hot' : 'w-badge-new';
+    var locText = item.remote ? (item.flag||'') + ' Remote' : (item.flag||'') + ' ' + item.loc;
+    var verifiedBadge = item.verified ? ' <span style="color:#e8b830;font-size:9px;">&#128309;</span>' : '';
     var el = document.createElement('div');
     el.className = 'w-card'+(item.badge==='new'?' w-card-alt':'');
     el.innerHTML =
-      '<div class="w-badge '+badgeClass+'">'+item.badgeText+'</div>'+
+      '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">'+
+        '<div class="w-badge '+badgeClass+'">'+item.badgeText+'</div>'+
+        '<div style="font-size:8px;color:rgba(255,255,255,.2);">'+item.time+'</div>'+
+      '</div>'+
       '<div class="w-title">'+item.title+'</div>'+
-      '<div class="w-meta">'+item.user+' &middot; '+(item.remote?'Remote':item.loc)+' &middot; '+item.comp+'</div>'+
+      '<div class="w-meta">'+item.user+verifiedBadge+' &middot; '+locText+' &middot; '+item.comp+'</div>'+
       '<div class="w-tags">'+
         '<div class="w-tag">'+item.cat+'</div>'+
         '<div class="w-tag">'+item.role+'</div>'+
-        (item.remote?'<div class="w-tag">&#127757; Remote</div>':'')+
+        (item.remote?'<div class="w-tag">&#127757; Remote OK</div>':'')+
       '</div>'+
       '<button class="w-apply">APPLY NOW</button>';
     el.querySelector('.w-apply').onclick = function(e){
@@ -1145,15 +1268,46 @@ async function loadMyWanted(){
   var data = await supaSelect('wanted_posts','user_id=eq.999999&status=eq.open&order=created_at.desc');
   var container = document.getElementById('profileWanted');
   if(!container) return;
+  container.innerHTML = '';
   if(!data || !data.length){
-    container.innerHTML = '<div style="background:#111118;border-radius:10px;padding:16px;text-align:center;cursor:pointer;" onclick="goTo(\'postwanted\')"><div style="font-size:9px;color:rgba(255,255,255,.25);">No posts yet</div><div style="font-size:8px;color:rgba(232,184,48,.5);margin-top:4px;">Tap to post your first WANTED</div></div>';
+    var empty = document.createElement('div');
+    empty.style.cssText = 'background:#111118;border-radius:10px;padding:16px;text-align:center;cursor:pointer;';
+    empty.onclick = function(){ goTo('postwanted'); };
+    empty.innerHTML = '<div style="font-size:9px;color:rgba(255,255,255,.25);">No posts yet</div><div style="font-size:8px;color:rgba(232,184,48,.5);margin-top:4px;">Tap to post your first WANTED</div>';
+    container.appendChild(empty);
     return;
   }
-  container.innerHTML = '';
   data.forEach(function(p){
     var card = document.createElement('div');
     card.className = 'p-wanted-card';
-    card.innerHTML = '<div class="p-wanted-title">'+p.title+'</div><div class="p-wanted-meta">'+p.role_needed+' &middot; '+(p.location||'Remote')+'</div>';
+    var titleRow = document.createElement('div');
+    titleRow.style.cssText = 'display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:3px;';
+    var title = document.createElement('div');
+    title.className = 'p-wanted-title';
+    title.style.flex = '1';
+    title.textContent = p.title;
+    var btnRow = document.createElement('div');
+    btnRow.style.cssText = 'display:flex;gap:5px;flex-shrink:0;';
+    var editBtn = document.createElement('button');
+    editBtn.style.cssText = 'padding:2px 8px;background:rgba(100,80,255,.1);border:1px solid rgba(100,80,255,.25);border-radius:6px;font-size:8px;color:rgba(180,160,255,.8);cursor:pointer;';
+    editBtn.textContent = 'Edit';
+    editBtn.onclick = function(){ showToast('Edit coming in full version.'); };
+    var closeBtn = document.createElement('button');
+    closeBtn.style.cssText = 'padding:2px 8px;background:rgba(255,60,60,.08);border:1px solid rgba(255,60,60,.2);border-radius:6px;font-size:8px;color:rgba(255,100,100,.8);cursor:pointer;';
+    closeBtn.textContent = 'Close';
+    closeBtn.onclick = (function(id,c){ return function(){
+      showToast('Post closed.');
+      c.remove();
+    };})(p.id, card);
+    btnRow.appendChild(editBtn);
+    btnRow.appendChild(closeBtn);
+    titleRow.appendChild(title);
+    titleRow.appendChild(btnRow);
+    var meta = document.createElement('div');
+    meta.className = 'p-wanted-meta';
+    meta.textContent = p.role_needed + ' - ' + (p.location||'Remote');
+    card.appendChild(titleRow);
+    card.appendChild(meta);
     container.appendChild(card);
   });
 }
