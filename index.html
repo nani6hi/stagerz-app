@@ -303,7 +303,7 @@ html,body{width:100%;height:100%;background:#08080f;color:#f0f0f5;font-family:'I
     <div class="stage-tab" onclick="setStageTab(this,'new')">New</div>
   </div>
   <!-- Category chips — only shown in Channels tab -->
-  <div id="stageCatChips" style="display:none;overflow-x:auto;padding:8px 14px;gap:8px;scrollbar-width:none;flex-shrink:0;border-bottom:1px solid rgba(255,255,255,.06);">
+  <div id="stageCatChips" style="overflow-x:auto;padding:8px 14px;gap:8px;scrollbar-width:none;flex-shrink:0;border-bottom:1px solid rgba(255,255,255,.06);">
     <div class="cat-chip on" onclick="setStageCat(this,'all')">&#127757; All</div>
     <div class="cat-chip" onclick="setStageCat(this,'music')">&#127925; Music</div>
     <div class="cat-chip" onclick="setStageCat(this,'film')">&#127916; Film</div>
@@ -856,10 +856,10 @@ function setStageTab(el, tab){
   el.classList.add('on');
   var chips = document.getElementById('stageCatChips');
   if(tab === 'channels'){
-    chips.classList.add('visible');
+    chips.style.display = 'flex';
     buildStageFeed(currentStageCatChip);
   } else {
-    chips.classList.remove('visible');
+    chips.style.display = 'none';
     if(tab==='foryou') buildStageFeed('all');
     else if(tab==='live') buildStageFeed('live');
     else if(tab==='new') buildStageFeed('all');
