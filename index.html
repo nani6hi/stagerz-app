@@ -9,46 +9,46 @@
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Inter:wght@400;500;600;700&display=swap');
 
-/* ─── RESET & BASE ─── */
+/* --- RESET & BASE --- */
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
 html,body{width:100%;height:100%;background:#08080f;color:#f0f0f5;font-family:'Inter',sans-serif;overflow:hidden;user-select:none;}
 
-/* ─── SCREENS ─── */
+/* --- SCREENS --- */
 .screen{position:fixed;inset:0;display:none;flex-direction:column;background:#08080f;}
 .screen.active{display:flex;}
 .sa{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;}
 .sa::-webkit-scrollbar{display:none;}
 
-/* ─── TYPOGRAPHY ─── */
+/* --- TYPOGRAPHY --- */
 .logo{font-family:'Playfair Display',serif;font-weight:900;font-size:22px;color:#fff;letter-spacing:-0.5px;}
 .logo em{color:#e8b830;font-style:italic;}
 .section-title{font-size:8px;letter-spacing:3px;text-transform:uppercase;color:rgba(255,255,255,.25);margin-bottom:10px;}
 
-/* ─── NAV BAR ─── */
+/* --- NAV BAR --- */
 .nb{height:56px;background:#08080f;border-top:1px solid rgba(255,255,255,.07);display:flex;flex-shrink:0;}
 .ni{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;font-size:9px;color:rgba(255,255,255,.3);cursor:pointer;transition:color .15s;}
 .ni.active{color:#fff;}
 .ni-icon{font-size:20px;line-height:1;}
 .ni-dot{width:4px;height:4px;border-radius:50%;background:#e8b830;}
 
-/* ─── TOP BAR ─── */
+/* --- TOP BAR --- */
 .tb{display:flex;align-items:center;justify-content:space-between;padding:12px 14px 10px;background:#08080f;flex-shrink:0;}
 .tb-icons{display:flex;gap:14px;}
 .tb-icon{width:32px;height:32px;border-radius:50%;background:rgba(255,255,255,.06);display:flex;align-items:center;justify-content:center;font-size:15px;cursor:pointer;}
 
-/* ─── CATEGORY CHIPS ─── */
+/* --- CATEGORY CHIPS --- */
 .cats{display:flex;gap:0;overflow-x:auto;padding:0 14px 10px;scrollbar-width:none;flex-shrink:0;}
 .cats::-webkit-scrollbar{display:none;}
 .cat{padding:6px 14px;font-size:10px;font-weight:500;color:rgba(255,255,255,.35);white-space:nowrap;border-bottom:2px solid transparent;cursor:pointer;transition:all .15s;}
 .cat.on{color:#fff;border-bottom-color:#e8b830;font-weight:600;}
 .cat-divider{height:1px;background:rgba(255,255,255,.06);flex-shrink:0;}
 
-/* ─── STAGE CARDS ─── */
+/* --- STAGE CARDS --- */
 .feed{padding:12px 12px 70px;}
 .card{background:#111118;border-radius:14px;overflow:hidden;margin-bottom:12px;cursor:pointer;}
 .card-thumb{position:relative;display:flex;align-items:center;justify-content:center;}
-.card-thumb-lg{height:120px;}
-.card-thumb-sm{height:88px;}
+.card-thumb-lg{height:185px;}
+.card-thumb-sm{height:110px;}
 .card-emoji{font-size:42px;opacity:.7;}
 .card-dur{position:absolute;bottom:7px;right:9px;background:rgba(0,0,0,.75);color:#fff;font-size:8px;padding:2px 6px;border-radius:4px;font-weight:600;}
 .card-badge{position:absolute;top:8px;left:9px;font-size:7px;padding:2px 7px;border-radius:4px;font-weight:700;letter-spacing:.5px;}
@@ -79,7 +79,25 @@ html,body{width:100%;height:100%;background:#08080f;color:#f0f0f5;font-family:'I
 .short-action-cnt{font-size:7px;color:rgba(255,255,255,.6);}
 .short-play{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:40px;height:40px;background:rgba(255,255,255,.15);backdrop-filter:blur(4px);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;}
 
-/* ─── SEARCH ─── */
+/* STAGE TABS */
+.stage-tab{padding:8px 16px;font-size:11px;font-weight:500;color:rgba(255,255,255,.35);white-space:nowrap;border-bottom:2px solid transparent;cursor:pointer;transition:all .15s;flex-shrink:0;}
+.stage-tab.on{color:#fff;border-bottom-color:#e8b830;font-weight:600;}
+.cat-chip{padding:6px 14px;background:rgba(255,255,255,.06);border-radius:20px;font-size:9px;font-weight:500;color:rgba(255,255,255,.4);white-space:nowrap;cursor:pointer;border:1px solid rgba(255,255,255,.07);display:inline-block;margin-right:6px;}
+.cat-chip.on{background:rgba(232,184,48,.1);color:#e8b830;border-color:rgba(232,184,48,.25);}
+#stageCatChips{display:none;}
+#stageCatChips.visible{display:flex;}
+
+/* SECTION LABELS --- */
+.feed-section-label{font-size:8px;letter-spacing:2.5px;text-transform:uppercase;color:rgba(255,255,255,.2);padding:4px 2px 8px;margin-top:4px;}
+
+/* CARD TEXTURE --- */
+.card-thumb::after{content:'';position:absolute;inset:0;background:repeating-linear-gradient(45deg,rgba(255,255,255,.015) 0px,rgba(255,255,255,.015) 1px,transparent 1px,transparent 8px);pointer-events:none;}
+.short::after{content:'';position:absolute;inset:0;background:repeating-linear-gradient(45deg,rgba(255,255,255,.015) 0px,rgba(255,255,255,.015) 1px,transparent 1px,transparent 8px);pointer-events:none;}
+
+/* SHORT CLIP INSET --- */
+.short-inset{margin-left:8px;margin-right:8px;border-radius:16px;}
+
+/* --- SEARCH --- */
 .search-top{padding:12px 14px 0;}
 .search-bar{background:#18181f;border-radius:12px;padding:10px 14px;display:flex;align-items:center;gap:10px;margin-bottom:12px;border:1px solid rgba(255,255,255,.06);}
 .search-bar input{background:none;border:none;outline:none;color:#f0f0f5;font-size:12px;font-family:'Inter',sans-serif;width:100%;}
@@ -97,7 +115,7 @@ html,body{width:100%;height:100%;background:#08080f;color:#f0f0f5;font-family:'I
 .artist-loc{font-size:9px;color:rgba(255,255,255,.25);}
 .artist-collab{padding:5px 12px;background:rgba(100,80,255,.1);border:1px solid rgba(100,80,255,.2);border-radius:10px;font-size:8px;color:rgba(180,160,255,.85);cursor:pointer;white-space:nowrap;}
 
-/* ─── WANTED ─── */
+/* --- WANTED --- */
 .w-post-btn{margin:0 14px 12px;padding:12px 14px;background:linear-gradient(135deg,rgba(232,184,48,.08),rgba(100,80,255,.06));border:1px solid rgba(232,184,48,.2);border-radius:14px;display:flex;align-items:center;gap:12px;cursor:pointer;}
 .w-post-icon{font-size:22px;}
 .w-post-label{font-size:11px;font-weight:600;color:#e8b830;}
@@ -116,7 +134,7 @@ html,body{width:100%;height:100%;background:#08080f;color:#f0f0f5;font-family:'I
 .w-tag{padding:3px 8px;background:rgba(255,255,255,.05);border-radius:6px;font-size:8px;color:rgba(255,255,255,.4);}
 .w-apply{width:100%;padding:9px;background:linear-gradient(135deg,#2a1888,#4a30a8);border:none;border-radius:10px;font-size:10px;font-weight:700;color:#fff;letter-spacing:1.5px;cursor:pointer;}
 
-/* ─── FAMEMAKER ─── */
+/* --- FAMEMAKER --- */
 .fm-tabs{display:flex;padding:0 14px 12px;gap:6px;}
 .fm-tab{flex:1;padding:8px 4px;background:#18181f;border-radius:10px;font-size:9px;font-weight:600;color:rgba(255,255,255,.35);text-align:center;cursor:pointer;border:1px solid transparent;}
 .fm-tab.on{background:rgba(232,184,48,.08);color:#e8b830;border-color:rgba(232,184,48,.2);}
@@ -141,7 +159,7 @@ html,body{width:100%;height:100%;background:#08080f;color:#f0f0f5;font-family:'I
 .fm-showcase-label{font-size:9px;color:rgba(255,255,255,.3);margin-bottom:6px;}
 .fm-showcase-input{width:100%;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);border-radius:8px;padding:9px 12px;color:#fff;font-size:11px;font-family:'Inter',sans-serif;outline:none;margin-bottom:8px;}
 
-/* ─── PROFILE ─── */
+/* --- PROFILE --- */
 .p-cover{height:100px;position:relative;display:flex;align-items:flex-end;padding-bottom:0;flex-shrink:0;}
 .p-cover-bg{position:absolute;inset:0;}
 .p-av-wrap{position:absolute;bottom:-26px;left:14px;}
@@ -167,14 +185,14 @@ html,body{width:100%;height:100%;background:#08080f;color:#f0f0f5;font-family:'I
 .p-wanted-title{font-size:10px;font-weight:600;color:#fff;margin-bottom:3px;}
 .p-wanted-meta{font-size:8px;color:rgba(255,255,255,.3);}
 
-/* ─── ARTIST PROFILE (others) ─── */
+/* --- ARTIST PROFILE (others) --- */
 .ap-cover{height:120px;position:relative;}
 .ap-actions{display:flex;gap:8px;padding:14px;}
 .ap-follow{flex:1;padding:10px;background:linear-gradient(135deg,#2a1888,#4a30a8);border:none;border-radius:10px;font-size:10px;font-weight:600;color:#fff;cursor:pointer;}
 .ap-collab{flex:1;padding:10px;background:rgba(232,184,48,.1);border:1px solid rgba(232,184,48,.25);border-radius:10px;font-size:10px;font-weight:600;color:#e8b830;cursor:pointer;}
 .ap-back{position:absolute;top:12px;left:12px;width:32px;height:32px;background:rgba(0,0,0,.5);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px;color:#fff;cursor:pointer;}
 
-/* ─── CONTENT VIEW (full screen) ─── */
+/* --- CONTENT VIEW (full screen) --- */
 .cv-thumb{height:220px;display:flex;align-items:center;justify-content:center;flex-shrink:0;position:relative;}
 .cv-play{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:56px;height:56px;background:rgba(255,255,255,.15);backdrop-filter:blur(6px);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:22px;cursor:pointer;}
 .cv-back{position:absolute;top:14px;left:14px;width:34px;height:34px;background:rgba(0,0,0,.5);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:20px;color:#fff;cursor:pointer;}
@@ -199,7 +217,7 @@ html,body{width:100%;height:100%;background:#08080f;color:#f0f0f5;font-family:'I
 .cv-credit-role{font-size:8px;color:rgba(255,255,255,.3);}
 .cv-credit-badge{margin-left:auto;font-size:10px;}
 
-/* ─── BACKSTAGE ─── */
+/* --- BACKSTAGE --- */
 .bs-hero{padding:28px 14px 24px;text-align:center;background:linear-gradient(180deg,#0e0820,#08080f);}
 .bs-hero-icon{font-size:36px;margin-bottom:10px;}
 .bs-hero-title{font-family:'Playfair Display',serif;font-size:22px;font-weight:900;color:#fff;margin-bottom:6px;}
@@ -215,7 +233,7 @@ html,body{width:100%;height:100%;background:#08080f;color:#f0f0f5;font-family:'I
 .bs-cta{width:100%;padding:13px;background:linear-gradient(135deg,#8a6018,#e8b830);border:none;border-radius:10px;font-family:'Playfair Display',serif;font-size:14px;font-weight:700;color:#08080f;cursor:pointer;margin-top:14px;}
 .bs-free-note{font-size:9px;color:rgba(255,255,255,.2);text-align:center;margin-top:8px;}
 
-/* ─── POST WANTED SCREEN ─── */
+/* --- POST WANTED SCREEN --- */
 .form-screen{padding:14px 14px 80px;}
 .form-label{font-size:9px;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.3);margin-bottom:7px;}
 .form-input{width:100%;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:11px 14px;color:#fff;font-size:12px;font-family:'Inter',sans-serif;outline:none;margin-bottom:14px;}
@@ -234,23 +252,23 @@ html,body{width:100%;height:100%;background:#08080f;color:#f0f0f5;font-family:'I
 .form-toggle.off .form-toggle-dot{right:auto;left:3px;}
 .form-remote-val{font-size:11px;color:rgba(40,200,80,.7);}
 
-/* ─── EDIT PROFILE SCREEN ─── */
+/* --- EDIT PROFILE SCREEN --- */
 .role-chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px;}
 .role-chip{padding:7px 13px;background:#111118;border-radius:20px;font-size:9px;color:rgba(255,255,255,.4);cursor:pointer;border:1px solid rgba(255,255,255,.07);}
 .role-chip.on{background:rgba(100,80,255,.12);color:rgba(180,160,255,.9);border-color:rgba(100,80,255,.3);}
 
-/* ─── BACK BUTTON ─── */
+/* --- BACK BUTTON --- */
 .bk{display:flex;align-items:center;gap:6px;font-size:13px;color:rgba(255,255,255,.5);cursor:pointer;padding:2px 0;}
 .bk-icon{font-size:20px;line-height:1;}
 
-/* ─── SCREEN-TOP ─── */
+/* --- SCREEN-TOP --- */
 .screen-top{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;background:#08080f;flex-shrink:0;border-bottom:1px solid rgba(255,255,255,.05);}
 .screen-top-title{font-size:14px;font-weight:700;color:#fff;}
 
-/* ─── ALERT ─── */
+/* --- ALERT --- */
 .toast{position:fixed;bottom:70px;left:14px;right:14px;background:#1a1828;border:1px solid rgba(100,80,255,.3);border-radius:12px;padding:12px 16px;font-size:11px;color:#f0f0f5;z-index:9999;display:none;text-align:center;line-height:1.5;}
 
-/* ─── NACKL CHIP ─── */
+/* --- NACKL CHIP --- */
 .nackl-chip{display:inline-flex;align-items:center;gap:5px;padding:4px 10px;background:rgba(232,184,48,.08);border:1px solid rgba(232,184,48,.15);border-radius:20px;font-size:9px;color:rgba(232,184,48,.7);}
 
 /* GRADIENTS for screen covers */
@@ -264,27 +282,37 @@ html,body{width:100%;height:100%;background:#08080f;color:#f0f0f5;font-family:'I
 </head>
 <body>
 
-<!-- ══════════════════════════════════════════
+<!-- ==========================================
      SCREEN 1: STAGE (Home)
-══════════════════════════════════════════ -->
+========================================== -->
 <div class="screen active" id="screen-stage">
-  <div class="tb">
-    <div class="logo">STA<em>G</em>ERZ</div>
-    <div class="tb-icons">
-      <div class="tb-icon" onclick="goTo('search')">🔍</div>
-      <div class="tb-icon">🔔</div>
+  <!-- Top bar -->
+  <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 14px 0;background:#08080f;flex-shrink:0;">
+    <div class="logo" style="font-size:26px;letter-spacing:-1px;text-shadow:0 0 30px rgba(232,184,48,.25);">STA<em>G</em>ERZ</div>
+    <div style="display:flex;gap:10px;">
+      <div class="tb-icon" onclick="goTo('search')">&#128269;</div>
+      <div class="tb-icon">&#128276;</div>
     </div>
   </div>
-  <div class="cats" id="stageCats">
-    <div class="cat on" onclick="setCat(this,'all')">All</div>
-    <div class="cat" onclick="setCat(this,'music')">Music</div>
-    <div class="cat" onclick="setCat(this,'film')">Film</div>
-    <div class="cat" onclick="setCat(this,'dance')">Dance</div>
-    <div class="cat" onclick="setCat(this,'live')">Live</div>
-    <div class="cat" onclick="setCat(this,'ai')">AI</div>
-    <div class="cat" onclick="setCat(this,'art')">Art</div>
+  <!-- Stage tabs -->
+  <div id="stageTabs" style="display:flex;overflow-x:auto;padding:8px 14px 0;gap:0;scrollbar-width:none;flex-shrink:0;background:#08080f;">
+    <div class="stage-tab on" onclick="setStageTab(this,'foryou')">For You</div>
+    <div class="stage-tab" onclick="setStageTab(this,'channels')">Channels</div>
+    <div class="stage-tab" onclick="setStageTab(this,'following')">Following</div>
+    <div class="stage-tab" onclick="setStageTab(this,'live')">Live</div>
+    <div class="stage-tab" onclick="setStageTab(this,'new')">New</div>
   </div>
-  <div class="cat-divider"></div>
+  <!-- Category chips — only shown in Channels tab -->
+  <div id="stageCatChips" style="display:none;overflow-x:auto;padding:8px 14px;gap:8px;scrollbar-width:none;flex-shrink:0;border-bottom:1px solid rgba(255,255,255,.06);">
+    <div class="cat-chip on" onclick="setStageCat(this,'all')">&#127757; All</div>
+    <div class="cat-chip" onclick="setStageCat(this,'music')">&#127925; Music</div>
+    <div class="cat-chip" onclick="setStageCat(this,'film')">&#127916; Film</div>
+    <div class="cat-chip" onclick="setStageCat(this,'dance')">&#128131; Dance</div>
+    <div class="cat-chip" onclick="setStageCat(this,'photo')">&#128247; Photo</div>
+    <div class="cat-chip" onclick="setStageCat(this,'ai')">&#129302; AI</div>
+    <div class="cat-chip" onclick="setStageCat(this,'art')">&#127912; Art</div>
+  </div>
+  <div style="height:1px;background:rgba(255,255,255,.06);flex-shrink:0;"></div>
   <div class="sa">
     <div class="feed" id="stageFeed"></div>
   </div>
@@ -297,9 +325,9 @@ html,body{width:100%;height:100%;background:#08080f;color:#f0f0f5;font-family:'I
   </div>
 </div>
 
-<!-- ══════════════════════════════════════════
+<!-- ==========================================
      SCREEN 2: SEARCH
-══════════════════════════════════════════ -->
+========================================== -->
 <div class="screen" id="screen-search">
   <div class="search-top">
     <div class="logo" style="font-size:18px;margin-bottom:12px;">Find Artists</div>
@@ -329,9 +357,9 @@ html,body{width:100%;height:100%;background:#08080f;color:#f0f0f5;font-family:'I
   </div>
 </div>
 
-<!-- ══════════════════════════════════════════
+<!-- ==========================================
      SCREEN 3: WANTED
-══════════════════════════════════════════ -->
+========================================== -->
 <div class="screen" id="screen-wanted">
   <div class="tb">
     <div class="logo">WAN<em>T</em>ED</div>
@@ -357,9 +385,9 @@ html,body{width:100%;height:100%;background:#08080f;color:#f0f0f5;font-family:'I
   </div>
 </div>
 
-<!-- ══════════════════════════════════════════
+<!-- ==========================================
      SCREEN 4: FAMEMAKER
-══════════════════════════════════════════ -->
+========================================== -->
 <div class="screen" id="screen-famemaker">
   <div class="tb">
     <div class="logo" style="font-size:18px;">Fame<em>M</em>aker</div>
@@ -436,9 +464,9 @@ html,body{width:100%;height:100%;background:#08080f;color:#f0f0f5;font-family:'I
   </div>
 </div>
 
-<!-- ══════════════════════════════════════════
+<!-- ==========================================
      SCREEN 5: MY PROFILE
-══════════════════════════════════════════ -->
+========================================== -->
 <div class="screen" id="screen-profile">
   <div class="sa">
     <div class="p-cover grad-purple">
@@ -487,9 +515,9 @@ html,body{width:100%;height:100%;background:#08080f;color:#f0f0f5;font-family:'I
   </div>
 </div>
 
-<!-- ══════════════════════════════════════════
+<!-- ==========================================
      SCREEN 6: EDIT PROFILE
-══════════════════════════════════════════ -->
+========================================== -->
 <div class="screen" id="screen-editprofile">
   <div class="screen-top">
     <div class="bk" onclick="goTo('profile')"><div class="bk-icon">‹</div> Profile</div>
@@ -522,9 +550,9 @@ html,body{width:100%;height:100%;background:#08080f;color:#f0f0f5;font-family:'I
   </div>
 </div>
 
-<!-- ══════════════════════════════════════════
+<!-- ==========================================
      SCREEN 7: POST WANTED
-══════════════════════════════════════════ -->
+========================================== -->
 <div class="screen" id="screen-postwanted">
   <div class="screen-top">
     <div class="bk" onclick="goTo('wanted')"><div class="bk-icon">‹</div> Wanted</div>
@@ -569,9 +597,9 @@ html,body{width:100%;height:100%;background:#08080f;color:#f0f0f5;font-family:'I
   </div>
 </div>
 
-<!-- ══════════════════════════════════════════
+<!-- ==========================================
      SCREEN 8: CONTENT VIEW
-══════════════════════════════════════════ -->
+========================================== -->
 <div class="screen" id="screen-content">
   <div class="sa">
     <div class="cv-thumb grad-purple" id="cvThumb" style="height:220px;">
@@ -631,9 +659,9 @@ html,body{width:100%;height:100%;background:#08080f;color:#f0f0f5;font-family:'I
   </div>
 </div>
 
-<!-- ══════════════════════════════════════════
+<!-- ==========================================
      SCREEN 9: ARTIST PROFILE (others)
-══════════════════════════════════════════ -->
+========================================== -->
 <div class="screen" id="screen-artist">
   <div class="sa">
     <div class="ap-cover" id="apCover" style="background:linear-gradient(160deg,#1a0840,#0a1040);">
@@ -665,9 +693,9 @@ html,body{width:100%;height:100%;background:#08080f;color:#f0f0f5;font-family:'I
   </div>
 </div>
 
-<!-- ══════════════════════════════════════════
+<!-- ==========================================
      SCREEN 10: BACKSTAGE
-══════════════════════════════════════════ -->
+========================================== -->
 <div class="screen" id="screen-backstage">
   <div class="screen-top">
     <div class="bk" onclick="goTo('profile')"><div class="bk-icon">‹</div> Profile</div>
@@ -761,10 +789,20 @@ function buildStageFeed(cat){
   if(!feed) return;
   feed.innerHTML = '';
   var items = cat==='all' ? stageData : stageData.filter(function(d){ return d.cat===cat; });
-  items.forEach(function(item){
+  var addedLabel = false;
+  items.forEach(function(item, i){
     if(item.short){
+      // Add "Quick Stage" label before first short
+      if(!addedLabel){
+        var lbl = document.createElement('div');
+        lbl.className = 'feed-section-label';
+        lbl.textContent = 'Quick Stage';
+        feed.appendChild(lbl);
+        addedLabel = true;
+      }
       var el = document.createElement('div');
       el.innerHTML = buildShort(item);
+      el.firstElementChild.classList.add('short-inset');
       el.firstElementChild.onclick = function(){ openContent(item); };
       feed.appendChild(el.firstElementChild);
     } else {
@@ -805,8 +843,59 @@ function buildShort(item){
 
 function setCat(el, cat){
   document.querySelectorAll('#stageCats .cat').forEach(function(c){ c.classList.remove('on'); });
+  if(el) el.classList.add('on');
+  buildStageFeed(cat);
+}
+
+var currentStageTab = 'foryou';
+var currentStageCatChip = 'all';
+
+function setStageTab(el, tab){
+  currentStageTab = tab;
+  document.querySelectorAll('#stageTabs .stage-tab').forEach(function(t){ t.classList.remove('on'); });
+  el.classList.add('on');
+  var chips = document.getElementById('stageCatChips');
+  if(tab === 'channels'){
+    chips.classList.add('visible');
+    buildStageFeed(currentStageCatChip);
+  } else {
+    chips.classList.remove('visible');
+    if(tab==='foryou') buildStageFeed('all');
+    else if(tab==='live') buildStageFeed('live');
+    else if(tab==='new') buildStageFeed('all');
+    else if(tab==='following') buildFollowingFeed();
+    else buildStageFeed('all');
+  }
+}
+
+function setStageCat(el, cat){
+  currentStageCatChip = cat;
+  document.querySelectorAll('#stageCatChips .cat-chip').forEach(function(c){ c.classList.remove('on'); });
   el.classList.add('on');
   buildStageFeed(cat);
+}
+
+function buildFollowingFeed(){
+  var feed = document.getElementById('stageFeed');
+  if(!feed) return;
+  feed.innerHTML = '';
+  var wrap = document.createElement('div');
+  wrap.style.cssText = 'padding:40px 0;text-align:center;';
+  var icon = document.createElement('div');
+  icon.style.cssText = 'font-size:28px;margin-bottom:10px;';
+  icon.innerHTML = '&#128100;';
+  var title = document.createElement('div');
+  title.style.cssText = 'font-size:12px;font-weight:600;color:#fff;margin-bottom:6px;';
+  title.textContent = 'Follow artists to see their work';
+  var sub = document.createElement('div');
+  sub.style.cssText = 'font-size:10px;color:rgba(255,255,255,.3);margin-bottom:16px;';
+  sub.textContent = 'Discover artists in Search and follow them';
+  var btn = document.createElement('div');
+  btn.style.cssText = 'display:inline-block;padding:10px 20px;background:rgba(100,80,255,.12);border:1px solid rgba(100,80,255,.25);border-radius:10px;font-size:10px;color:rgba(180,160,255,.9);cursor:pointer;';
+  btn.textContent = 'Find Artists';
+  btn.onclick = function(){ goTo('search'); };
+  wrap.appendChild(icon); wrap.appendChild(title); wrap.appendChild(sub); wrap.appendChild(btn);
+  feed.appendChild(wrap);
 }
 
 // --- OPEN CONTENT ---
