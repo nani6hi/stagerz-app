@@ -756,7 +756,7 @@ function goTo(id){
     var sa = t.querySelector('.sa'); if(sa) sa.scrollTop = 0;
   }
   haptic('light');
-  if(id==='search') setTimeout(function(){ var inp=document.getElementById('searchInput'); if(inp) inp.focus(); },100);
+  if(id==='search') setTimeout(function(){ renderArtists(); },50);
   if(id==='wanted') loadWanted();
   if(id==='profile') loadMyProfile();
 }
