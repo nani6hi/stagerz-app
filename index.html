@@ -336,6 +336,14 @@ html,body{width:100%;height:100%;background:#08080f;color:#f0f0f5;font-family:'I
 .grad-green{background:linear-gradient(160deg,#0a2018,#0a1040);}
 .grad-orange{background:linear-gradient(160deg,#201008,#0a1040);}
 .grad-teal{background:linear-gradient(160deg,#0a1828,#0a1040);}
+
+/* FAMEMAKER PULSE */
+@keyframes pulse-ring{0%{transform:scale(1);opacity:1;}50%{transform:scale(1.15);opacity:.6;}100%{transform:scale(1);opacity:1;}}
+@keyframes pulse-dot{0%{transform:scale(1);}50%{transform:scale(1.1);}100%{transform:scale(1);}}
+.fm-ring.recording{border-color:rgba(255,60,30,.9) !important;animation:pulse-ring 1.2s ease-in-out infinite;}
+.fm-dot.recording{animation:pulse-dot 1.2s ease-in-out infinite;}
+@keyframes wave{0%,100%{height:6px;}50%{height:18px;}}
+.wave-bar{width:3px;background:rgba(255,60,30,.7);border-radius:2px;animation:wave 1s ease-in-out infinite;}
 </style>
 </head>
 <body>
@@ -460,6 +468,13 @@ html,body{width:100%;height:100%;background:#08080f;color:#f0f0f5;font-family:'I
     <!-- Quick tab -->
     <div class="fm-content" id="fmQuick">
       <div class="fm-rec-area" id="recArea" onclick="toggleRec()">
+        <div id="recWave" style="display:none;align-items:flex-end;gap:3px;height:24px;margin-bottom:4px;">
+          <div class="wave-bar" style="animation-delay:0s;"></div>
+          <div class="wave-bar" style="animation-delay:.15s;"></div>
+          <div class="wave-bar" style="animation-delay:.3s;"></div>
+          <div class="wave-bar" style="animation-delay:.45s;"></div>
+          <div class="wave-bar" style="animation-delay:.6s;"></div>
+        </div>
         <div class="fm-ring" id="recRing">
           <div class="fm-dot" id="recDot"></div>
         </div>
@@ -486,13 +501,21 @@ html,body{width:100%;height:100%;background:#08080f;color:#f0f0f5;font-family:'I
       <div class="form-label">Title</div>
       <input class="form-input" type="text" placeholder="Name your work...">
       <div class="form-label">Category</div>
-      <div class="form-chips">
-        <div class="form-chip on">🎵 Music</div>
-        <div class="form-chip">🎬 Film</div>
-        <div class="form-chip">💃 Dance</div>
-        <div class="form-chip">📷 Photo</div>
-        <div class="form-chip">🤖 AI</div>
-        <div class="form-chip">🎨 Art</div>
+      <div class="form-chips" id="uploadCatPicker">
+        <div class="form-chip on" onclick="pickChip(this,'uploadCatPicker')">&#127925; Music</div>
+        <div class="form-chip" onclick="pickChip(this,'uploadCatPicker')">&#127916; Film</div>
+        <div class="form-chip" onclick="pickChip(this,'uploadCatPicker')">&#128131; Dance</div>
+        <div class="form-chip" onclick="pickChip(this,'uploadCatPicker')">&#128247; Photo</div>
+        <div class="form-chip" onclick="pickChip(this,'uploadCatPicker')">&#129302; AI</div>
+        <div class="form-chip" onclick="pickChip(this,'uploadCatPicker')">&#127912; Art</div>
+      </div>
+      <div class="form-label">Mood / Genre</div>
+      <div class="form-chips" id="uploadMoodPicker">
+        <div class="form-chip on" onclick="pickChip(this,'uploadMoodPicker')">&#127775; Chill</div>
+        <div class="form-chip" onclick="pickChip(this,'uploadMoodPicker')">&#128293; Energetic</div>
+        <div class="form-chip" onclick="pickChip(this,'uploadMoodPicker')">&#127963; Cinematic</div>
+        <div class="form-chip" onclick="pickChip(this,'uploadMoodPicker')">&#128131; Rhythmic</div>
+        <div class="form-chip" onclick="pickChip(this,'uploadMoodPicker')">&#129302; Experimental</div>
       </div>
       <div class="form-label">Description</div>
       <textarea class="form-textarea" placeholder="Tell the story behind this work..."></textarea>
@@ -1341,9 +1364,12 @@ function startRec(){
   document.getElementById('recRing').classList.add('recording');
   document.getElementById('recDot').classList.add('recording');
   document.getElementById('recLabel').textContent = 'RECORDING... TAP TO STOP';
+  var wave = document.getElementById('recWave');
+  if(wave) wave.style.display = 'flex';
   recTimer = setInterval(function(){
     recSec--;
-    document.getElementById('recCounter').textContent = recSec;
+    var counter = document.getElementById('recCounter');
+    if(counter) counter.textContent = recSec;
     if(recSec<=0) stopRec();
   },1000);
   haptic('heavy');
@@ -1352,9 +1378,11 @@ function stopRec(){
   recActive = false; clearInterval(recTimer);
   document.getElementById('recRing').classList.remove('recording');
   document.getElementById('recDot').classList.remove('recording');
-  document.getElementById('recCounter').innerHTML = '&#10003;';
-  document.getElementById('recCounter').style.color = 'rgba(40,200,80,.9)';
+  var counter = document.getElementById('recCounter');
+  if(counter){ counter.innerHTML = '&#10003;'; counter.style.color = 'rgba(40,200,80,.9)'; }
   document.getElementById('recLabel').textContent = 'Tap TAKE THE STAGE to publish';
+  var wave = document.getElementById('recWave');
+  if(wave) wave.style.display = 'none';
   haptic('success');
 }
 
