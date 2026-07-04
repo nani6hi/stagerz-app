@@ -218,7 +218,7 @@ html,body{width:100%;height:100%;background:#08080f;color:#f0f0f5;font-family:'I
 .fm-showcase-input{width:100%;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);border-radius:8px;padding:9px 12px;color:#fff;font-size:11px;font-family:'Inter',sans-serif;outline:none;margin-bottom:8px;}
 
 /* --- PROFILE --- */
-.p-cover{height:100px;position:relative;display:flex;align-items:flex-end;padding-bottom:0;flex-shrink:0;}
+.p-cover{height:130px;position:relative;display:flex;align-items:flex-end;padding-bottom:0;flex-shrink:0;}
 .p-cover-bg{position:absolute;inset:0;}
 .p-av-wrap{position:absolute;bottom:-26px;left:14px;}
 .p-av{width:54px;height:54px;border-radius:50%;border:3px solid #08080f;display:flex;align-items:center;justify-content:center;font-size:24px;}
@@ -344,6 +344,10 @@ html,body{width:100%;height:100%;background:#08080f;color:#f0f0f5;font-family:'I
 .fm-dot.recording{animation:pulse-dot 1.2s ease-in-out infinite;}
 @keyframes wave{0%,100%{height:6px;}50%{height:18px;}}
 .wave-bar{width:3px;background:rgba(255,60,30,.7);border-radius:2px;animation:wave 1s ease-in-out infinite;}
+
+/* NACKL GLOW */
+@keyframes nackl-pulse{0%,100%{text-shadow:0 0 12px rgba(232,184,48,.4);}50%{text-shadow:0 0 20px rgba(232,184,48,.7);}}
+#nacklCount{animation:nackl-pulse 3s ease-in-out infinite;}
 </style>
 </head>
 <body>
@@ -567,7 +571,7 @@ html,body{width:100%;height:100%;background:#08080f;color:#f0f0f5;font-family:'I
         <div class="p-stat"><div class="p-stat-num">0</div><div class="p-stat-label">On Stage</div></div>
         <div class="p-stat"><div class="p-stat-num">0</div><div class="p-stat-label">Followers</div></div>
         <div class="p-stat"><div class="p-stat-num">0</div><div class="p-stat-label">Collabs</div></div>
-        <div class="p-stat"><div class="p-stat-num" id="nacklCount">0</div><div class="p-stat-label">NACKL</div></div>
+        <div class="p-stat"><div class="p-stat-num" id="nacklCount" style="color:#e8b830;text-shadow:0 0 12px rgba(232,184,48,.4);">0</div><div class="p-stat-label" style="color:rgba(232,184,48,.5);">NACKL</div></div>
       </div>
       <div class="p-actions">
         <div class="p-btn-primary" onclick="goTo('backstage')">⭐ BACKSTAGE</div>
@@ -575,8 +579,17 @@ html,body{width:100%;height:100%;background:#08080f;color:#f0f0f5;font-family:'I
       </div>
       <div class="section-title" style="margin-bottom:8px;">On Stage</div>
       <div class="p-gallery" id="profileGallery">
-        <div class="p-gallery-item grad-purple" style="opacity:.3;border:1px dashed rgba(255,255,255,.1);">
-          <div style="font-size:11px;color:rgba(255,255,255,.3);text-align:center;padding:4px;">Publish<br>your first<br>work</div>
+        <div class="p-gallery-item grad-purple" style="cursor:pointer;" onclick="showToast('Publish your first work via FameMaker!')">
+          <div style="font-size:22px;">&#127928;</div>
+          <div class="p-gallery-badge">&#128081;</div>
+        </div>
+        <div class="p-gallery-item grad-red" style="cursor:pointer;" onclick="showToast('Publish your first work via FameMaker!')">
+          <div style="font-size:22px;">&#127908;</div>
+          <div class="p-gallery-badge">&#129309;</div>
+        </div>
+        <div class="p-gallery-item" style="background:#111118;border:1px dashed rgba(255,255,255,.08);cursor:pointer;" onclick="goTo('famemaker')">
+          <div style="font-size:18px;opacity:.3;">+</div>
+          <div style="font-size:7px;color:rgba(255,255,255,.2);margin-top:4px;">Add</div>
         </div>
       </div>
       <div class="section-title" style="margin-bottom:8px;">My Wanted</div>
