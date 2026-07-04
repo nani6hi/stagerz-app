@@ -244,14 +244,14 @@ html,body{width:100%;height:100%;background:#08080f;color:#f0f0f5;font-family:'I
 .p-wanted-meta{font-size:8px;color:rgba(255,255,255,.3);}
 
 /* --- ARTIST PROFILE (others) --- */
-.ap-cover{height:120px;position:relative;}
+.ap-cover{height:150px;position:relative;}
 .ap-actions{display:flex;gap:8px;padding:14px;}
 .ap-follow{flex:1;padding:10px;background:linear-gradient(135deg,#2a1888,#4a30a8);border:none;border-radius:10px;font-size:10px;font-weight:600;color:#fff;cursor:pointer;}
 .ap-collab{flex:1;padding:10px;background:rgba(232,184,48,.1);border:1px solid rgba(232,184,48,.25);border-radius:10px;font-size:10px;font-weight:600;color:#e8b830;cursor:pointer;}
 .ap-back{position:absolute;top:12px;left:12px;width:32px;height:32px;background:rgba(0,0,0,.5);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px;color:#fff;cursor:pointer;}
 
 /* --- CONTENT VIEW (full screen) --- */
-.cv-thumb{height:220px;display:flex;align-items:center;justify-content:center;flex-shrink:0;position:relative;}
+.cv-thumb{height:240px;display:flex;align-items:center;justify-content:center;flex-shrink:0;position:relative;}
 .cv-play{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:56px;height:56px;background:rgba(255,255,255,.15);backdrop-filter:blur(6px);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:22px;cursor:pointer;}
 .cv-back{position:absolute;top:14px;left:14px;width:34px;height:34px;background:rgba(0,0,0,.5);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:20px;color:#fff;cursor:pointer;}
 .cv-body{padding:14px 14px 80px;}
@@ -267,7 +267,7 @@ html,body{width:100%;height:100%;background:#08080f;color:#f0f0f5;font-family:'I
 .cv-action-label{font-size:8px;color:rgba(255,255,255,.4);}
 .cv-action-count{font-size:10px;font-weight:600;color:#fff;}
 .cv-desc{font-size:11px;color:rgba(255,255,255,.45);line-height:1.7;margin-bottom:16px;}
-.cv-credits{background:#111118;border-radius:12px;padding:14px;}
+.cv-credits{background:#111118;border-radius:12px;padding:14px;border-left:3px solid #e8b830;}
 .cv-credits-title{font-size:8px;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.25);margin-bottom:10px;}
 .cv-credit-row{display:flex;align-items:center;gap:10px;margin-bottom:8px;}
 .cv-credit-av{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;border:1px solid rgba(255,255,255,.08);}
@@ -778,10 +778,7 @@ html,body{width:100%;height:100%;background:#08080f;color:#f0f0f5;font-family:'I
         <div class="p-stat"><div class="p-stat-num" id="apCollabs">8</div><div class="p-stat-label">Collabs</div></div>
         <div class="p-stat"><div class="p-stat-num">4.9</div><div class="p-stat-label">Rating</div></div>
       </div>
-      <div class="ap-actions">
-        <button class="ap-follow" onclick="showToast('Follow coming in full version.')">Follow</button>
-        <button class="ap-collab" onclick="goTo('postwanted')">+ Collab</button>
-      </div>
+
       <div class="section-title" style="margin:14px 0 10px;">On Stage</div>
       <div class="p-gallery" id="apGallery"></div>
     </div>
@@ -1092,6 +1089,7 @@ function openArtist(a){
   document.getElementById('apCover').style.background = 'linear-gradient(160deg,'+a.bg+',#08080f)';
   document.getElementById('apEmoji').innerHTML = a.emoji;
   document.getElementById('apName').textContent = a.n;
+  var apAv = document.getElementById('apAvatar'); if(apAv){ apAv.innerHTML = a.emoji; apAv.style.background = 'linear-gradient(135deg,'+a.bg+',#08080f)'; }
   document.getElementById('apRole').innerHTML = a.role+' &middot; '+a.loc.split(',')[0];
   document.getElementById('apBio').textContent = a.bio;
   document.getElementById('apProjects').textContent = a.projects;
@@ -1107,7 +1105,7 @@ function openArtist(a){
     gallery.appendChild(item);
   });
   // Set back button context
-  document.querySelector('#screen-artist .ap-back').onclick = function(){ goTo('search'); };
+  apBackScreen = 'search'; document.querySelector('#screen-artist .ap-back').onclick = function(){ goTo(apBackScreen); };
   goTo('artist');
 }
 
@@ -1122,6 +1120,7 @@ var wantedData = [
   {id:'w7',title:'AI Artist for Album Visual Identity',role:'AI Artist',cat:'AI',loc:'Remote',flag:'&#127757;',remote:true,comp:'Credit + Rev Share',badge:'match',badgeText:'&#11088; 94% Match',user:'Aria Santos',verified:true,time:'6h ago'},
 ];
 
+var apBackScreen = 'search';
 var currentWantedCat = 'all';
 var currentWantedTab = 'my';
 
