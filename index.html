@@ -102,8 +102,8 @@ html,body{width:100%;height:100%;background:#08080f;color:#f0f0f5;font-family:'I
 .cat-divider{height:1px;background:rgba(255,255,255,.06);flex-shrink:0;}
 
 /* --- STAGE CARDS --- */
-.feed{padding:12px 12px 70px;}
-.card{background:#111118;border-radius:14px;overflow:hidden;margin-bottom:12px;cursor:pointer;}
+.feed{padding:0 0 70px;}
+.card{background:#111118;border-radius:0;overflow:hidden;margin-bottom:1px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,.04);}
 .card-thumb{position:relative;display:flex;align-items:center;justify-content:center;}
 .card-thumb-lg{height:185px;}
 .card-thumb-sm{height:110px;}
@@ -113,22 +113,22 @@ html,body{width:100%;height:100%;background:#08080f;color:#f0f0f5;font-family:'I
 .card-badge-new{background:#e8b830;color:#08080f;}
 .card-badge-hot{background:rgba(255,60,30,.85);color:#fff;}
 .card-badge-live{background:rgba(220,30,30,.9);color:#fff;}
-.card-info{display:flex;gap:9px;padding:10px 12px 6px;}
+.card-info{display:flex;gap:9px;padding:10px 14px 6px;}
 .card-av{width:28px;height:28px;border-radius:50%;background:#1a1228;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;border:1px solid rgba(255,255,255,.08);}
 .card-meta{flex:1;min-width:0;}
 .card-title{font-size:11px;font-weight:600;color:#f0f0f5;margin-bottom:2px;line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .card-sub{font-size:8px;color:rgba(255,255,255,.3);}
 .card-verified{color:#e8b830;font-size:9px;}
-.card-actions{display:flex;align-items:center;gap:12px;padding:4px 12px 11px;}
+.card-actions{display:flex;align-items:center;gap:12px;padding:4px 14px 11px;}
 .card-btn{font-size:9px;color:rgba(255,255,255,.4);display:flex;align-items:center;gap:4px;cursor:pointer;}
 .card-btn span{font-size:13px;}
 .card-collab{margin-left:auto;padding:4px 10px;background:rgba(232,184,48,.08);border:1px solid rgba(232,184,48,.2);border-radius:10px;font-size:8px;color:rgba(232,184,48,.85);cursor:pointer;}
 .card-recreate{padding:4px 10px;background:rgba(100,80,255,.1);border:1px solid rgba(100,80,255,.25);border-radius:10px;font-size:8px;color:rgba(180,160,255,.9);cursor:pointer;}
 
 /* SHORT CLIP */
-.short{border-radius:12px;overflow:hidden;margin-bottom:12px;position:relative;height:160px;cursor:pointer;display:flex;align-items:center;justify-content:center;}
+.short{border-radius:0;overflow:hidden;margin-bottom:8px;position:relative;height:160px;cursor:pointer;display:flex;align-items:center;justify-content:center;}
 .short-emoji{font-size:50px;opacity:.6;}
-.short-overlay{position:absolute;bottom:0;left:0;right:0;padding:10px 12px;background:linear-gradient(transparent,rgba(0,0,0,.85));}
+.short-overlay{position:absolute;bottom:0;left:0;right:0;padding:10px 14px;background:linear-gradient(transparent,rgba(0,0,0,.85));}
 .short-name{font-size:10px;font-weight:600;color:#fff;margin-bottom:1px;}
 .short-sub{font-size:8px;color:rgba(255,255,255,.5);}
 .short-side{position:absolute;right:10px;top:50%;transform:translateY(-50%);display:flex;flex-direction:column;gap:12px;align-items:center;}
@@ -146,14 +146,14 @@ html,body{width:100%;height:100%;background:#08080f;color:#f0f0f5;font-family:'I
 #stageCatChips.visible{display:flex;}
 
 /* SECTION LABELS --- */
-.feed-section-label{font-size:8px;letter-spacing:2.5px;text-transform:uppercase;color:rgba(255,255,255,.2);padding:4px 2px 8px;margin-top:4px;}
+.feed-section-label{font-size:8px;letter-spacing:2.5px;text-transform:uppercase;color:rgba(255,255,255,.2);padding:12px 14px 8px;}
 
 /* CARD TEXTURE --- */
 .card-thumb::after{content:'';position:absolute;inset:0;background:repeating-linear-gradient(45deg,rgba(255,255,255,.015) 0px,rgba(255,255,255,.015) 1px,transparent 1px,transparent 8px);pointer-events:none;}
 .short::after{content:'';position:absolute;inset:0;background:repeating-linear-gradient(45deg,rgba(255,255,255,.015) 0px,rgba(255,255,255,.015) 1px,transparent 1px,transparent 8px);pointer-events:none;}
 
 /* SHORT CLIP INSET --- */
-.short-inset{margin-left:8px;margin-right:8px;border-radius:16px;}
+.short-inset{}
 
 /* --- SEARCH --- */
 .search-top{padding:12px 14px 0;}
