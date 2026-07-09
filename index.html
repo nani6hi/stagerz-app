@@ -15,13 +15,13 @@
   </div>
   <!-- Category chips — only in Community tab -->
   <div id="wCatChips" style="display:none;overflow-x:auto;padding:8px 14px;gap:8px;scrollbar-width:none;flex-shrink:0;border-bottom:1px solid rgba(255,255,255,.06);">
-    <div class="cat-chip on" onclick="setWantedCat(this,'all')">&#127757; All</div>
-    <div class="cat-chip" onclick="setWantedCat(this,'music')">&#127925; Music</div>
-    <div class="cat-chip" onclick="setWantedCat(this,'film')">&#127916; Film</div>
-    <div class="cat-chip" onclick="setWantedCat(this,'dance')">&#128131; Dance</div>
-    <div class="cat-chip" onclick="setWantedCat(this,'photo')">&#128247; Photo</div>
-    <div class="cat-chip" onclick="setWantedCat(this,'ai')">&#129302; AI</div>
-    <div class="cat-chip" onclick="setWantedCat(this,'art')">&#127912; Art</div>
+    <div class="cat-chip on chip chip-interactive" onclick="setWantedCat(this,'all')">&#127757; All</div>
+    <div class="cat-chip chip chip-interactive" onclick="setWantedCat(this,'music')">&#127925; Music</div>
+    <div class="cat-chip chip chip-interactive" onclick="setWantedCat(this,'film')">&#127916; Film</div>
+    <div class="cat-chip chip chip-interactive" onclick="setWantedCat(this,'dance')">&#128131; Dance</div>
+    <div class="cat-chip chip chip-interactive" onclick="setWantedCat(this,'photo')">&#128247; Photo</div>
+    <div class="cat-chip chip chip-interactive" onclick="setWantedCat(this,'ai')">&#129302; AI</div>
+    <div class="cat-chip chip chip-interactive" onclick="setWantedCat(this,'art')">&#127912; Art</div>
   </div>
   <div class="sa">
     <!-- My Wanted tab -->
@@ -336,6 +336,68 @@
   cursor:pointer;
 }
 
+/* ══════════════════════════════════════════
+   CHIP SYSTEM — reusable classes
+   Placed before all per-selector chip rules on
+   purpose: .cat-chip/.skill-chip/.form-chip/
+   .role-chip/.w-tag each still fully redeclare
+   their own background/border/padding/etc, so
+   those rules (appearing later, equal specificity)
+   win on any overlapping property. Visual output
+   stays identical while elements also carry the
+   new semantic .chip-* classes.
+
+   Structure: Chip (primitive)
+     -> Interactive (tappable, .on state) -> Selection Chip
+     -> Informational (static, no state)  -> Tag Chip
+   ══════════════════════════════════════════ */
+.chip{
+  display:inline-block;
+  padding:var(--chip-padding);
+  background:var(--chip-bg-idle);
+  border:1px solid var(--chip-border-idle);
+  border-radius:var(--chip-radius);
+  font-size:var(--fs-3xs);
+  color:var(--chip-text-idle);
+  white-space:nowrap;
+}
+
+/* Interactive branch — Selection Chip (Category/Skill/Role/Form chips) */
+.chip-interactive{
+  cursor:pointer;
+}
+
+/* On-state color modifiers. NOT yet wired to any element below: current
+   JS toggles the pre-existing ".on" class only (setStageCat/setWantedCat/
+   setSearchCat/pickChip/pickRole), and none of it touches "chip-on-gold"/
+   "chip-on-purple". Adding these as static classes to a chip that starts
+   selected would leave a stale gold/purple tint after the user taps a
+   different chip, since JS never removes it. Wiring these in requires a
+   JS change, which is out of scope this pass — documented here as ready
+   for that future step, not applied yet. */
+.chip-on-gold{
+  background:var(--chip-bg-gold-on);
+  color:var(--chip-text-gold-on);
+  border-color:var(--chip-border-gold-on);
+}
+.chip-on-purple{
+  background:var(--chip-bg-purple-on);
+  color:var(--chip-text-purple-on);
+  border-color:var(--chip-border-purple-on);
+}
+
+/* Informational branch — Tag Chip (static metadata, e.g. .w-tag) */
+.chip-tag{
+  /* no cursor, no state — intentionally inert */
+}
+
+/* Compact size — matches existing Tag Chip proportions (.w-tag) */
+.chip-small{
+  padding:3px 8px;
+  border-radius:var(--r-sm);
+  font-size:var(--fs-4xs);
+}
+
 /* --- RESET & BASE --- */
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
 html,body{width:100%;height:100%;background:var(--c-bg);color:var(--c-text-100);font-family:var(--font-body);overflow:hidden;user-select:none;}
@@ -643,13 +705,13 @@ html,body{width:100%;height:100%;background:var(--c-bg);color:var(--c-text-100);
   </div>
   <!-- Category chips — only shown in Channels tab -->
   <div id="stageCatChips" style="overflow-x:auto;padding:8px 14px;gap:8px;scrollbar-width:none;flex-shrink:0;border-bottom:1px solid rgba(255,255,255,.06);">
-    <div class="cat-chip on" onclick="setStageCat(this,'all')">&#127757; All</div>
-    <div class="cat-chip" onclick="setStageCat(this,'music')">&#127925; Music</div>
-    <div class="cat-chip" onclick="setStageCat(this,'film')">&#127916; Film</div>
-    <div class="cat-chip" onclick="setStageCat(this,'dance')">&#128131; Dance</div>
-    <div class="cat-chip" onclick="setStageCat(this,'photo')">&#128247; Photo</div>
-    <div class="cat-chip" onclick="setStageCat(this,'ai')">&#129302; AI</div>
-    <div class="cat-chip" onclick="setStageCat(this,'art')">&#127912; Art</div>
+    <div class="cat-chip on chip chip-interactive" onclick="setStageCat(this,'all')">&#127757; All</div>
+    <div class="cat-chip chip chip-interactive" onclick="setStageCat(this,'music')">&#127925; Music</div>
+    <div class="cat-chip chip chip-interactive" onclick="setStageCat(this,'film')">&#127916; Film</div>
+    <div class="cat-chip chip chip-interactive" onclick="setStageCat(this,'dance')">&#128131; Dance</div>
+    <div class="cat-chip chip chip-interactive" onclick="setStageCat(this,'photo')">&#128247; Photo</div>
+    <div class="cat-chip chip chip-interactive" onclick="setStageCat(this,'ai')">&#129302; AI</div>
+    <div class="cat-chip chip chip-interactive" onclick="setStageCat(this,'art')">&#127912; Art</div>
   </div>
   <div style="height:1px;background:rgba(255,255,255,.06);flex-shrink:0;"></div>
   <div class="sa">
@@ -676,13 +738,13 @@ html,body{width:100%;height:100%;background:var(--c-bg);color:var(--c-text-100);
     </div>
     <div id="searchCount" style="font-size:9px;color:rgba(255,255,255,.25);padding:0 2px 8px;"></div>
     <div class="skill-chips" id="searchCats">
-      <div class="skill-chip on" onclick="setSearchCat(this,'all')">All</div>
-      <div class="skill-chip" onclick="setSearchCat(this,'music')">🎵 Music</div>
-      <div class="skill-chip" onclick="setSearchCat(this,'film')">🎬 Film</div>
-      <div class="skill-chip" onclick="setSearchCat(this,'dance')">💃 Dance</div>
-      <div class="skill-chip" onclick="setSearchCat(this,'photo')">📷 Photo</div>
-      <div class="skill-chip" onclick="setSearchCat(this,'ai')">🤖 AI</div>
-      <div class="skill-chip" onclick="setSearchCat(this,'art')">🎨 Art</div>
+      <div class="skill-chip on chip chip-interactive" onclick="setSearchCat(this,'all')">All</div>
+      <div class="skill-chip chip chip-interactive" onclick="setSearchCat(this,'music')">🎵 Music</div>
+      <div class="skill-chip chip chip-interactive" onclick="setSearchCat(this,'film')">🎬 Film</div>
+      <div class="skill-chip chip chip-interactive" onclick="setSearchCat(this,'dance')">💃 Dance</div>
+      <div class="skill-chip chip chip-interactive" onclick="setSearchCat(this,'photo')">📷 Photo</div>
+      <div class="skill-chip chip chip-interactive" onclick="setSearchCat(this,'ai')">🤖 AI</div>
+      <div class="skill-chip chip chip-interactive" onclick="setSearchCat(this,'art')">🎨 Art</div>
     </div>
   </div>
   <div class="sa">
@@ -775,20 +837,20 @@ html,body{width:100%;height:100%;background:var(--c-bg);color:var(--c-text-100);
       <input class="form-input" type="text" placeholder="Name your work...">
       <div class="form-label">Category</div>
       <div class="form-chips" id="uploadCatPicker">
-        <div class="form-chip on" onclick="pickChip(this,'uploadCatPicker')">&#127925; Music</div>
-        <div class="form-chip" onclick="pickChip(this,'uploadCatPicker')">&#127916; Film</div>
-        <div class="form-chip" onclick="pickChip(this,'uploadCatPicker')">&#128131; Dance</div>
-        <div class="form-chip" onclick="pickChip(this,'uploadCatPicker')">&#128247; Photo</div>
-        <div class="form-chip" onclick="pickChip(this,'uploadCatPicker')">&#129302; AI</div>
-        <div class="form-chip" onclick="pickChip(this,'uploadCatPicker')">&#127912; Art</div>
+        <div class="form-chip on chip chip-interactive" onclick="pickChip(this,'uploadCatPicker')">&#127925; Music</div>
+        <div class="form-chip chip chip-interactive" onclick="pickChip(this,'uploadCatPicker')">&#127916; Film</div>
+        <div class="form-chip chip chip-interactive" onclick="pickChip(this,'uploadCatPicker')">&#128131; Dance</div>
+        <div class="form-chip chip chip-interactive" onclick="pickChip(this,'uploadCatPicker')">&#128247; Photo</div>
+        <div class="form-chip chip chip-interactive" onclick="pickChip(this,'uploadCatPicker')">&#129302; AI</div>
+        <div class="form-chip chip chip-interactive" onclick="pickChip(this,'uploadCatPicker')">&#127912; Art</div>
       </div>
       <div class="form-label">Mood / Genre</div>
       <div class="form-chips" id="uploadMoodPicker">
-        <div class="form-chip on" onclick="pickChip(this,'uploadMoodPicker')">&#127775; Chill</div>
-        <div class="form-chip" onclick="pickChip(this,'uploadMoodPicker')">&#128293; Energetic</div>
-        <div class="form-chip" onclick="pickChip(this,'uploadMoodPicker')">&#127963; Cinematic</div>
-        <div class="form-chip" onclick="pickChip(this,'uploadMoodPicker')">&#128131; Rhythmic</div>
-        <div class="form-chip" onclick="pickChip(this,'uploadMoodPicker')">&#129302; Experimental</div>
+        <div class="form-chip on chip chip-interactive" onclick="pickChip(this,'uploadMoodPicker')">&#127775; Chill</div>
+        <div class="form-chip chip chip-interactive" onclick="pickChip(this,'uploadMoodPicker')">&#128293; Energetic</div>
+        <div class="form-chip chip chip-interactive" onclick="pickChip(this,'uploadMoodPicker')">&#127963; Cinematic</div>
+        <div class="form-chip chip chip-interactive" onclick="pickChip(this,'uploadMoodPicker')">&#128131; Rhythmic</div>
+        <div class="form-chip chip chip-interactive" onclick="pickChip(this,'uploadMoodPicker')">&#129302; Experimental</div>
       </div>
       <div class="form-label">Description</div>
       <textarea class="form-textarea" placeholder="Tell the story behind this work..."></textarea>
@@ -894,14 +956,14 @@ html,body{width:100%;height:100%;background:var(--c-bg);color:var(--c-text-100);
       <input class="form-input" id="editName" type="text" placeholder="Your artist name">
       <div class="form-label">I am a...</div>
       <div class="role-chips" id="rolePicker">
-        <div class="role-chip on" onclick="pickRole(this,'🎸 Musician')">🎸 Musician</div>
-        <div class="role-chip" onclick="pickRole(this,'🎬 Filmmaker')">🎬 Filmmaker</div>
-        <div class="role-chip" onclick="pickRole(this,'💃 Dancer')">💃 Dancer</div>
-        <div class="role-chip" onclick="pickRole(this,'📷 Photographer')">📷 Photographer</div>
-        <div class="role-chip" onclick="pickRole(this,'🎨 Visual Artist')">🎨 Visual Artist</div>
-        <div class="role-chip" onclick="pickRole(this,'🤖 AI Creator')">🤖 AI Creator</div>
-        <div class="role-chip" onclick="pickRole(this,'🎤 Singer')">🎤 Singer</div>
-        <div class="role-chip" onclick="pickRole(this,'🎵 Producer')">🎵 Producer</div>
+        <div class="role-chip on chip chip-interactive" onclick="pickRole(this,'🎸 Musician')">🎸 Musician</div>
+        <div class="role-chip chip chip-interactive" onclick="pickRole(this,'🎬 Filmmaker')">🎬 Filmmaker</div>
+        <div class="role-chip chip chip-interactive" onclick="pickRole(this,'💃 Dancer')">💃 Dancer</div>
+        <div class="role-chip chip chip-interactive" onclick="pickRole(this,'📷 Photographer')">📷 Photographer</div>
+        <div class="role-chip chip chip-interactive" onclick="pickRole(this,'🎨 Visual Artist')">🎨 Visual Artist</div>
+        <div class="role-chip chip chip-interactive" onclick="pickRole(this,'🤖 AI Creator')">🤖 AI Creator</div>
+        <div class="role-chip chip chip-interactive" onclick="pickRole(this,'🎤 Singer')">🎤 Singer</div>
+        <div class="role-chip chip chip-interactive" onclick="pickRole(this,'🎵 Producer')">🎵 Producer</div>
       </div>
       <div class="form-label">Location</div>
       <input class="form-input" id="editLocation" type="text" placeholder="City, Country">
@@ -931,12 +993,12 @@ html,body{width:100%;height:100%;background:var(--c-bg);color:var(--c-text-100);
       <input class="form-input" id="pwRole" type="text" placeholder="e.g. Guitarist, Cinematographer...">
       <div class="form-label">Category</div>
       <div class="form-chips" id="pwCatPicker">
-        <div class="form-chip on" onclick="pickChip(this,'pwCatPicker')">🎵 Music</div>
-        <div class="form-chip" onclick="pickChip(this,'pwCatPicker')">🎬 Film</div>
-        <div class="form-chip" onclick="pickChip(this,'pwCatPicker')">💃 Dance</div>
-        <div class="form-chip" onclick="pickChip(this,'pwCatPicker')">📷 Photo</div>
-        <div class="form-chip" onclick="pickChip(this,'pwCatPicker')">🤖 AI</div>
-        <div class="form-chip" onclick="pickChip(this,'pwCatPicker')">🎨 Art</div>
+        <div class="form-chip on chip chip-interactive" onclick="pickChip(this,'pwCatPicker')">🎵 Music</div>
+        <div class="form-chip chip chip-interactive" onclick="pickChip(this,'pwCatPicker')">🎬 Film</div>
+        <div class="form-chip chip chip-interactive" onclick="pickChip(this,'pwCatPicker')">💃 Dance</div>
+        <div class="form-chip chip chip-interactive" onclick="pickChip(this,'pwCatPicker')">📷 Photo</div>
+        <div class="form-chip chip chip-interactive" onclick="pickChip(this,'pwCatPicker')">🤖 AI</div>
+        <div class="form-chip chip chip-interactive" onclick="pickChip(this,'pwCatPicker')">🎨 Art</div>
       </div>
       <div class="form-label">Location</div>
       <input class="form-input" id="pwLocation" type="text" placeholder="City, Country">
@@ -949,9 +1011,9 @@ html,body{width:100%;height:100%;background:var(--c-bg);color:var(--c-text-100);
       </div>
       <div class="form-label">Compensation</div>
       <div class="form-chips" id="pwCompPicker">
-        <div class="form-chip on" onclick="pickChip(this,'pwCompPicker')">💰 Paid</div>
-        <div class="form-chip" onclick="pickChip(this,'pwCompPicker')">🤝 Rev Share</div>
-        <div class="form-chip" onclick="pickChip(this,'pwCompPicker')">⭐ Credit</div>
+        <div class="form-chip on chip chip-interactive" onclick="pickChip(this,'pwCompPicker')">💰 Paid</div>
+        <div class="form-chip chip chip-interactive" onclick="pickChip(this,'pwCompPicker')">🤝 Rev Share</div>
+        <div class="form-chip chip chip-interactive" onclick="pickChip(this,'pwCompPicker')">⭐ Credit</div>
       </div>
       <div class="form-label">Description</div>
       <textarea class="form-textarea" id="pwDesc" placeholder="Tell artists about the project, timeline, what you expect..."></textarea>
