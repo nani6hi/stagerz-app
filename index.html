@@ -5,7 +5,7 @@
   <div class="tb">
     <div class="logo">WAN<em>T</em>ED</div>
     <div class="tb-icons">
-      <div class="tb-icon" onclick="goTo('postwanted')" style="font-size:18px;color:#e8b830;">+</div>
+      <div class="tb-icon btn btn-icon" onclick="goTo('postwanted')" style="font-size:18px;color:#e8b830;">+</div>
     </div>
   </div>
   <!-- My / Community tabs -->
@@ -26,7 +26,7 @@
   <div class="sa">
     <!-- My Wanted tab -->
     <div id="wMyTab" style="padding:12px 14px 70px;">
-      <div class="w-post-btn" onclick="goTo('postwanted')">
+      <div class="w-post-btn btn btn-promo" onclick="goTo('postwanted')">
         <div class="w-post-icon">&#127919;</div>
         <div>
           <div class="w-post-label">POST A WANTED</div>
@@ -218,6 +218,122 @@
 --chip-border-purple-on: rgba(100,80,255,.3);
 --chip-text-purple-on:   var(--c-purple-text);
 
+}
+
+/* ══════════════════════════════════════════
+   BUTTON SYSTEM — reusable classes
+   Placed before all component rules on purpose:
+   each mapped selector below still fully defines
+   its own properties, so those rules (appearing
+   later in the cascade, equal specificity) win on
+   any overlapping property. This keeps the visual
+   result byte-for-byte identical while the elements
+   also carry the new semantic .btn-* classes.
+   ══════════════════════════════════════════ */
+.btn{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  cursor:pointer;
+  border:none;
+  outline:none;
+  text-align:center;
+  white-space:nowrap;
+  font-family:var(--font-body);
+}
+
+.btn-primary-gold{
+  background:var(--btn-primary-grad);
+  color:var(--btn-primary-text);
+  font-family:var(--font-display);
+  font-weight:var(--fw-bold);
+  font-size:var(--fs-md);
+  padding:var(--btn-padding);
+  border-radius:var(--btn-radius);
+}
+.btn-radius-lg{
+  border-radius:var(--r-lg);
+}
+
+.btn-purple-action{
+  background:var(--btn-purple-grad);
+  color:var(--btn-purple-text);
+  font-weight:var(--fw-semibold);
+  font-size:var(--fs-2xs);
+  padding:10px;
+  border-radius:var(--btn-radius);
+}
+.btn-wanted-apply{
+  padding:9px;
+  font-weight:var(--fw-bold);
+  letter-spacing:1.5px;
+}
+.btn-artist-collab{
+  background:var(--c-purple-10);
+  border:1px solid var(--c-purple-20);
+  color:rgba(180,160,255,.85);
+  padding:5px 12px;
+}
+
+.btn-secondary{
+  background:var(--btn-secondary-bg);
+  border:1px solid var(--btn-secondary-border);
+  color:var(--btn-secondary-text);
+  font-weight:var(--fw-semibold);
+  font-size:var(--fs-3xs);
+  letter-spacing:1px;
+  padding:10px;
+  border-radius:var(--btn-radius);
+}
+.btn-edit-pill{
+  padding:5px 12px;
+  border-radius:var(--r-md);
+}
+
+.btn-ghost-gold{
+  background:var(--btn-ghost-gold-bg);
+  border:1px solid var(--btn-ghost-gold-border);
+  color:var(--btn-ghost-gold-text);
+  font-weight:var(--fw-semibold);
+  font-size:var(--fs-2xs);
+  padding:10px;
+  border-radius:var(--btn-radius);
+}
+.btn-ghost-gold-soft{
+  background:var(--c-gold-08);
+  border:1px solid var(--c-gold-20);
+}
+
+.btn-icon{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  flex-shrink:0;
+  border-radius:var(--r-circle);
+  cursor:pointer;
+}
+
+.btn-small{
+  padding:4px 10px;
+  font-size:var(--fs-4xs);
+  border-radius:var(--r-base);
+}
+
+.btn-full{
+  display:flex;
+  width:100%;
+}
+
+.btn-promo{
+  display:flex;
+  align-items:center;
+  justify-content:flex-start;
+  gap:12px;
+  padding:12px 14px;
+  background:linear-gradient(135deg, var(--c-gold-08), rgba(100,80,255,.06));
+  border:1px solid var(--c-gold-20);
+  border-radius:var(--r-xl);
+  cursor:pointer;
 }
 
 /* --- RESET & BASE --- */
@@ -513,8 +629,8 @@ html,body{width:100%;height:100%;background:var(--c-bg);color:var(--c-text-100);
   <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 14px 0;background:#08080f;flex-shrink:0;">
     <div class="logo" style="font-size:26px;letter-spacing:-1px;text-shadow:0 0 30px rgba(232,184,48,.25);">STA<em>G</em>ERZ</div>
     <div style="display:flex;gap:10px;">
-      <div class="tb-icon" onclick="goTo('search')">&#128269;</div>
-      <div class="tb-icon">&#128276;</div>
+      <div class="tb-icon btn btn-icon" onclick="goTo('search')">&#128269;</div>
+      <div class="tb-icon btn btn-icon">&#128276;</div>
     </div>
   </div>
   <!-- Stage tabs -->
@@ -590,7 +706,7 @@ html,body{width:100%;height:100%;background:var(--c-bg);color:var(--c-text-100);
     <div style="font-size:10px;color:rgba(255,255,255,.3);" id="wantedCount">loading...</div>
   </div>
   <div class="sa">
-    <div class="w-post-btn" onclick="goTo('postwanted')">
+    <div class="w-post-btn btn btn-promo" onclick="goTo('postwanted')">
       <div class="w-post-icon">🎯</div>
       <div>
         <div class="w-post-label">POST A WANTED</div>
@@ -645,7 +761,7 @@ html,body{width:100%;height:100%;background:var(--c-bg);color:var(--c-text-100);
         <div class="fm-tool">Loop</div>
         <div class="fm-tool">Undo</div>
       </div>
-      <button class="fm-pub" onclick="showToast('Taking the Stage! Publishing coming in full version.')">TAKE THE STAGE</button>
+      <button class="fm-pub btn btn-primary-gold btn-full btn-radius-lg" onclick="showToast('Taking the Stage! Publishing coming in full version.')">TAKE THE STAGE</button>
       <div class="fm-pub-sub">Published instantly · Visible to the world</div>
     </div>
     <!-- Upload tab -->
@@ -676,7 +792,7 @@ html,body{width:100%;height:100%;background:var(--c-bg);color:var(--c-text-100);
       </div>
       <div class="form-label">Description</div>
       <textarea class="form-textarea" placeholder="Tell the story behind this work..."></textarea>
-      <button class="form-submit" onclick="showToast('Upload coming in full version.')">TAKE THE STAGE</button>
+      <button class="form-submit btn btn-primary-gold btn-full btn-radius-lg" onclick="showToast('Upload coming in full version.')">TAKE THE STAGE</button>
     </div>
     <!-- Showcase tab -->
     <div class="fm-content" id="fmShowcase" style="display:none;">
@@ -690,7 +806,7 @@ html,body{width:100%;height:100%;background:var(--c-bg);color:var(--c-text-100);
         </div>
         <div class="fm-showcase-label">Description</div>
         <textarea class="fm-showcase-input" style="min-height:70px;" placeholder="What is this showcase about?"></textarea>
-        <button class="form-submit" onclick="showToast('Showcase coming in full version.')">CREATE SHOWCASE</button>
+        <button class="form-submit btn btn-primary-gold btn-full btn-radius-lg" onclick="showToast('Showcase coming in full version.')">CREATE SHOWCASE</button>
       </div>
     </div>
   </div>
@@ -712,7 +828,7 @@ html,body{width:100%;height:100%;background:var(--c-bg);color:var(--c-text-100);
       <div class="p-av-wrap">
         <div class="p-av grad-purple" id="profileAvatar">🎸</div>
       </div>
-      <div class="p-edit-btn" onclick="goTo('editprofile')">✏ EDIT</div>
+      <div class="p-edit-btn btn btn-secondary btn-edit-pill" onclick="goTo('editprofile')">✏ EDIT</div>
     </div>
     <div class="p-body">
       <div class="p-name-row">
@@ -727,8 +843,8 @@ html,body{width:100%;height:100%;background:var(--c-bg);color:var(--c-text-100);
         <div class="p-stat"><div class="p-stat-num" id="nacklCount" style="color:#e8b830;text-shadow:0 0 12px rgba(232,184,48,.4);">0</div><div class="p-stat-label" style="color:rgba(232,184,48,.5);">NACKL</div></div>
       </div>
       <div class="p-actions">
-        <div class="p-btn-primary" onclick="goTo('backstage')">⭐ BACKSTAGE</div>
-        <div class="p-btn-secondary" onclick="goTo('famemaker')">🎬 FAMEMAKER</div>
+        <div class="p-btn-primary btn btn-ghost-gold" onclick="goTo('backstage')">⭐ BACKSTAGE</div>
+        <div class="p-btn-secondary btn btn-secondary" onclick="goTo('famemaker')">🎬 FAMEMAKER</div>
       </div>
       <div class="section-title" style="margin-bottom:8px;">On Stage</div>
       <div class="p-gallery" id="profileGallery">
@@ -793,7 +909,7 @@ html,body{width:100%;height:100%;background:var(--c-bg);color:var(--c-text-100);
       <textarea class="form-textarea" id="editBio" placeholder="Tell the world who you are and what you create..."></textarea>
       <div class="form-label">Skills (comma separated)</div>
       <input class="form-input" id="editSkills" type="text" placeholder="Guitar, Vocals, Songwriting...">
-      <button class="form-submit" onclick="saveProfile()">SAVE PROFILE</button>
+      <button class="form-submit btn btn-primary-gold btn-full btn-radius-lg" onclick="saveProfile()">SAVE PROFILE</button>
     </div>
   </div>
 </div>
@@ -839,7 +955,7 @@ html,body{width:100%;height:100%;background:var(--c-bg);color:var(--c-text-100);
       </div>
       <div class="form-label">Description</div>
       <textarea class="form-textarea" id="pwDesc" placeholder="Tell artists about the project, timeline, what you expect..."></textarea>
-      <button class="form-submit" onclick="submitWanted()">🎯 POST TO THE WORLD</button>
+      <button class="form-submit btn btn-primary-gold btn-full btn-radius-lg" onclick="submitWanted()">🎯 POST TO THE WORLD</button>
       <div style="font-size:8px;color:rgba(255,255,255,.2);text-align:center;margin-top:8px;">Visible to artists worldwide instantly</div>
     </div>
   </div>
@@ -852,8 +968,8 @@ html,body{width:100%;height:100%;background:var(--c-bg);color:var(--c-text-100);
   <div class="sa">
     <div class="cv-thumb grad-purple" id="cvThumb" style="height:220px;">
       <div style="font-size:60px;opacity:.6;" id="cvEmoji">🎤</div>
-      <div class="cv-play" onclick="showToast('Playback coming in full version.')">▶</div>
-      <div class="cv-back" onclick="goTo('stage')">‹</div>
+      <div class="cv-play btn btn-icon" onclick="showToast('Playback coming in full version.')">▶</div>
+      <div class="cv-back btn btn-icon" onclick="goTo('stage')">‹</div>
     </div>
     <div class="cv-body">
       <div class="cv-title" id="cvTitle">Midnight in Lagos</div>
@@ -914,7 +1030,7 @@ html,body{width:100%;height:100%;background:var(--c-bg);color:var(--c-text-100);
   <div class="sa">
     <div class="ap-cover" id="apCover" style="background:linear-gradient(160deg,#1a0840,#0a1040);">
       <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:50px;opacity:.5;" id="apEmoji">🎸</div>
-      <div class="ap-back" onclick="goTo('stage')">‹</div>
+      <div class="ap-back btn btn-icon" onclick="goTo('stage')">‹</div>
     </div>
     <div style="padding:14px;">
       <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:12px;">
@@ -967,7 +1083,7 @@ html,body{width:100%;height:100%;background:var(--c-bg);color:var(--c-text-100);
       <div class="bs-feature"><div class="bs-feature-icon">💎</div>NACKL mining tracked</div>
       <div class="bs-feature"><div class="bs-feature-icon">📊</div>Analytics & insights</div>
       <div class="bs-feature"><div class="bs-feature-icon">🎬</div>Priority in Wanted search</div>
-      <button class="bs-cta" onclick="showToast('Payment launches with full app. Price locked for early users!')">JOIN BACKSTAGE</button>
+      <button class="bs-cta btn btn-primary-gold btn-full" onclick="showToast('Payment launches with full app. Price locked for early users!')">JOIN BACKSTAGE</button>
       <div class="bs-free-note">Free tier: 1 Stage post · 1 Wanted · No verification</div>
     </div>
     <div style="height:20px;"></div>
