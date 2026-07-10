@@ -398,6 +398,396 @@
   font-size:var(--fs-4xs);
 }
 
+/* ══════════════════════════════════════════
+   VERIFIED BADGE — reusable classes
+   Informational primitive, sibling to Badge System
+   (pill/overlay shape) rather than a child of it —
+   Verified Badge is an inline glyph adjacent to a
+   name, never a standalone pill or thumbnail overlay.
+   Placed before per-selector rules (.p-verified) so
+   that rule, appearing later, still wins on any
+   overlapping property — visual output unchanged.
+   ══════════════════════════════════════════ */
+.verified-badge{
+  display:inline-flex;
+  align-items:center;
+  line-height:1;
+  color:var(--c-gold);
+}
+/* sm: inline-with-text scale — matches Content View / Wanted Card usage */
+.verified-badge-sm{
+  font-size:10px;
+}
+/* lg: profile-header scale — matches Own Profile / Artist Profile usage */
+.verified-badge-lg{
+  font-size:24px;
+}
+
+/* ══════════════════════════════════════════
+   BADGE SYSTEM — reusable classes
+   Informational primitive, sibling to Verified Badge
+   (person-adjacent inline glyph) rather than a child
+   of it — Badge communicates a fact about content/state
+   (new/hot/live/match), always pill-shaped, either an
+   absolute overlay or an inline metadata line.
+   Placed before per-selector rules (.card-badge*,
+   .w-badge*) so those rules, appearing later, keep
+   winning on any overlapping property — except the
+   approved Wanted "New" -> gold remap below, which
+   uses a deliberately higher-specificity combined
+   selector so it wins regardless of source order.
+   ══════════════════════════════════════════ */
+.badge{
+  display:inline-block;
+  font-size:var(--fs-5xs);
+  font-weight:var(--fw-bold);
+  letter-spacing:.5px;
+  border-radius:var(--r-xs);
+}
+
+/* Semantic color variants (defaults for a future consumer with no
+   pre-existing class layered on; existing consumers keep their exact
+   current look via cascade-safety placement above) */
+.badge-gold{
+  background:var(--c-gold);
+  color:var(--c-bg);
+}
+.badge-hot{
+  background:var(--c-hot);
+  color:var(--c-text-90);
+}
+.badge-live{
+  background:var(--c-live);
+  color:var(--c-text-90);
+}
+
+/* Shape variants */
+.badge-overlay{
+  position:absolute;
+  top:8px;
+  left:9px;
+}
+.badge-inline{
+  display:inline-block;
+  margin-bottom:8px;
+}
+
+/* Approved remap: Wanted's "New" badge moves from purple to gold, since
+   "new" should always mean freshness, not people/collab. Purple stays
+   reserved for people/collab/role semantics elsewhere (chips, buttons).
+   Targets the specific intersection of the old class (kept, unchanged)
+   and the new semantic class added by the JS template — two-class
+   specificity (0,0,2,0) beats the single-class .w-badge-new rule
+   (0,0,1,0) regardless of where either rule sits in the file. Colors
+   match the existing .w-badge-gold treatment so "New" now reads
+   consistently with "Match" in the same inline badge style. */
+.w-badge-new.badge-gold{
+  background:var(--c-gold-12);
+  color:var(--c-gold);
+}
+
+/* ══════════════════════════════════════════
+   PERSON ROW — reusable identity row
+   NOT YET APPLIED to any element in this pass —
+   both real current consumers (Search Artist Row,
+   Content View Credit Row) turn out to be rendered
+   entirely via JS at runtime (see implementation
+   notes). Defined here, cascade-safety placed before
+   .artist-row/.cv-credit-row, ready for a future
+   JS-inclusive pass. Card creator info block is
+   explicitly NOT a consumer (content-first, not
+   person-first — confirmed in architecture review).
+   ══════════════════════════════════════════ */
+.person-row{
+  display:flex;
+  align-items:center;
+}
+.person-row-standard{
+  gap:12px;
+}
+.person-row-compact{
+  gap:10px;
+}
+.person-row-interactive{
+  cursor:pointer;
+}
+.person-row-static{
+  /* no cursor — intentionally inert; only an explicit .person-trailing
+     action (if present) responds to touch */
+}
+
+.person-avatar{
+  border-radius:var(--r-circle);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  border:1px solid var(--c-white-08);
+  flex-shrink:0;
+}
+/* size is a row-level property, matched to the two proven existing
+   scales — standard (Artist Row, 42px) and compact (Credit Row, 28px) */
+.person-row-standard .person-avatar{
+  width:42px;
+  height:42px;
+  font-size:20px;
+}
+.person-row-compact .person-avatar{
+  width:28px;
+  height:28px;
+  font-size:var(--fs-base);
+}
+
+.person-main{
+  flex:1;
+  min-width:0;
+}
+
+.person-primary{
+  font-size:var(--fs-sm);
+  font-weight:var(--fw-semibold);
+  color:var(--c-text-90);
+  margin-bottom:2px;
+}
+.person-row-compact .person-primary{
+  font-size:var(--fs-2xs);
+}
+
+/* NOTE: Artist Row's real layout has two secondary lines (role, then
+   location), not one. A single .person-secondary slot doesn't map 1:1
+   onto that today — flagging rather than silently merging the two
+   lines or inventing an unrequested second slot. Credit Row (one
+   secondary line: role) maps cleanly. */
+.person-secondary{
+  font-size:var(--fs-3xs);
+  color:var(--c-text-35);
+}
+.person-row-compact .person-secondary{
+  font-size:var(--fs-4xs);
+  color:var(--c-text-30);
+}
+
+.person-trailing{
+  margin-left:auto;
+  flex-shrink:0;
+}
+
+/* ══════════════════════════════════════════
+   CARD SHELL — thin reusable base, deliberately
+   minimal per "Composition Before Complexity":
+   Card Shell owns only background/radius/tap-
+   behavior. Media, Badge, Chip, Button/Action Row
+   are separate systems that compose INTO a card,
+   not properties Card Shell tries to own itself.
+
+   Placed before per-selector rules (.card, .w-card,
+   .p-wanted-card) so those rules, appearing later,
+   keep winning on any overlapping property — visual
+   output unchanged for all three existing consumers.
+
+   FameMaker Showcase Card and Backstage Price Card
+   are explicitly NOT part of Card System (confirmed
+   in architecture review) — see PANEL below instead.
+   ══════════════════════════════════════════ */
+.card-shell{
+  background:var(--c-surface);
+  border-radius:var(--r-xl);
+  cursor:pointer;
+}
+
+/* Stage-specific shell modifier: edge-to-edge, no radius (deliberate
+   design decision, not an oversight) */
+.card-stage{
+  border-radius:var(--r-none);
+}
+
+/* Wanted-specific shell modifier: standard size */
+.card-wanted{
+  padding:10px 12px;
+  border-radius:var(--r-xl);
+  margin-bottom:8px;
+}
+
+/* Wanted-specific shell modifier: compact size (Profile Wanted Card) */
+.card-wanted-compact{
+  padding:12px;
+  border-radius:var(--r-base);
+  margin-bottom:8px;
+}
+
+/* Left-accent-bar treatment, generalized from .w-card/.w-card-alt/
+   .p-wanted-card's border-left convention */
+.card-accent-gold{
+  border-left:3px solid var(--c-gold);
+}
+.card-accent-purple{
+  border-left:3px solid rgba(100,80,255,.5);
+}
+
+/* ══════════════════════════════════════════
+   PANEL — generic bordered wrapper (Layout family)
+   Reclassified from Card System per architecture
+   review: Showcase Card and Price Card hold form
+   fields / pricing info, not media/title/badge
+   content — they're panels, not cards.
+   ══════════════════════════════════════════ */
+.panel{
+  background:var(--c-surface);
+  border-radius:var(--r-xl);
+}
+.panel-gold{
+  border:1px solid rgba(232,184,48,.15);
+}
+.panel-form{
+  border:1px solid var(--c-white-06);
+}
+
+/* ══════════════════════════════════════════
+   FORM SYSTEM — reusable classes
+   Field is the shared surface behind Input and
+   Textarea (proven identical via .fm-showcase-input,
+   which is applied to both an <input> and a
+   <textarea> in the live markup). Two independent
+   axes: size (standard/compact) and line-mode
+   (single/multiline). Search Bar input, Toggle, and
+   Chip logic are explicitly untouched — different
+   structural patterns, not part of this base.
+
+   Placed before per-selector rules (.form-input,
+   .form-textarea, .fm-showcase-input, .form-label,
+   .form-chips, .fm-upload-area) so those rules,
+   appearing later, keep winning on any overlapping
+   property — visual output unchanged.
+   ══════════════════════════════════════════ */
+.field{
+  width:100%;
+  background:var(--chip-bg-idle);
+  border:1px solid var(--c-white-08);
+  color:var(--c-text-90);
+  font-family:var(--font-body);
+  outline:none;
+}
+.field-standard{
+  border-radius:var(--r-base);
+  padding:11px 14px;
+  font-size:var(--fs-sm);
+  margin-bottom:14px;
+}
+.field-compact{
+  border-radius:var(--r-md);
+  padding:9px 12px;
+  font-size:var(--fs-xs);
+  margin-bottom:8px;
+}
+/* Single-line is Input's implicit default — marker class only, no
+   properties of its own needed beyond the base surface */
+.field-single{
+}
+.field-multiline{
+  resize:none;
+  min-height:90px;
+}
+
+.field-label{
+  font-size:var(--fs-3xs);
+  letter-spacing:2px;
+  text-transform:uppercase;
+  color:var(--c-text-30);
+  margin-bottom:7px;
+}
+
+/* Layout wrapper for a group of Selection Chips under a Field Label —
+   composes Chip System, does not restyle it */
+.field-group{
+  display:flex;
+  flex-wrap:wrap;
+  gap:6px;
+  margin-bottom:14px;
+}
+
+.upload-panel{
+  background:var(--c-surface);
+  border-radius:var(--r-xl);
+  border:1px dashed rgba(255,255,255,.12);
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:6px;
+  cursor:pointer;
+}
+.upload-panel-default{
+  height:120px;
+  margin-bottom:12px;
+}
+/* Formalizes the previously ad hoc inline height:80px/margin-bottom:8px
+   override (cover-image use) into a real size modifier */
+.upload-panel-compact{
+  height:80px;
+  margin-bottom:8px;
+}
+
+/* ══════════════════════════════════════════
+   HEADER / TOP BAR SYSTEM
+
+   Main Header — single flex row (title + optional
+   trailing icon actions), for main-nav destination
+   screens. NOTE: Search is NOT a consumer despite
+   the earlier architecture proposal — .search-top
+   has no display:flex (title stacks above the search
+   bar, not beside icons). Forcing Main Header's flex
+   row onto it would break that stacking. Deferred,
+   flagged for a real decision rather than forced.
+
+   Sub Header — back-link + centered title + spacer,
+   for screens navigated into and left via back action.
+
+   Placed before per-selector rules (.tb, .search-top,
+   .screen-top, .screen-top-title, .bk) so those rules,
+   appearing later, keep winning on any overlapping
+   property — visual output unchanged.
+   ══════════════════════════════════════════ */
+.main-header{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  background:var(--c-bg);
+  flex-shrink:0;
+}
+.main-header-default{
+  padding:12px 14px 10px;
+}
+.main-header-compact{
+  padding:12px 14px 0;
+}
+.main-header-actions{
+  display:flex;
+  gap:10px;
+}
+
+.sub-header{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  padding:12px 14px;
+  background:var(--c-bg);
+  flex-shrink:0;
+  border-bottom:1px solid var(--c-border-soft);
+}
+.sub-header-title{
+  font-size:var(--fs-md);
+  font-weight:var(--fw-bold);
+  color:var(--c-text-90);
+}
+.sub-header-back{
+  display:flex;
+  align-items:center;
+  gap:6px;
+  font-size:var(--fs-base);
+  color:var(--c-text-50);
+  cursor:pointer;
+  padding:2px 0;
+}
+
 /* --- RESET & BASE --- */
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
 html,body{width:100%;height:100%;background:var(--c-bg);color:var(--c-text-100);font-family:var(--font-body);overflow:hidden;user-select:none;}
@@ -688,9 +1078,9 @@ html,body{width:100%;height:100%;background:var(--c-bg);color:var(--c-text-100);
 ========================================== -->
 <div class="screen active" id="screen-stage">
   <!-- Top bar -->
-  <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 14px 0;background:#08080f;flex-shrink:0;">
+  <div class="main-header main-header-compact" style="display:flex;align-items:center;justify-content:space-between;padding:12px 14px 0;background:#08080f;flex-shrink:0;">
     <div class="logo" style="font-size:26px;letter-spacing:-1px;text-shadow:0 0 30px rgba(232,184,48,.25);">STA<em>G</em>ERZ</div>
-    <div style="display:flex;gap:10px;">
+    <div class="main-header-actions" style="display:flex;gap:10px;">
       <div class="tb-icon btn btn-icon" onclick="goTo('search')">&#128269;</div>
       <div class="tb-icon btn btn-icon">&#128276;</div>
     </div>
@@ -763,7 +1153,7 @@ html,body{width:100%;height:100%;background:var(--c-bg);color:var(--c-text-100);
      SCREEN 3: WANTED
 ========================================== -->
 <div class="screen" id="screen-wanted">
-  <div class="tb">
+  <div class="tb main-header main-header-default">
     <div class="logo">WAN<em>T</em>ED</div>
     <div style="font-size:10px;color:rgba(255,255,255,.3);" id="wantedCount">loading...</div>
   </div>
@@ -791,7 +1181,7 @@ html,body{width:100%;height:100%;background:var(--c-bg);color:var(--c-text-100);
      SCREEN 4: FAMEMAKER
 ========================================== -->
 <div class="screen" id="screen-famemaker">
-  <div class="tb">
+  <div class="tb main-header main-header-default">
     <div class="logo" style="font-size:18px;">Fame<em>M</em>aker</div>
   </div>
   <div class="fm-tabs">
@@ -828,15 +1218,15 @@ html,body{width:100%;height:100%;background:var(--c-bg);color:var(--c-text-100);
     </div>
     <!-- Upload tab -->
     <div class="fm-content" id="fmUpload" style="display:none;">
-      <div class="fm-upload-area" onclick="showToast('File uploads coming in full version.')">
+      <div class="fm-upload-area upload-panel upload-panel-default" onclick="showToast('File uploads coming in full version.')">
         <div class="fm-upload-icon">📁</div>
         <div class="fm-upload-label">Tap to upload</div>
         <div class="fm-upload-sub">Video, Audio, Image · Max 500MB</div>
       </div>
-      <div class="form-label">Title</div>
-      <input class="form-input" type="text" placeholder="Name your work...">
-      <div class="form-label">Category</div>
-      <div class="form-chips" id="uploadCatPicker">
+      <div class="form-label field-label">Title</div>
+      <input class="form-input field field-standard field-single" type="text" placeholder="Name your work...">
+      <div class="form-label field-label">Category</div>
+      <div class="form-chips field-group" id="uploadCatPicker">
         <div class="form-chip on chip chip-interactive" onclick="pickChip(this,'uploadCatPicker')">&#127925; Music</div>
         <div class="form-chip chip chip-interactive" onclick="pickChip(this,'uploadCatPicker')">&#127916; Film</div>
         <div class="form-chip chip chip-interactive" onclick="pickChip(this,'uploadCatPicker')">&#128131; Dance</div>
@@ -844,30 +1234,30 @@ html,body{width:100%;height:100%;background:var(--c-bg);color:var(--c-text-100);
         <div class="form-chip chip chip-interactive" onclick="pickChip(this,'uploadCatPicker')">&#129302; AI</div>
         <div class="form-chip chip chip-interactive" onclick="pickChip(this,'uploadCatPicker')">&#127912; Art</div>
       </div>
-      <div class="form-label">Mood / Genre</div>
-      <div class="form-chips" id="uploadMoodPicker">
+      <div class="form-label field-label">Mood / Genre</div>
+      <div class="form-chips field-group" id="uploadMoodPicker">
         <div class="form-chip on chip chip-interactive" onclick="pickChip(this,'uploadMoodPicker')">&#127775; Chill</div>
         <div class="form-chip chip chip-interactive" onclick="pickChip(this,'uploadMoodPicker')">&#128293; Energetic</div>
         <div class="form-chip chip chip-interactive" onclick="pickChip(this,'uploadMoodPicker')">&#127963; Cinematic</div>
         <div class="form-chip chip chip-interactive" onclick="pickChip(this,'uploadMoodPicker')">&#128131; Rhythmic</div>
         <div class="form-chip chip chip-interactive" onclick="pickChip(this,'uploadMoodPicker')">&#129302; Experimental</div>
       </div>
-      <div class="form-label">Description</div>
-      <textarea class="form-textarea" placeholder="Tell the story behind this work..."></textarea>
+      <div class="form-label field-label">Description</div>
+      <textarea class="form-textarea field field-standard field-multiline" placeholder="Tell the story behind this work..."></textarea>
       <button class="form-submit btn btn-primary-gold btn-full btn-radius-lg" onclick="showToast('Upload coming in full version.')">TAKE THE STAGE</button>
     </div>
     <!-- Showcase tab -->
     <div class="fm-content" id="fmShowcase" style="display:none;">
-      <div class="fm-showcase-card">
+      <div class="fm-showcase-card panel panel-form">
         <div class="fm-showcase-label">Showcase Title</div>
-        <input class="fm-showcase-input" type="text" placeholder="e.g. My 2025 Portfolio">
+        <input class="fm-showcase-input field field-compact field-single" type="text" placeholder="e.g. My 2025 Portfolio">
         <div class="fm-showcase-label">Cover Image</div>
-        <div class="fm-upload-area" style="height:80px;margin-bottom:8px;" onclick="showToast('Image upload coming in full version.')">
+        <div class="fm-upload-area upload-panel upload-panel-compact" style="height:80px;margin-bottom:8px;" onclick="showToast('Image upload coming in full version.')">
           <div class="fm-upload-icon" style="font-size:20px;">🖼</div>
           <div class="fm-upload-sub">Tap to add cover</div>
         </div>
         <div class="fm-showcase-label">Description</div>
-        <textarea class="fm-showcase-input" style="min-height:70px;" placeholder="What is this showcase about?"></textarea>
+        <textarea class="fm-showcase-input field field-compact field-multiline" style="min-height:70px;" placeholder="What is this showcase about?"></textarea>
         <button class="form-submit btn btn-primary-gold btn-full btn-radius-lg" onclick="showToast('Showcase coming in full version.')">CREATE SHOWCASE</button>
       </div>
     </div>
@@ -895,7 +1285,7 @@ html,body{width:100%;height:100%;background:var(--c-bg);color:var(--c-text-100);
     <div class="p-body">
       <div class="p-name-row">
         <div class="p-name" id="profileName">Your Name</div>
-        <div class="p-verified" id="profileVerified" style="display:none;">🔵</div>
+        <div class="p-verified verified-badge verified-badge-lg" id="profileVerified" style="display:none;">🔵</div>
       </div>
       <div class="p-role" id="profileRole">Set up your artist profile</div>
       <div class="p-stats">
@@ -945,16 +1335,16 @@ html,body{width:100%;height:100%;background:var(--c-bg);color:var(--c-text-100);
      SCREEN 6: EDIT PROFILE
 ========================================== -->
 <div class="screen" id="screen-editprofile">
-  <div class="screen-top">
-    <div class="bk" onclick="goTo('profile')"><div class="bk-icon">‹</div> Profile</div>
-    <div class="screen-top-title">Edit Profile</div>
+  <div class="screen-top sub-header">
+    <div class="bk sub-header-back" onclick="goTo('profile')"><div class="bk-icon">‹</div> Profile</div>
+    <div class="screen-top-title sub-header-title">Edit Profile</div>
     <div style="width:60px;"></div>
   </div>
   <div class="sa">
     <div class="form-screen">
-      <div class="form-label">Display Name</div>
-      <input class="form-input" id="editName" type="text" placeholder="Your artist name">
-      <div class="form-label">I am a...</div>
+      <div class="form-label field-label">Display Name</div>
+      <input class="form-input field field-standard field-single" id="editName" type="text" placeholder="Your artist name">
+      <div class="form-label field-label">I am a...</div>
       <div class="role-chips" id="rolePicker">
         <div class="role-chip on chip chip-interactive" onclick="pickRole(this,'🎸 Musician')">🎸 Musician</div>
         <div class="role-chip chip chip-interactive" onclick="pickRole(this,'🎬 Filmmaker')">🎬 Filmmaker</div>
@@ -965,12 +1355,12 @@ html,body{width:100%;height:100%;background:var(--c-bg);color:var(--c-text-100);
         <div class="role-chip chip chip-interactive" onclick="pickRole(this,'🎤 Singer')">🎤 Singer</div>
         <div class="role-chip chip chip-interactive" onclick="pickRole(this,'🎵 Producer')">🎵 Producer</div>
       </div>
-      <div class="form-label">Location</div>
-      <input class="form-input" id="editLocation" type="text" placeholder="City, Country">
-      <div class="form-label">Bio</div>
-      <textarea class="form-textarea" id="editBio" placeholder="Tell the world who you are and what you create..."></textarea>
-      <div class="form-label">Skills (comma separated)</div>
-      <input class="form-input" id="editSkills" type="text" placeholder="Guitar, Vocals, Songwriting...">
+      <div class="form-label field-label">Location</div>
+      <input class="form-input field field-standard field-single" id="editLocation" type="text" placeholder="City, Country">
+      <div class="form-label field-label">Bio</div>
+      <textarea class="form-textarea field field-standard field-multiline" id="editBio" placeholder="Tell the world who you are and what you create..."></textarea>
+      <div class="form-label field-label">Skills (comma separated)</div>
+      <input class="form-input field field-standard field-single" id="editSkills" type="text" placeholder="Guitar, Vocals, Songwriting...">
       <button class="form-submit btn btn-primary-gold btn-full btn-radius-lg" onclick="saveProfile()">SAVE PROFILE</button>
     </div>
   </div>
@@ -980,19 +1370,19 @@ html,body{width:100%;height:100%;background:var(--c-bg);color:var(--c-text-100);
      SCREEN 7: POST WANTED
 ========================================== -->
 <div class="screen" id="screen-postwanted">
-  <div class="screen-top">
-    <div class="bk" onclick="goTo('wanted')"><div class="bk-icon">‹</div> Wanted</div>
-    <div class="screen-top-title">Post a Wanted</div>
+  <div class="screen-top sub-header">
+    <div class="bk sub-header-back" onclick="goTo('wanted')"><div class="bk-icon">‹</div> Wanted</div>
+    <div class="screen-top-title sub-header-title">Post a Wanted</div>
     <div style="width:60px;"></div>
   </div>
   <div class="sa">
     <div class="form-screen">
-      <div class="form-label">What are you looking for?</div>
-      <input class="form-input" id="pwTitle" type="text" placeholder="e.g. Guitarist for Afrobeat EP">
-      <div class="form-label">Role needed</div>
-      <input class="form-input" id="pwRole" type="text" placeholder="e.g. Guitarist, Cinematographer...">
-      <div class="form-label">Category</div>
-      <div class="form-chips" id="pwCatPicker">
+      <div class="form-label field-label">What are you looking for?</div>
+      <input class="form-input field field-standard field-single" id="pwTitle" type="text" placeholder="e.g. Guitarist for Afrobeat EP">
+      <div class="form-label field-label">Role needed</div>
+      <input class="form-input field field-standard field-single" id="pwRole" type="text" placeholder="e.g. Guitarist, Cinematographer...">
+      <div class="form-label field-label">Category</div>
+      <div class="form-chips field-group" id="pwCatPicker">
         <div class="form-chip on chip chip-interactive" onclick="pickChip(this,'pwCatPicker')">🎵 Music</div>
         <div class="form-chip chip chip-interactive" onclick="pickChip(this,'pwCatPicker')">🎬 Film</div>
         <div class="form-chip chip chip-interactive" onclick="pickChip(this,'pwCatPicker')">💃 Dance</div>
@@ -1000,8 +1390,8 @@ html,body{width:100%;height:100%;background:var(--c-bg);color:var(--c-text-100);
         <div class="form-chip chip chip-interactive" onclick="pickChip(this,'pwCatPicker')">🤖 AI</div>
         <div class="form-chip chip chip-interactive" onclick="pickChip(this,'pwCatPicker')">🎨 Art</div>
       </div>
-      <div class="form-label">Location</div>
-      <input class="form-input" id="pwLocation" type="text" placeholder="City, Country">
+      <div class="form-label field-label">Location</div>
+      <input class="form-input field field-standard field-single" id="pwLocation" type="text" placeholder="City, Country">
       <div class="form-remote-row">
         <div class="form-remote-label">Remote OK?</div>
         <div class="form-toggle" id="pwRemote" onclick="toggleRemote()">
@@ -1009,14 +1399,14 @@ html,body{width:100%;height:100%;background:var(--c-bg);color:var(--c-text-100);
         </div>
         <div class="form-remote-val" id="pwRemoteVal">Yes</div>
       </div>
-      <div class="form-label">Compensation</div>
-      <div class="form-chips" id="pwCompPicker">
+      <div class="form-label field-label">Compensation</div>
+      <div class="form-chips field-group" id="pwCompPicker">
         <div class="form-chip on chip chip-interactive" onclick="pickChip(this,'pwCompPicker')">💰 Paid</div>
         <div class="form-chip chip chip-interactive" onclick="pickChip(this,'pwCompPicker')">🤝 Rev Share</div>
         <div class="form-chip chip chip-interactive" onclick="pickChip(this,'pwCompPicker')">⭐ Credit</div>
       </div>
-      <div class="form-label">Description</div>
-      <textarea class="form-textarea" id="pwDesc" placeholder="Tell artists about the project, timeline, what you expect..."></textarea>
+      <div class="form-label field-label">Description</div>
+      <textarea class="form-textarea field field-standard field-multiline" id="pwDesc" placeholder="Tell artists about the project, timeline, what you expect..."></textarea>
       <button class="form-submit btn btn-primary-gold btn-full btn-radius-lg" onclick="submitWanted()">🎯 POST TO THE WORLD</button>
       <div style="font-size:8px;color:rgba(255,255,255,.2);text-align:center;margin-top:8px;">Visible to artists worldwide instantly</div>
     </div>
@@ -1100,7 +1490,7 @@ html,body{width:100%;height:100%;background:var(--c-bg);color:var(--c-text-100);
           <div style="font-size:18px;font-weight:700;color:#fff;margin-bottom:3px;" id="apName">Maya Rivera</div>
           <div style="font-size:10px;color:rgba(255,255,255,.35);" id="apRole">🎸 Musician · Singer · Berlin</div>
         </div>
-        <div style="font-size:24px;" id="apVerified">🔵</div>
+        <div class="verified-badge verified-badge-lg" style="font-size:24px;" id="apVerified">🔵</div>
       </div>
       <div style="font-size:11px;color:rgba(255,255,255,.45);line-height:1.7;margin-bottom:14px;" id="apBio">Multi-genre musician blending indie, jazz and electronic. Open to global collabs.</div>
       <div class="p-stats" style="margin-bottom:14px;">
@@ -1135,7 +1525,7 @@ html,body{width:100%;height:100%;background:var(--c-bg);color:var(--c-text-100);
       <div class="bs-toggle-btn on" id="bsMonthly" onclick="switchBilling('monthly')">Monthly</div>
       <div class="bs-toggle-btn" id="bsYearly" onclick="switchBilling('yearly')">Yearly · Save 40%</div>
     </div>
-    <div class="bs-price-card">
+    <div class="bs-price-card panel panel-gold">
       <div class="bs-price" id="bsPrice">EUR 9.99</div>
       <div class="bs-price-per" id="bsPer">per month · billed monthly</div>
       <div class="bs-feature"><div class="bs-feature-icon">🚀</div>Unlimited Stage posts</div>
@@ -1238,9 +1628,9 @@ function buildStageFeed(cat){
 }
 
 function buildCard(item){
-  var badge = item.badge==='new' ? '<div class="card-badge card-badge-new">NEW</div>' : item.badge==='hot' ? '<div class="card-badge card-badge-hot">&#128293; HOT</div>' : item.badge==='live' ? '<div class="card-badge card-badge-live">&#128308; LIVE</div>' : '';
+  var badge = item.badge==='new' ? '<div class="card-badge card-badge-new badge badge-gold badge-overlay">NEW</div>' : item.badge==='hot' ? '<div class="card-badge card-badge-hot badge badge-hot badge-overlay">&#128293; HOT</div>' : item.badge==='live' ? '<div class="card-badge card-badge-live badge badge-live badge-overlay">&#128308; LIVE</div>' : '';
   var dur = item.dur ? '<div class="card-dur">'+item.dur+'</div>' : '';
-  return '<div class="card">'+
+  return '<div class="card card-shell card-stage">'+
     '<div class="card-thumb card-thumb-lg '+item.grad+'"><div class="card-emoji">'+item.emoji+'</div>'+badge+dur+'</div>'+
     '<div class="card-info"><div class="card-av" style="background:'+item.avGrad+'">'+item.avEmoji+'</div>'+
     '<div class="card-meta"><div class="card-title">'+item.title+'</div><div class="card-sub">'+item.artist+' &middot; '+item.loc+(item.views?' &middot; '+item.views+' views':'')+'</div></div></div>'+
@@ -1337,7 +1727,7 @@ function openContent(item){
   if(item.credits && item.credits.length){
     var html = '<div class="cv-credits-title">Made together</div>';
     item.credits.forEach(function(c){
-      html += '<div class="cv-credit-row"><div class="cv-credit-av" style="background:'+c.bg+'">'+c.e+'</div><div><div class="cv-credit-name">'+c.n+'</div><div class="cv-credit-role">'+c.r+'</div></div><div class="cv-credit-badge">'+c.b+'</div></div>';
+      html += '<div class="cv-credit-row person-row person-row-compact person-row-static"><div class="cv-credit-av person-avatar" style="background:'+c.bg+'">'+c.e+'</div><div class="person-main"><div class="cv-credit-name person-primary">'+c.n+'</div><div class="cv-credit-role person-secondary">'+c.r+'</div></div><div class="cv-credit-badge person-trailing">'+c.b+'</div></div>';
     });
     credits.innerHTML = html;
     credits.style.display = 'block';
@@ -1402,15 +1792,15 @@ function renderArtists(){
   }
   list.forEach(function(a){
     var el = document.createElement('div');
-    el.className = 'artist-row';
+    el.className = 'artist-row person-row person-row-standard person-row-interactive';
     el.innerHTML =
-      '<div class="artist-av" style="background:'+a.bg+'">'+a.emoji+'</div>'+
-      '<div class="artist-info">'+
-        '<div class="artist-name">'+a.n+' <span style="color:#e8b830;font-size:10px;">&#128309;</span></div>'+
-        '<div class="artist-role">'+a.role+'</div>'+
-        '<div class="artist-loc">&#128205; '+a.loc+'</div>'+
+      '<div class="artist-av person-avatar" style="background:'+a.bg+'">'+a.emoji+'</div>'+
+      '<div class="artist-info person-main">'+
+        '<div class="artist-name person-primary">'+a.n+' <span style="color:#e8b830;font-size:10px;">&#128309;</span></div>'+
+        '<div class="artist-role person-secondary">'+a.role+'</div>'+
+        '<div class="artist-loc person-secondary">&#128205; '+a.loc+'</div>'+
       '</div>'+
-      '<div class="artist-collab" onclick="event.stopPropagation();showToast(\'Collab request sent!\')">+ Collab</div>';
+      '<div class="artist-collab person-trailing" onclick="event.stopPropagation();showToast(\'Collab request sent!\')">+ Collab</div>';
     el.onclick = function(){ openArtist(a); };
     r.appendChild(el);
   });
@@ -1530,11 +1920,11 @@ function renderWanted(dbData){
   var count = document.getElementById('wantedCount');
   if(count) count.textContent = items.length+' open';
   items.forEach(function(item){
-    var badgeClass = item.badge==='match' ? 'w-badge-gold' : item.badge==='hot' ? 'w-badge-hot' : 'w-badge-new';
+    var badgeClass = item.badge==='match' ? 'w-badge-gold badge badge-gold badge-inline' : item.badge==='hot' ? 'w-badge-hot badge badge-hot badge-inline' : 'w-badge-new badge badge-gold badge-inline';
     var locText = item.remote ? (item.flag||'') + ' Remote' : (item.flag||'') + ' ' + item.loc;
     var verifiedBadge = item.verified ? ' <span style="color:#e8b830;font-size:9px;">&#128309;</span>' : '';
     var el = document.createElement('div');
-    el.className = 'w-card'+(item.badge==='new'?' w-card-alt':'');
+    el.className = 'w-card card-shell card-wanted'+(item.badge==='new'?' w-card-alt card-accent-purple':' card-accent-gold');
     el.innerHTML =
       '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">'+
         '<div class="w-badge '+badgeClass+'">'+item.badgeText+'</div>'+
@@ -1645,7 +2035,7 @@ async function loadMyWanted(){
   }
   data.forEach(function(p){
     var card = document.createElement('div');
-    card.className = 'p-wanted-card';
+    card.className = 'p-wanted-card card-shell card-wanted-compact card-accent-gold';
     var titleRow = document.createElement('div');
     titleRow.style.cssText = 'display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:3px;';
     var title = document.createElement('div');
