@@ -5,7 +5,7 @@
   <div class="tb">
     <div class="logo">WAN<em>T</em>ED</div>
     <div class="tb-icons">
-      <div class="tb-icon btn btn-icon" onclick="goTo('postwanted')" style="font-size:18px;color:#e8b830;">+</div>
+      <div class="tb-icon" onclick="goTo('postwanted')" style="font-size:18px;color:#e8b830;">+</div>
     </div>
   </div>
   <!-- My / Community tabs -->
@@ -15,18 +15,18 @@
   </div>
   <!-- Category chips — only in Community tab -->
   <div id="wCatChips" style="display:none;overflow-x:auto;padding:8px 14px;gap:8px;scrollbar-width:none;flex-shrink:0;border-bottom:1px solid rgba(255,255,255,.06);">
-    <div class="cat-chip on chip chip-interactive" onclick="setWantedCat(this,'all')">&#127757; All</div>
-    <div class="cat-chip chip chip-interactive" onclick="setWantedCat(this,'music')">&#127925; Music</div>
-    <div class="cat-chip chip chip-interactive" onclick="setWantedCat(this,'film')">&#127916; Film</div>
-    <div class="cat-chip chip chip-interactive" onclick="setWantedCat(this,'dance')">&#128131; Dance</div>
-    <div class="cat-chip chip chip-interactive" onclick="setWantedCat(this,'photo')">&#128247; Photo</div>
-    <div class="cat-chip chip chip-interactive" onclick="setWantedCat(this,'ai')">&#129302; AI</div>
-    <div class="cat-chip chip chip-interactive" onclick="setWantedCat(this,'art')">&#127912; Art</div>
+    <div class="cat-chip on" onclick="setWantedCat(this,'all')">&#127757; All</div>
+    <div class="cat-chip" onclick="setWantedCat(this,'music')">&#127925; Music</div>
+    <div class="cat-chip" onclick="setWantedCat(this,'film')">&#127916; Film</div>
+    <div class="cat-chip" onclick="setWantedCat(this,'dance')">&#128131; Dance</div>
+    <div class="cat-chip" onclick="setWantedCat(this,'photo')">&#128247; Photo</div>
+    <div class="cat-chip" onclick="setWantedCat(this,'ai')">&#129302; AI</div>
+    <div class="cat-chip" onclick="setWantedCat(this,'art')">&#127912; Art</div>
   </div>
   <div class="sa">
     <!-- My Wanted tab -->
     <div id="wMyTab" style="padding:12px 14px 70px;">
-      <div class="w-post-btn btn btn-promo" onclick="goTo('postwanted')">
+      <div class="w-post-btn" onclick="goTo('postwanted')">
         <div class="w-post-icon">&#127919;</div>
         <div>
           <div class="w-post-label">POST A WANTED</div>
@@ -64,810 +64,90 @@
 <meta name='version' content='3.0'>
 <title>STAGERZ</title>
 <script src='https://telegram.org/js/telegram-web-app.js'></script>
+<script src='https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js'></script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Inter:wght@400;500;600;700&display=swap');
 
-/* ══════════════════════════════════════════
-   DESIGN TOKENS — STAGERZ v3.0
-   ══════════════════════════════════════════ */
-:root{
-
-/* ---- COLORS ---- */
---c-bg:            #08080f;
---c-surface:       #111118;
---c-surface-alt:   #18181f;
---c-surface-raised:#1a1828;
-
---c-gold:          #e8b830;
---c-gold-dim:      #8a6018;
---c-purple:        rgba(100,80,255,1);
---c-purple-dark:   #2a1888;
---c-purple-light:  #4a30a8;
---c-purple-text:   rgba(180,160,255,.9);
-
---c-text-100:      #f0f0f5;
---c-text-90:       #fff;
---c-text-60:       rgba(255,255,255,.6);
---c-text-50:       rgba(255,255,255,.5);
---c-text-40:       rgba(255,255,255,.4);
---c-text-35:       rgba(255,255,255,.35);
---c-text-30:       rgba(255,255,255,.3);
---c-text-25:       rgba(255,255,255,.25);
---c-text-20:       rgba(255,255,255,.2);
-
---c-border-soft:   rgba(255,255,255,.05);
---c-white-06:      rgba(255,255,255,.06);
---c-border:        rgba(255,255,255,.07);
---c-white-08:      rgba(255,255,255,.08);
---c-border-strong: rgba(255,255,255,.1);
-
---c-live:          rgba(220,30,30,.9);
---c-hot:           rgba(255,60,30,.85);
---c-success:       rgba(40,200,80,.7);
-
---c-gold-08:       rgba(232,184,48,.08);
---c-gold-10:       rgba(232,184,48,.1);
---c-gold-12:       rgba(232,184,48,.12);
---c-gold-20:       rgba(232,184,48,.2);
---c-gold-25:       rgba(232,184,48,.25);
-
---c-purple-08:     rgba(100,80,255,.08);
---c-purple-10:     rgba(100,80,255,.1);
---c-purple-12:     rgba(100,80,255,.12);
---c-purple-20:     rgba(100,80,255,.2);
---c-purple-25:     rgba(100,80,255,.25);
-
-/* ---- TYPOGRAPHY ---- */
---font-display: 'Playfair Display', serif;
---font-body:    'Inter', sans-serif;
-
---fs-3xl: 28px;
---fs-2xl: 22px;
---fs-xl:  18px;
---fs-lg:  16px;
---fs-md:  14px;
---fs-base:13px;
---fs-sm:  12px;
---fs-xs:  11px;
---fs-2xs: 10px;
---fs-3xs: 9px;
---fs-4xs: 8px;
---fs-5xs: 7px;
-
---fw-regular: 400;
---fw-medium:  500;
---fw-semibold:600;
---fw-bold:    700;
---fw-black:   900;
-
---ls-caps:  2.5px;
---ls-badge: .5px;
-
-/* ---- SPACING ---- */
---sp-2xs:  3px;
---sp-xs:   4px;
---sp-sm:   6px;
---sp-md:   8px;
---sp-base: 10px;
---sp-lg:   12px;
---sp-xl:   14px;
---sp-2xl:  16px;
---sp-3xl:  20px;
---sp-nav-clearance: 70px;
-
-/* ---- BORDER RADIUS (all existing values kept) ---- */
---r-none:   0;
---r-xs:     4px;
---r-sm:     6px;
---r-md:     8px;
---r-base:   10px;
---r-lg:     12px;
---r-xl:     14px;
---r-2xl:    16px;
---r-pill:   20px;
---r-circle: 50%;
-
-/* ---- SHADOWS / GLOWS (minimal — no new heavy effects) ---- */
---glow-gold-text:    0 0 12px rgba(232,184,48,.4);
---glow-gold-text-hi: 0 0 20px rgba(232,184,48,.7);
---blur-play-btn:     blur(4px);
---blur-play-btn-lg:  blur(6px);
-
-/* ---- BUTTONS ---- */
---btn-primary-grad:     linear-gradient(135deg, var(--c-gold-dim), var(--c-gold));
---btn-primary-text:     var(--c-bg);
---btn-purple-grad:      linear-gradient(135deg, var(--c-purple-dark), var(--c-purple-light));
---btn-purple-text:      #fff;
---btn-secondary-bg:     rgba(255,255,255,.05);
---btn-secondary-border: var(--c-border-strong);
---btn-secondary-text:   var(--c-text-50);
---btn-ghost-gold-bg:      var(--c-gold-10);
---btn-ghost-gold-border:  var(--c-gold-25);
---btn-ghost-gold-text:    var(--c-gold);
---btn-radius:  var(--r-base);
---btn-padding: 13px;
-
-/* ---- CARDS ---- */
---card-bg: var(--c-surface);
---card-radius-feed:  var(--r-none);
---card-radius-panel: var(--r-lg);
---card-divider: 1px solid rgba(255,255,255,.04);
-
-/* ---- BOTTOM NAVIGATION ---- */
---nav-height: 56px;
---nav-bg: var(--c-bg);
---nav-icon-size: 20px;
---nav-label-size: var(--fs-3xs);
---nav-color-idle: rgba(255,255,255,.3);
---nav-color-active: #fff;
---nav-dot-size: 4px;
---nav-dot-color: var(--c-gold);
-
-/* ---- TAGS / CHIPS (idle bg kept at .05; gold = content/topic, purple = people/collab) ---- */
---chip-bg-idle:      rgba(255,255,255,.05);
---chip-border-idle:  var(--c-border);
---chip-text-idle:    var(--c-text-40);
---chip-radius:       var(--r-pill);
---chip-padding:      6px 14px;
-
---chip-bg-gold-on:     var(--c-gold-10);
---chip-border-gold-on: var(--c-gold-25);
---chip-text-gold-on:   var(--c-gold);
-
---chip-bg-purple-on:     var(--c-purple-12);
---chip-border-purple-on: rgba(100,80,255,.3);
---chip-text-purple-on:   var(--c-purple-text);
-
-}
-
-/* ══════════════════════════════════════════
-   BUTTON SYSTEM — reusable classes
-   Placed before all component rules on purpose:
-   each mapped selector below still fully defines
-   its own properties, so those rules (appearing
-   later in the cascade, equal specificity) win on
-   any overlapping property. This keeps the visual
-   result byte-for-byte identical while the elements
-   also carry the new semantic .btn-* classes.
-   ══════════════════════════════════════════ */
-.btn{
-  display:inline-flex;
-  align-items:center;
-  justify-content:center;
-  cursor:pointer;
-  border:none;
-  outline:none;
-  text-align:center;
-  white-space:nowrap;
-  font-family:var(--font-body);
-}
-
-.btn-primary-gold{
-  background:var(--btn-primary-grad);
-  color:var(--btn-primary-text);
-  font-family:var(--font-display);
-  font-weight:var(--fw-bold);
-  font-size:var(--fs-md);
-  padding:var(--btn-padding);
-  border-radius:var(--btn-radius);
-}
-.btn-radius-lg{
-  border-radius:var(--r-lg);
-}
-
-.btn-purple-action{
-  background:var(--btn-purple-grad);
-  color:var(--btn-purple-text);
-  font-weight:var(--fw-semibold);
-  font-size:var(--fs-2xs);
-  padding:10px;
-  border-radius:var(--btn-radius);
-}
-.btn-wanted-apply{
-  padding:9px;
-  font-weight:var(--fw-bold);
-  letter-spacing:1.5px;
-}
-.btn-artist-collab{
-  background:var(--c-purple-10);
-  border:1px solid var(--c-purple-20);
-  color:rgba(180,160,255,.85);
-  padding:5px 12px;
-}
-
-.btn-secondary{
-  background:var(--btn-secondary-bg);
-  border:1px solid var(--btn-secondary-border);
-  color:var(--btn-secondary-text);
-  font-weight:var(--fw-semibold);
-  font-size:var(--fs-3xs);
-  letter-spacing:1px;
-  padding:10px;
-  border-radius:var(--btn-radius);
-}
-.btn-edit-pill{
-  padding:5px 12px;
-  border-radius:var(--r-md);
-}
-
-.btn-ghost-gold{
-  background:var(--btn-ghost-gold-bg);
-  border:1px solid var(--btn-ghost-gold-border);
-  color:var(--btn-ghost-gold-text);
-  font-weight:var(--fw-semibold);
-  font-size:var(--fs-2xs);
-  padding:10px;
-  border-radius:var(--btn-radius);
-}
-.btn-ghost-gold-soft{
-  background:var(--c-gold-08);
-  border:1px solid var(--c-gold-20);
-}
-
-.btn-icon{
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  flex-shrink:0;
-  border-radius:var(--r-circle);
-  cursor:pointer;
-}
-
-.btn-small{
-  padding:4px 10px;
-  font-size:var(--fs-4xs);
-  border-radius:var(--r-base);
-}
-
-.btn-full{
-  display:flex;
-  width:100%;
-}
-
-.btn-promo{
-  display:flex;
-  align-items:center;
-  justify-content:flex-start;
-  gap:12px;
-  padding:12px 14px;
-  background:linear-gradient(135deg, var(--c-gold-08), rgba(100,80,255,.06));
-  border:1px solid var(--c-gold-20);
-  border-radius:var(--r-xl);
-  cursor:pointer;
-}
-
-/* ══════════════════════════════════════════
-   CHIP SYSTEM — reusable classes
-   Placed before all per-selector chip rules on
-   purpose: .cat-chip/.skill-chip/.form-chip/
-   .role-chip/.w-tag each still fully redeclare
-   their own background/border/padding/etc, so
-   those rules (appearing later, equal specificity)
-   win on any overlapping property. Visual output
-   stays identical while elements also carry the
-   new semantic .chip-* classes.
-
-   Structure: Chip (primitive)
-     -> Interactive (tappable, .on state) -> Selection Chip
-     -> Informational (static, no state)  -> Tag Chip
-   ══════════════════════════════════════════ */
-.chip{
-  display:inline-block;
-  padding:var(--chip-padding);
-  background:var(--chip-bg-idle);
-  border:1px solid var(--chip-border-idle);
-  border-radius:var(--chip-radius);
-  font-size:var(--fs-3xs);
-  color:var(--chip-text-idle);
-  white-space:nowrap;
-}
-
-/* Interactive branch — Selection Chip (Category/Skill/Role/Form chips) */
-.chip-interactive{
-  cursor:pointer;
-}
-
-/* On-state color modifiers. NOT yet wired to any element below: current
-   JS toggles the pre-existing ".on" class only (setStageCat/setWantedCat/
-   setSearchCat/pickChip/pickRole), and none of it touches "chip-on-gold"/
-   "chip-on-purple". Adding these as static classes to a chip that starts
-   selected would leave a stale gold/purple tint after the user taps a
-   different chip, since JS never removes it. Wiring these in requires a
-   JS change, which is out of scope this pass — documented here as ready
-   for that future step, not applied yet. */
-.chip-on-gold{
-  background:var(--chip-bg-gold-on);
-  color:var(--chip-text-gold-on);
-  border-color:var(--chip-border-gold-on);
-}
-.chip-on-purple{
-  background:var(--chip-bg-purple-on);
-  color:var(--chip-text-purple-on);
-  border-color:var(--chip-border-purple-on);
-}
-
-/* Informational branch — Tag Chip (static metadata, e.g. .w-tag) */
-.chip-tag{
-  /* no cursor, no state — intentionally inert */
-}
-
-/* Compact size — matches existing Tag Chip proportions (.w-tag) */
-.chip-small{
-  padding:3px 8px;
-  border-radius:var(--r-sm);
-  font-size:var(--fs-4xs);
-}
-
-/* ══════════════════════════════════════════
-   VERIFIED BADGE — reusable classes
-   Informational primitive, sibling to Badge System
-   (pill/overlay shape) rather than a child of it —
-   Verified Badge is an inline glyph adjacent to a
-   name, never a standalone pill or thumbnail overlay.
-   Placed before per-selector rules (.p-verified) so
-   that rule, appearing later, still wins on any
-   overlapping property — visual output unchanged.
-   ══════════════════════════════════════════ */
-.verified-badge{
-  display:inline-flex;
-  align-items:center;
-  line-height:1;
-  color:var(--c-gold);
-}
-/* sm: inline-with-text scale — matches Content View / Wanted Card usage */
-.verified-badge-sm{
-  font-size:10px;
-}
-/* lg: profile-header scale — matches Own Profile / Artist Profile usage */
-.verified-badge-lg{
-  font-size:24px;
-}
-
-/* ══════════════════════════════════════════
-   BADGE SYSTEM — reusable classes
-   Informational primitive, sibling to Verified Badge
-   (person-adjacent inline glyph) rather than a child
-   of it — Badge communicates a fact about content/state
-   (new/hot/live/match), always pill-shaped, either an
-   absolute overlay or an inline metadata line.
-   Placed before per-selector rules (.card-badge*,
-   .w-badge*) so those rules, appearing later, keep
-   winning on any overlapping property — except the
-   approved Wanted "New" -> gold remap below, which
-   uses a deliberately higher-specificity combined
-   selector so it wins regardless of source order.
-   ══════════════════════════════════════════ */
-.badge{
-  display:inline-block;
-  font-size:var(--fs-5xs);
-  font-weight:var(--fw-bold);
-  letter-spacing:.5px;
-  border-radius:var(--r-xs);
-}
-
-/* Semantic color variants (defaults for a future consumer with no
-   pre-existing class layered on; existing consumers keep their exact
-   current look via cascade-safety placement above) */
-.badge-gold{
-  background:var(--c-gold);
-  color:var(--c-bg);
-}
-.badge-hot{
-  background:var(--c-hot);
-  color:var(--c-text-90);
-}
-.badge-live{
-  background:var(--c-live);
-  color:var(--c-text-90);
-}
-
-/* Shape variants */
-.badge-overlay{
-  position:absolute;
-  top:8px;
-  left:9px;
-}
-.badge-inline{
-  display:inline-block;
-  margin-bottom:8px;
-}
-
-/* Approved remap: Wanted's "New" badge moves from purple to gold, since
-   "new" should always mean freshness, not people/collab. Purple stays
-   reserved for people/collab/role semantics elsewhere (chips, buttons).
-   Targets the specific intersection of the old class (kept, unchanged)
-   and the new semantic class added by the JS template — two-class
-   specificity (0,0,2,0) beats the single-class .w-badge-new rule
-   (0,0,1,0) regardless of where either rule sits in the file. Colors
-   match the existing .w-badge-gold treatment so "New" now reads
-   consistently with "Match" in the same inline badge style. */
-.w-badge-new.badge-gold{
-  background:var(--c-gold-12);
-  color:var(--c-gold);
-}
-
-/* ══════════════════════════════════════════
-   PERSON ROW — reusable identity row
-   NOT YET APPLIED to any element in this pass —
-   both real current consumers (Search Artist Row,
-   Content View Credit Row) turn out to be rendered
-   entirely via JS at runtime (see implementation
-   notes). Defined here, cascade-safety placed before
-   .artist-row/.cv-credit-row, ready for a future
-   JS-inclusive pass. Card creator info block is
-   explicitly NOT a consumer (content-first, not
-   person-first — confirmed in architecture review).
-   ══════════════════════════════════════════ */
-.person-row{
-  display:flex;
-  align-items:center;
-}
-.person-row-standard{
-  gap:12px;
-}
-.person-row-compact{
-  gap:10px;
-}
-.person-row-interactive{
-  cursor:pointer;
-}
-.person-row-static{
-  /* no cursor — intentionally inert; only an explicit .person-trailing
-     action (if present) responds to touch */
-}
-
-.person-avatar{
-  border-radius:var(--r-circle);
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  border:1px solid var(--c-white-08);
-  flex-shrink:0;
-}
-/* size is a row-level property, matched to the two proven existing
-   scales — standard (Artist Row, 42px) and compact (Credit Row, 28px) */
-.person-row-standard .person-avatar{
-  width:42px;
-  height:42px;
-  font-size:20px;
-}
-.person-row-compact .person-avatar{
-  width:28px;
-  height:28px;
-  font-size:var(--fs-base);
-}
-
-.person-main{
-  flex:1;
-  min-width:0;
-}
-
-.person-primary{
-  font-size:var(--fs-sm);
-  font-weight:var(--fw-semibold);
-  color:var(--c-text-90);
-  margin-bottom:2px;
-}
-.person-row-compact .person-primary{
-  font-size:var(--fs-2xs);
-}
-
-/* NOTE: Artist Row's real layout has two secondary lines (role, then
-   location), not one. A single .person-secondary slot doesn't map 1:1
-   onto that today — flagging rather than silently merging the two
-   lines or inventing an unrequested second slot. Credit Row (one
-   secondary line: role) maps cleanly. */
-.person-secondary{
-  font-size:var(--fs-3xs);
-  color:var(--c-text-35);
-}
-.person-row-compact .person-secondary{
-  font-size:var(--fs-4xs);
-  color:var(--c-text-30);
-}
-
-.person-trailing{
-  margin-left:auto;
-  flex-shrink:0;
-}
-
-/* ══════════════════════════════════════════
-   CARD SHELL — thin reusable base, deliberately
-   minimal per "Composition Before Complexity":
-   Card Shell owns only background/radius/tap-
-   behavior. Media, Badge, Chip, Button/Action Row
-   are separate systems that compose INTO a card,
-   not properties Card Shell tries to own itself.
-
-   Placed before per-selector rules (.card, .w-card,
-   .p-wanted-card) so those rules, appearing later,
-   keep winning on any overlapping property — visual
-   output unchanged for all three existing consumers.
-
-   FameMaker Showcase Card and Backstage Price Card
-   are explicitly NOT part of Card System (confirmed
-   in architecture review) — see PANEL below instead.
-   ══════════════════════════════════════════ */
-.card-shell{
-  background:var(--c-surface);
-  border-radius:var(--r-xl);
-  cursor:pointer;
-}
-
-/* Stage-specific shell modifier: edge-to-edge, no radius (deliberate
-   design decision, not an oversight) */
-.card-stage{
-  border-radius:var(--r-none);
-}
-
-/* Wanted-specific shell modifier: standard size */
-.card-wanted{
-  padding:10px 12px;
-  border-radius:var(--r-xl);
-  margin-bottom:8px;
-}
-
-/* Wanted-specific shell modifier: compact size (Profile Wanted Card) */
-.card-wanted-compact{
-  padding:12px;
-  border-radius:var(--r-base);
-  margin-bottom:8px;
-}
-
-/* Left-accent-bar treatment, generalized from .w-card/.w-card-alt/
-   .p-wanted-card's border-left convention */
-.card-accent-gold{
-  border-left:3px solid var(--c-gold);
-}
-.card-accent-purple{
-  border-left:3px solid rgba(100,80,255,.5);
-}
-
-/* ══════════════════════════════════════════
-   PANEL — generic bordered wrapper (Layout family)
-   Reclassified from Card System per architecture
-   review: Showcase Card and Price Card hold form
-   fields / pricing info, not media/title/badge
-   content — they're panels, not cards.
-   ══════════════════════════════════════════ */
-.panel{
-  background:var(--c-surface);
-  border-radius:var(--r-xl);
-}
-.panel-gold{
-  border:1px solid rgba(232,184,48,.15);
-}
-.panel-form{
-  border:1px solid var(--c-white-06);
-}
-
-/* ══════════════════════════════════════════
-   FORM SYSTEM — reusable classes
-   Field is the shared surface behind Input and
-   Textarea (proven identical via .fm-showcase-input,
-   which is applied to both an <input> and a
-   <textarea> in the live markup). Two independent
-   axes: size (standard/compact) and line-mode
-   (single/multiline). Search Bar input, Toggle, and
-   Chip logic are explicitly untouched — different
-   structural patterns, not part of this base.
-
-   Placed before per-selector rules (.form-input,
-   .form-textarea, .fm-showcase-input, .form-label,
-   .form-chips, .fm-upload-area) so those rules,
-   appearing later, keep winning on any overlapping
-   property — visual output unchanged.
-   ══════════════════════════════════════════ */
-.field{
-  width:100%;
-  background:var(--chip-bg-idle);
-  border:1px solid var(--c-white-08);
-  color:var(--c-text-90);
-  font-family:var(--font-body);
-  outline:none;
-}
-.field-standard{
-  border-radius:var(--r-base);
-  padding:11px 14px;
-  font-size:var(--fs-sm);
-  margin-bottom:14px;
-}
-.field-compact{
-  border-radius:var(--r-md);
-  padding:9px 12px;
-  font-size:var(--fs-xs);
-  margin-bottom:8px;
-}
-/* Single-line is Input's implicit default — marker class only, no
-   properties of its own needed beyond the base surface */
-.field-single{
-}
-.field-multiline{
-  resize:none;
-  min-height:90px;
-}
-
-.field-label{
-  font-size:var(--fs-3xs);
-  letter-spacing:2px;
-  text-transform:uppercase;
-  color:var(--c-text-30);
-  margin-bottom:7px;
-}
-
-/* Layout wrapper for a group of Selection Chips under a Field Label —
-   composes Chip System, does not restyle it */
-.field-group{
-  display:flex;
-  flex-wrap:wrap;
-  gap:6px;
-  margin-bottom:14px;
-}
-
-.upload-panel{
-  background:var(--c-surface);
-  border-radius:var(--r-xl);
-  border:1px dashed rgba(255,255,255,.12);
-  display:flex;
-  flex-direction:column;
-  align-items:center;
-  justify-content:center;
-  gap:6px;
-  cursor:pointer;
-}
-.upload-panel-default{
-  height:120px;
-  margin-bottom:12px;
-}
-/* Formalizes the previously ad hoc inline height:80px/margin-bottom:8px
-   override (cover-image use) into a real size modifier */
-.upload-panel-compact{
-  height:80px;
-  margin-bottom:8px;
-}
-
-/* ══════════════════════════════════════════
-   HEADER / TOP BAR SYSTEM
-
-   Main Header — single flex row (title + optional
-   trailing icon actions), for main-nav destination
-   screens. NOTE: Search is NOT a consumer despite
-   the earlier architecture proposal — .search-top
-   has no display:flex (title stacks above the search
-   bar, not beside icons). Forcing Main Header's flex
-   row onto it would break that stacking. Deferred,
-   flagged for a real decision rather than forced.
-
-   Sub Header — back-link + centered title + spacer,
-   for screens navigated into and left via back action.
-
-   Placed before per-selector rules (.tb, .search-top,
-   .screen-top, .screen-top-title, .bk) so those rules,
-   appearing later, keep winning on any overlapping
-   property — visual output unchanged.
-   ══════════════════════════════════════════ */
-.main-header{
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-  background:var(--c-bg);
-  flex-shrink:0;
-}
-.main-header-default{
-  padding:12px 14px 10px;
-}
-.main-header-compact{
-  padding:12px 14px 0;
-}
-.main-header-actions{
-  display:flex;
-  gap:10px;
-}
-
-.sub-header{
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-  padding:12px 14px;
-  background:var(--c-bg);
-  flex-shrink:0;
-  border-bottom:1px solid var(--c-border-soft);
-}
-.sub-header-title{
-  font-size:var(--fs-md);
-  font-weight:var(--fw-bold);
-  color:var(--c-text-90);
-}
-.sub-header-back{
-  display:flex;
-  align-items:center;
-  gap:6px;
-  font-size:var(--fs-base);
-  color:var(--c-text-50);
-  cursor:pointer;
-  padding:2px 0;
-}
-
 /* --- RESET & BASE --- */
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
-html,body{width:100%;height:100%;background:var(--c-bg);color:var(--c-text-100);font-family:var(--font-body);overflow:hidden;user-select:none;}
+html,body{width:100%;height:100%;background:#08080f;color:#f0f0f5;font-family:'Inter',sans-serif;overflow:hidden;user-select:none;}
 
 /* --- SCREENS --- */
-.screen{position:fixed;inset:0;display:none;flex-direction:column;background:var(--c-bg);}
+.screen{position:fixed;inset:0;display:none;flex-direction:column;background:#08080f;}
 .screen.active{display:flex;}
 .sa{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;}
 .sa::-webkit-scrollbar{display:none;}
 
 /* --- TYPOGRAPHY --- */
-.logo{font-family:var(--font-display);font-weight:var(--fw-black);font-size:var(--fs-2xl);color:var(--c-text-90);letter-spacing:-0.5px;}
-.logo em{color:var(--c-gold);font-style:italic;}
-.section-title{font-size:var(--fs-4xs);letter-spacing:3px;text-transform:uppercase;color:var(--c-text-25);margin-bottom:10px;}
+.logo{font-family:'Playfair Display',serif;font-weight:900;font-size:22px;color:#fff;letter-spacing:-0.5px;}
+.logo em{color:#e8b830;font-style:italic;}
+.section-title{font-size:8px;letter-spacing:3px;text-transform:uppercase;color:rgba(255,255,255,.25);margin-bottom:10px;}
 
 /* --- NAV BAR --- */
-.nb{height:56px;background:var(--c-bg);border-top:1px solid var(--c-border);display:flex;flex-shrink:0;}
-.ni{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;font-size:var(--fs-3xs);color:var(--c-text-30);cursor:pointer;transition:color .15s;}
-.ni.active{color:var(--c-text-90);}
+.nb{height:56px;background:#08080f;border-top:1px solid rgba(255,255,255,.07);display:flex;flex-shrink:0;}
+.ni{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;font-size:9px;color:rgba(255,255,255,.3);cursor:pointer;transition:color .15s;}
+.ni.active{color:#fff;}
 .ni-icon{font-size:20px;line-height:1;}
-.ni-dot{width:4px;height:4px;border-radius:var(--r-circle);background:var(--c-gold);}
+.ni-dot{width:4px;height:4px;border-radius:50%;background:#e8b830;}
 
 /* --- TOP BAR --- */
-.tb{display:flex;align-items:center;justify-content:space-between;padding:12px 14px 10px;background:var(--c-bg);flex-shrink:0;}
+.tb{display:flex;align-items:center;justify-content:space-between;padding:12px 14px 10px;background:#08080f;flex-shrink:0;}
 .tb-icons{display:flex;gap:14px;}
-.tb-icon{width:32px;height:32px;border-radius:var(--r-circle);background:var(--c-white-06);display:flex;align-items:center;justify-content:center;font-size:15px;cursor:pointer;}
+.tb-icon{width:32px;height:32px;border-radius:50%;background:rgba(255,255,255,.06);display:flex;align-items:center;justify-content:center;font-size:15px;cursor:pointer;}
 
 /* --- CATEGORY CHIPS --- */
 .cats{display:flex;gap:0;overflow-x:auto;padding:0 14px 10px;scrollbar-width:none;flex-shrink:0;}
 .cats::-webkit-scrollbar{display:none;}
-.cat{padding:6px 14px;font-size:var(--fs-2xs);font-weight:var(--fw-medium);color:var(--c-text-35);white-space:nowrap;border-bottom:2px solid transparent;cursor:pointer;transition:all .15s;}
-.cat.on{color:var(--c-text-90);border-bottom-color:var(--c-gold);font-weight:var(--fw-semibold);}
-.cat-divider{height:1px;background:var(--c-white-06);flex-shrink:0;}
+.cat{padding:6px 14px;font-size:10px;font-weight:500;color:rgba(255,255,255,.35);white-space:nowrap;border-bottom:2px solid transparent;cursor:pointer;transition:all .15s;}
+.cat.on{color:#fff;border-bottom-color:#e8b830;font-weight:600;}
+.cat-divider{height:1px;background:rgba(255,255,255,.06);flex-shrink:0;}
 
 /* --- STAGE CARDS --- */
 .feed{padding:0 0 70px;}
-.card{background:var(--c-surface);border-radius:var(--r-none);overflow:hidden;margin-bottom:1px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,.04);}
+.card{background:#111118;border-radius:0;overflow:hidden;margin-bottom:1px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,.04);}
 .card-thumb{position:relative;display:flex;align-items:center;justify-content:center;}
 .card-thumb-lg{height:185px;}
 .card-thumb-sm{height:110px;}
 .card-emoji{font-size:42px;opacity:.7;}
-.card-dur{position:absolute;bottom:7px;right:9px;background:rgba(0,0,0,.75);color:var(--c-text-90);font-size:var(--fs-4xs);padding:2px 6px;border-radius:var(--r-xs);font-weight:var(--fw-semibold);}
-.card-badge{position:absolute;top:8px;left:9px;font-size:var(--fs-5xs);padding:2px 7px;border-radius:var(--r-xs);font-weight:var(--fw-bold);letter-spacing:.5px;}
-.card-badge-new{background:var(--c-gold);color:var(--c-bg);}
-.card-badge-hot{background:var(--c-hot);color:var(--c-text-90);}
-.card-badge-live{background:var(--c-live);color:var(--c-text-90);}
+.card-dur{position:absolute;bottom:7px;right:9px;background:rgba(0,0,0,.75);color:#fff;font-size:8px;padding:2px 6px;border-radius:4px;font-weight:600;}
+.card-badge{position:absolute;top:8px;left:9px;font-size:7px;padding:2px 7px;border-radius:4px;font-weight:700;letter-spacing:.5px;}
+.card-badge-new{background:#e8b830;color:#08080f;}
+.card-badge-hot{background:rgba(255,60,30,.85);color:#fff;}
+.card-badge-live{background:rgba(220,30,30,.9);color:#fff;}
 .card-info{display:flex;gap:9px;padding:10px 14px 6px;}
-.card-av{width:28px;height:28px;border-radius:var(--r-circle);background:#1a1228;display:flex;align-items:center;justify-content:center;font-size:var(--fs-base);flex-shrink:0;border:1px solid var(--c-white-08);}
+.card-av{width:28px;height:28px;border-radius:50%;background:#1a1228;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;border:1px solid rgba(255,255,255,.08);}
 .card-meta{flex:1;min-width:0;}
-.card-title{font-size:var(--fs-xs);font-weight:var(--fw-semibold);color:var(--c-text-100);margin-bottom:2px;line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.card-sub{font-size:var(--fs-4xs);color:var(--c-text-30);}
-.card-verified{color:var(--c-gold);font-size:var(--fs-3xs);}
+.card-title{font-size:11px;font-weight:600;color:#f0f0f5;margin-bottom:2px;line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.card-sub{font-size:8px;color:rgba(255,255,255,.3);}
+.card-verified{color:#e8b830;font-size:9px;}
 .card-actions{display:flex;align-items:center;gap:12px;padding:4px 14px 11px;}
-.card-btn{font-size:var(--fs-3xs);color:var(--c-text-40);display:flex;align-items:center;gap:4px;cursor:pointer;}
-.card-btn span{font-size:var(--fs-base);}
-.card-collab{margin-left:auto;padding:4px 10px;background:var(--c-gold-08);border:1px solid var(--c-gold-20);border-radius:var(--r-base);font-size:var(--fs-4xs);color:rgba(232,184,48,.85);cursor:pointer;}
-.card-recreate{padding:4px 10px;background:var(--c-purple-10);border:1px solid var(--c-purple-25);border-radius:var(--r-base);font-size:var(--fs-4xs);color:rgba(180,160,255,.9);cursor:pointer;}
+.card-btn{font-size:9px;color:rgba(255,255,255,.4);display:flex;align-items:center;gap:4px;cursor:pointer;}
+.card-btn span{font-size:13px;}
+.card-collab{margin-left:auto;padding:4px 10px;background:rgba(232,184,48,.08);border:1px solid rgba(232,184,48,.2);border-radius:10px;font-size:8px;color:rgba(232,184,48,.85);cursor:pointer;}
+.card-recreate{padding:4px 10px;background:rgba(100,80,255,.1);border:1px solid rgba(100,80,255,.25);border-radius:10px;font-size:8px;color:rgba(180,160,255,.9);cursor:pointer;}
 
 /* SHORT CLIP */
-.short{border-radius:var(--r-none);overflow:hidden;margin-bottom:8px;position:relative;height:160px;cursor:pointer;display:flex;align-items:center;justify-content:center;}
+.short{border-radius:0;overflow:hidden;margin-bottom:8px;position:relative;height:160px;cursor:pointer;display:flex;align-items:center;justify-content:center;}
 .short-emoji{font-size:50px;opacity:.6;}
 .short-overlay{position:absolute;bottom:0;left:0;right:0;padding:10px 14px;background:linear-gradient(transparent,rgba(0,0,0,.85));}
-.short-name{font-size:var(--fs-2xs);font-weight:var(--fw-semibold);color:var(--c-text-90);margin-bottom:1px;}
-.short-sub{font-size:var(--fs-4xs);color:var(--c-text-50);}
+.short-name{font-size:10px;font-weight:600;color:#fff;margin-bottom:1px;}
+.short-sub{font-size:8px;color:rgba(255,255,255,.5);}
 .short-side{position:absolute;right:10px;top:50%;transform:translateY(-50%);display:flex;flex-direction:column;gap:12px;align-items:center;}
 .short-action{display:flex;flex-direction:column;align-items:center;gap:2px;}
-.short-action-icon{font-size:var(--fs-xl);color:var(--c-text-90);}
-.short-action-cnt{font-size:var(--fs-5xs);color:var(--c-text-60);}
-.short-play{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:40px;height:40px;background:rgba(255,255,255,.15);backdrop-filter:blur(4px);border-radius:var(--r-circle);display:flex;align-items:center;justify-content:center;font-size:var(--fs-lg);}
+.short-action-icon{font-size:18px;color:#fff;}
+.short-action-cnt{font-size:7px;color:rgba(255,255,255,.6);}
+.short-play{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:40px;height:40px;background:rgba(255,255,255,.15);backdrop-filter:blur(4px);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;}
 
 /* STAGE TABS */
-.stage-tab{padding:8px 16px;font-size:var(--fs-xs);font-weight:var(--fw-medium);color:var(--c-text-35);white-space:nowrap;border-bottom:2px solid transparent;cursor:pointer;transition:all .15s;flex-shrink:0;}
-.stage-tab.on{color:var(--c-text-90);border-bottom-color:var(--c-gold);font-weight:var(--fw-semibold);}
-.cat-chip{padding:6px 14px;background:var(--c-white-06);border-radius:var(--r-pill);font-size:var(--fs-3xs);font-weight:var(--fw-medium);color:var(--c-text-40);white-space:nowrap;cursor:pointer;border:1px solid var(--c-border);display:inline-block;margin-right:6px;}
-.cat-chip.on{background:var(--c-gold-10);color:var(--c-gold);border-color:var(--c-gold-25);}
+.stage-tab{padding:8px 16px;font-size:11px;font-weight:500;color:rgba(255,255,255,.35);white-space:nowrap;border-bottom:2px solid transparent;cursor:pointer;transition:all .15s;flex-shrink:0;}
+.stage-tab.on{color:#fff;border-bottom-color:#e8b830;font-weight:600;}
+.cat-chip{padding:6px 14px;background:rgba(255,255,255,.06);border-radius:20px;font-size:9px;font-weight:500;color:rgba(255,255,255,.4);white-space:nowrap;cursor:pointer;border:1px solid rgba(255,255,255,.07);display:inline-block;margin-right:6px;}
+.cat-chip.on{background:rgba(232,184,48,.1);color:#e8b830;border-color:rgba(232,184,48,.25);}
 #stageCatChips{display:none;}
 #stageCatChips.visible{display:flex;}
 
 /* SECTION LABELS --- */
-.feed-section-label{font-size:var(--fs-4xs);letter-spacing:2.5px;text-transform:uppercase;color:var(--c-text-20);padding:12px 14px 8px;}
+.feed-section-label{font-size:8px;letter-spacing:2.5px;text-transform:uppercase;color:rgba(255,255,255,.2);padding:12px 14px 8px;}
 
 /* CARD TEXTURE --- */
 .card-thumb::after{content:'';position:absolute;inset:0;background:repeating-linear-gradient(45deg,rgba(255,255,255,.015) 0px,rgba(255,255,255,.015) 1px,transparent 1px,transparent 8px);pointer-events:none;}
@@ -878,177 +158,177 @@ html,body{width:100%;height:100%;background:var(--c-bg);color:var(--c-text-100);
 
 /* --- SEARCH --- */
 .search-top{padding:12px 14px 0;}
-.search-bar{background:var(--c-surface-alt);border-radius:var(--r-lg);padding:10px 14px;display:flex;align-items:center;gap:10px;margin-bottom:12px;border:1px solid var(--c-white-06);}
-.search-bar input{background:none;border:none;outline:none;color:var(--c-text-100);font-size:var(--fs-sm);font-family:var(--font-body);width:100%;}
-.search-bar input::placeholder{color:var(--c-text-25);}
+.search-bar{background:#18181f;border-radius:12px;padding:10px 14px;display:flex;align-items:center;gap:10px;margin-bottom:12px;border:1px solid rgba(255,255,255,.06);}
+.search-bar input{background:none;border:none;outline:none;color:#f0f0f5;font-size:12px;font-family:'Inter',sans-serif;width:100%;}
+.search-bar input::placeholder{color:rgba(255,255,255,.25);}
 .skill-chips{display:flex;gap:6px;overflow-x:auto;padding-bottom:8px;scrollbar-width:none;}
 .skill-chips::-webkit-scrollbar{display:none;}
-.skill-chip{padding:6px 13px;background:var(--c-surface-alt);border-radius:var(--r-pill);font-size:var(--fs-3xs);color:var(--c-text-40);white-space:nowrap;flex-shrink:0;cursor:pointer;border:1px solid var(--c-white-06);}
-.skill-chip.on{background:var(--c-gold-10);color:var(--c-gold);border-color:var(--c-gold-25);}
+.skill-chip{padding:6px 13px;background:#18181f;border-radius:20px;font-size:9px;color:rgba(255,255,255,.4);white-space:nowrap;flex-shrink:0;cursor:pointer;border:1px solid rgba(255,255,255,.06);}
+.skill-chip.on{background:rgba(232,184,48,.1);color:#e8b830;border-color:rgba(232,184,48,.25);}
 .search-results{padding:0 14px 70px;}
-.artist-row{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--c-border-soft);cursor:pointer;}
-.artist-av{width:42px;height:42px;border-radius:var(--r-circle);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;border:1px solid var(--c-white-08);}
+.artist-row{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid rgba(255,255,255,.05);cursor:pointer;}
+.artist-av{width:42px;height:42px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;border:1px solid rgba(255,255,255,.08);}
 .artist-info{flex:1;min-width:0;}
-.artist-name{font-size:var(--fs-sm);font-weight:var(--fw-semibold);color:var(--c-text-90);margin-bottom:2px;}
-.artist-role{font-size:var(--fs-3xs);color:var(--c-text-35);}
-.artist-loc{font-size:var(--fs-3xs);color:var(--c-text-25);}
-.artist-collab{padding:5px 12px;background:var(--c-purple-10);border:1px solid var(--c-purple-20);border-radius:var(--r-base);font-size:var(--fs-4xs);color:rgba(180,160,255,.85);cursor:pointer;white-space:nowrap;}
+.artist-name{font-size:12px;font-weight:600;color:#fff;margin-bottom:2px;}
+.artist-role{font-size:9px;color:rgba(255,255,255,.35);}
+.artist-loc{font-size:9px;color:rgba(255,255,255,.25);}
+.artist-collab{padding:5px 12px;background:rgba(100,80,255,.1);border:1px solid rgba(100,80,255,.2);border-radius:10px;font-size:8px;color:rgba(180,160,255,.85);cursor:pointer;white-space:nowrap;}
 
 /* --- WANTED --- */
-.w-post-btn{margin:0 14px 12px;padding:12px 14px;background:linear-gradient(135deg,var(--c-gold-08),rgba(100,80,255,.06));border:1px solid var(--c-gold-20);border-radius:var(--r-xl);display:flex;align-items:center;gap:12px;cursor:pointer;}
-.w-post-icon{font-size:var(--fs-2xl);}
-.w-post-label{font-size:var(--fs-xs);font-weight:var(--fw-semibold);color:var(--c-gold);}
-.w-post-sub{font-size:var(--fs-4xs);color:var(--c-text-30);}
-.w-post-plus{margin-left:auto;font-size:var(--fs-2xl);color:rgba(232,184,48,.4);}
+.w-post-btn{margin:0 14px 12px;padding:12px 14px;background:linear-gradient(135deg,rgba(232,184,48,.08),rgba(100,80,255,.06));border:1px solid rgba(232,184,48,.2);border-radius:14px;display:flex;align-items:center;gap:12px;cursor:pointer;}
+.w-post-icon{font-size:22px;}
+.w-post-label{font-size:11px;font-weight:600;color:#e8b830;}
+.w-post-sub{font-size:8px;color:rgba(255,255,255,.3);}
+.w-post-plus{margin-left:auto;font-size:22px;color:rgba(232,184,48,.4);}
 .w-feed{padding:0 14px 70px;}
-.w-card{background:var(--c-surface);border-radius:var(--r-xl);padding:10px 12px;margin-bottom:8px;border-left:3px solid var(--c-gold);}
+.w-card{background:#111118;border-radius:14px;padding:10px 12px;margin-bottom:8px;border-left:3px solid #e8b830;}
 .w-card-alt{border-left-color:rgba(100,80,255,.5);}
-.w-badge{display:inline-block;padding:3px 8px;border-radius:var(--r-sm);font-size:var(--fs-5xs);font-weight:var(--fw-bold);letter-spacing:.5px;margin-bottom:8px;}
-.w-badge-gold{background:var(--c-gold-12);color:var(--c-gold);}
+.w-badge{display:inline-block;padding:3px 8px;border-radius:6px;font-size:7px;font-weight:700;letter-spacing:.5px;margin-bottom:8px;}
+.w-badge-gold{background:rgba(232,184,48,.12);color:#e8b830;}
 .w-badge-hot{background:rgba(255,60,30,.12);color:rgba(255,100,60,.9);}
-.w-badge-new{background:var(--c-purple-12);color:rgba(180,160,255,.9);}
-.w-title{font-size:var(--fs-sm);font-weight:var(--fw-semibold);color:var(--c-text-90);margin-bottom:4px;}
-.w-meta{font-size:var(--fs-3xs);color:var(--c-text-30);margin-bottom:10px;}
+.w-badge-new{background:rgba(100,80,255,.12);color:rgba(180,160,255,.9);}
+.w-title{font-size:12px;font-weight:600;color:#fff;margin-bottom:4px;}
+.w-meta{font-size:9px;color:rgba(255,255,255,.3);margin-bottom:10px;}
 .w-tags{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:12px;}
-.w-tag{padding:3px 8px;background:var(--chip-bg-idle);border-radius:var(--r-sm);font-size:var(--fs-4xs);color:var(--c-text-40);}
-.w-apply{width:100%;padding:9px;background:linear-gradient(135deg,var(--c-purple-dark),var(--c-purple-light));border:none;border-radius:var(--r-base);font-size:var(--fs-2xs);font-weight:var(--fw-bold);color:var(--c-text-90);letter-spacing:1.5px;cursor:pointer;}
+.w-tag{padding:3px 8px;background:rgba(255,255,255,.05);border-radius:6px;font-size:8px;color:rgba(255,255,255,.4);}
+.w-apply{width:100%;padding:9px;background:linear-gradient(135deg,#2a1888,#4a30a8);border:none;border-radius:10px;font-size:10px;font-weight:700;color:#fff;letter-spacing:1.5px;cursor:pointer;}
 
 /* --- FAMEMAKER --- */
 .fm-tabs{display:flex;padding:0 14px 12px;gap:6px;}
-.fm-tab{flex:1;padding:8px 4px;background:var(--c-surface-alt);border-radius:var(--r-base);font-size:var(--fs-3xs);font-weight:var(--fw-semibold);color:var(--c-text-35);text-align:center;cursor:pointer;border:1px solid transparent;}
-.fm-tab.on{background:var(--c-gold-08);color:var(--c-gold);border-color:var(--c-gold-20);}
+.fm-tab{flex:1;padding:8px 4px;background:#18181f;border-radius:10px;font-size:9px;font-weight:600;color:rgba(255,255,255,.35);text-align:center;cursor:pointer;border:1px solid transparent;}
+.fm-tab.on{background:rgba(232,184,48,.08);color:#e8b830;border-color:rgba(232,184,48,.2);}
 .fm-content{padding:0 14px 70px;}
-.fm-rec-area{height:160px;background:var(--c-surface);border-radius:var(--r-2xl);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;margin-bottom:12px;border:1px solid var(--c-white-06);cursor:pointer;}
-.fm-ring{width:64px;height:64px;border-radius:var(--r-circle);border:3px solid rgba(255,60,30,.35);display:flex;align-items:center;justify-content:center;transition:border-color .2s;}
+.fm-rec-area{height:160px;background:#111118;border-radius:16px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;margin-bottom:12px;border:1px solid rgba(255,255,255,.06);cursor:pointer;}
+.fm-ring{width:64px;height:64px;border-radius:50%;border:3px solid rgba(255,60,30,.35);display:flex;align-items:center;justify-content:center;transition:border-color .2s;}
 .fm-ring.recording{border-color:rgba(255,60,30,.9);}
-.fm-dot{width:22px;height:22px;border-radius:var(--r-circle);background:rgba(255,60,30,.8);transition:border-radius .2s;}
-.fm-dot.recording{border-radius:var(--r-xs);}
-.fm-counter{font-size:var(--fs-3xl);font-weight:var(--fw-bold);color:var(--c-text-90);}
-.fm-label{font-size:var(--fs-3xs);color:var(--c-text-30);}
+.fm-dot{width:22px;height:22px;border-radius:50%;background:rgba(255,60,30,.8);transition:border-radius .2s;}
+.fm-dot.recording{border-radius:4px;}
+.fm-counter{font-size:28px;font-weight:700;color:#fff;}
+.fm-label{font-size:9px;color:rgba(255,255,255,.3);}
 .fm-tools{display:flex;gap:6px;margin-bottom:12px;}
-.fm-tool{flex:1;padding:8px 4px;background:var(--c-surface);border-radius:var(--r-md);text-align:center;font-size:var(--fs-4xs);color:var(--c-text-35);cursor:pointer;border:1px solid var(--c-border-soft);}
-.fm-tool.on{background:var(--c-purple-10);color:rgba(180,160,255,.9);border-color:var(--c-purple-20);}
-.fm-pub{width:100%;padding:13px;background:linear-gradient(135deg,var(--c-gold-dim),var(--c-gold));border:none;border-radius:var(--r-lg);font-family:var(--font-display);font-size:var(--fs-md);font-weight:var(--fw-bold);color:var(--c-bg);letter-spacing:1px;cursor:pointer;margin-bottom:6px;}
-.fm-pub-sub{font-size:var(--fs-4xs);color:var(--c-text-20);text-align:center;}
-.fm-upload-area{height:120px;background:var(--c-surface);border-radius:var(--r-xl);border:1px dashed rgba(255,255,255,.12);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;margin-bottom:12px;cursor:pointer;}
-.fm-upload-icon{font-size:var(--fs-3xl);opacity:.4;}
-.fm-upload-label{font-size:var(--fs-2xs);color:var(--c-text-30);}
-.fm-upload-sub{font-size:var(--fs-4xs);color:var(--c-text-20);}
-.fm-showcase-card{background:var(--c-surface);border-radius:var(--r-xl);padding:14px;margin-bottom:10px;border:1px solid var(--c-white-06);}
-.fm-showcase-label{font-size:var(--fs-3xs);color:var(--c-text-30);margin-bottom:6px;}
-.fm-showcase-input{width:100%;background:var(--chip-bg-idle);border:1px solid var(--c-white-08);border-radius:var(--r-md);padding:9px 12px;color:var(--c-text-90);font-size:var(--fs-xs);font-family:var(--font-body);outline:none;margin-bottom:8px;}
+.fm-tool{flex:1;padding:8px 4px;background:#111118;border-radius:8px;text-align:center;font-size:8px;color:rgba(255,255,255,.35);cursor:pointer;border:1px solid rgba(255,255,255,.05);}
+.fm-tool.on{background:rgba(100,80,255,.1);color:rgba(180,160,255,.9);border-color:rgba(100,80,255,.2);}
+.fm-pub{width:100%;padding:13px;background:linear-gradient(135deg,#8a6018,#e8b830);border:none;border-radius:12px;font-family:'Playfair Display',serif;font-size:14px;font-weight:700;color:#08080f;letter-spacing:1px;cursor:pointer;margin-bottom:6px;}
+.fm-pub-sub{font-size:8px;color:rgba(255,255,255,.2);text-align:center;}
+.fm-upload-area{height:120px;background:#111118;border-radius:14px;border:1px dashed rgba(255,255,255,.12);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;margin-bottom:12px;cursor:pointer;}
+.fm-upload-icon{font-size:28px;opacity:.4;}
+.fm-upload-label{font-size:10px;color:rgba(255,255,255,.3);}
+.fm-upload-sub{font-size:8px;color:rgba(255,255,255,.2);}
+.fm-showcase-card{background:#111118;border-radius:14px;padding:14px;margin-bottom:10px;border:1px solid rgba(255,255,255,.06);}
+.fm-showcase-label{font-size:9px;color:rgba(255,255,255,.3);margin-bottom:6px;}
+.fm-showcase-input{width:100%;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);border-radius:8px;padding:9px 12px;color:#fff;font-size:11px;font-family:'Inter',sans-serif;outline:none;margin-bottom:8px;}
 
 /* --- PROFILE --- */
 .p-cover{height:130px;position:relative;display:flex;align-items:flex-end;padding-bottom:0;flex-shrink:0;}
 .p-cover-bg{position:absolute;inset:0;}
 .p-av-wrap{position:absolute;bottom:-26px;left:14px;}
-.p-av{width:54px;height:54px;border-radius:var(--r-circle);border:3px solid var(--c-bg);display:flex;align-items:center;justify-content:center;font-size:24px;}
-.p-edit-btn{position:absolute;top:10px;right:14px;padding:5px 12px;background:var(--c-white-08);border:1px solid var(--c-border-strong);border-radius:var(--r-md);font-size:var(--fs-3xs);color:var(--c-text-60);cursor:pointer;}
+.p-av{width:54px;height:54px;border-radius:50%;border:3px solid #08080f;display:flex;align-items:center;justify-content:center;font-size:24px;}
+.p-edit-btn{position:absolute;top:10px;right:14px;padding:5px 12px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.1);border-radius:8px;font-size:9px;color:rgba(255,255,255,.6);cursor:pointer;}
 .p-body{padding:36px 14px 70px;}
 .p-name-row{display:flex;align-items:center;gap:6px;margin-bottom:3px;}
-.p-name{font-size:var(--fs-lg);font-weight:var(--fw-bold);color:var(--c-text-90);}
-.p-verified{font-size:var(--fs-md);}
-.p-role{font-size:var(--fs-2xs);color:var(--c-text-35);margin-bottom:12px;}
-.p-stats{display:flex;gap:0;background:var(--c-surface);border-radius:var(--r-lg);overflow:hidden;margin-bottom:14px;}
-.p-stat{flex:1;padding:10px 4px;text-align:center;border-right:1px solid var(--c-border-soft);}
+.p-name{font-size:16px;font-weight:700;color:#fff;}
+.p-verified{font-size:14px;}
+.p-role{font-size:10px;color:rgba(255,255,255,.35);margin-bottom:12px;}
+.p-stats{display:flex;gap:0;background:#111118;border-radius:12px;overflow:hidden;margin-bottom:14px;}
+.p-stat{flex:1;padding:10px 4px;text-align:center;border-right:1px solid rgba(255,255,255,.05);}
 .p-stat:last-child{border-right:none;}
-.p-stat-num{font-size:var(--fs-md);font-weight:var(--fw-bold);color:var(--c-text-90);}
-.p-stat-label{font-size:var(--fs-5xs);color:var(--c-text-30);margin-top:1px;}
+.p-stat-num{font-size:14px;font-weight:700;color:#fff;}
+.p-stat-label{font-size:7px;color:rgba(255,255,255,.3);margin-top:1px;}
 .p-actions{display:flex;gap:8px;margin-bottom:16px;}
-.p-btn-primary{flex:1;padding:10px;background:var(--c-gold-10);border:1px solid var(--c-gold-25);border-radius:var(--r-base);font-size:var(--fs-3xs);font-weight:var(--fw-semibold);color:var(--c-gold);letter-spacing:1px;cursor:pointer;text-align:center;}
-.p-btn-secondary{flex:1;padding:10px;background:var(--chip-bg-idle);border:1px solid var(--c-white-08);border-radius:var(--r-base);font-size:var(--fs-3xs);font-weight:var(--fw-semibold);color:var(--c-text-50);letter-spacing:1px;cursor:pointer;text-align:center;}
+.p-btn-primary{flex:1;padding:10px;background:rgba(232,184,48,.1);border:1px solid rgba(232,184,48,.25);border-radius:10px;font-size:9px;font-weight:600;color:#e8b830;letter-spacing:1px;cursor:pointer;text-align:center;}
+.p-btn-secondary{flex:1;padding:10px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);border-radius:10px;font-size:9px;font-weight:600;color:rgba(255,255,255,.5);letter-spacing:1px;cursor:pointer;text-align:center;}
 .p-gallery{display:grid;grid-template-columns:1fr 1fr 1fr;gap:3px;margin-bottom:16px;}
-.p-gallery-item{aspect-ratio:1;background:var(--c-surface);display:flex;align-items:center;justify-content:center;font-size:24px;cursor:pointer;position:relative;border-radius:var(--r-xs);}
-.p-gallery-badge{position:absolute;top:3px;right:3px;font-size:var(--fs-4xs);}
-.p-wanted-card{background:var(--c-surface);border-radius:var(--r-base);padding:12px;margin-bottom:8px;border-left:2px solid var(--c-gold);}
-.p-wanted-title{font-size:var(--fs-2xs);font-weight:var(--fw-semibold);color:var(--c-text-90);margin-bottom:3px;}
-.p-wanted-meta{font-size:var(--fs-4xs);color:var(--c-text-30);}
+.p-gallery-item{aspect-ratio:1;background:#111118;display:flex;align-items:center;justify-content:center;font-size:24px;cursor:pointer;position:relative;border-radius:4px;}
+.p-gallery-badge{position:absolute;top:3px;right:3px;font-size:8px;}
+.p-wanted-card{background:#111118;border-radius:10px;padding:12px;margin-bottom:8px;border-left:2px solid #e8b830;}
+.p-wanted-title{font-size:10px;font-weight:600;color:#fff;margin-bottom:3px;}
+.p-wanted-meta{font-size:8px;color:rgba(255,255,255,.3);}
 
 /* --- ARTIST PROFILE (others) --- */
 .ap-cover{height:150px;position:relative;}
 .ap-actions{display:flex;gap:8px;padding:14px;}
-.ap-follow{flex:1;padding:10px;background:linear-gradient(135deg,var(--c-purple-dark),var(--c-purple-light));border:none;border-radius:var(--r-base);font-size:var(--fs-2xs);font-weight:var(--fw-semibold);color:var(--c-text-90);cursor:pointer;}
-.ap-collab{flex:1;padding:10px;background:var(--c-gold-10);border:1px solid var(--c-gold-25);border-radius:var(--r-base);font-size:var(--fs-2xs);font-weight:var(--fw-semibold);color:var(--c-gold);cursor:pointer;}
-.ap-back{position:absolute;top:12px;left:12px;width:32px;height:32px;background:rgba(0,0,0,.5);border-radius:var(--r-circle);display:flex;align-items:center;justify-content:center;font-size:var(--fs-xl);color:var(--c-text-90);cursor:pointer;}
+.ap-follow{flex:1;padding:10px;background:linear-gradient(135deg,#2a1888,#4a30a8);border:none;border-radius:10px;font-size:10px;font-weight:600;color:#fff;cursor:pointer;}
+.ap-collab{flex:1;padding:10px;background:rgba(232,184,48,.1);border:1px solid rgba(232,184,48,.25);border-radius:10px;font-size:10px;font-weight:600;color:#e8b830;cursor:pointer;}
+.ap-back{position:absolute;top:12px;left:12px;width:32px;height:32px;background:rgba(0,0,0,.5);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px;color:#fff;cursor:pointer;}
 
 /* --- CONTENT VIEW (full screen) --- */
 .cv-thumb{height:240px;display:flex;align-items:center;justify-content:center;flex-shrink:0;position:relative;}
-.cv-play{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:56px;height:56px;background:rgba(255,255,255,.15);backdrop-filter:blur(6px);border-radius:var(--r-circle);display:flex;align-items:center;justify-content:center;font-size:var(--fs-2xl);cursor:pointer;}
-.cv-back{position:absolute;top:14px;left:14px;width:34px;height:34px;background:rgba(0,0,0,.5);border-radius:var(--r-circle);display:flex;align-items:center;justify-content:center;font-size:20px;color:var(--c-text-90);cursor:pointer;}
+.cv-play{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:56px;height:56px;background:rgba(255,255,255,.15);backdrop-filter:blur(6px);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:22px;cursor:pointer;}
+.cv-back{position:absolute;top:14px;left:14px;width:34px;height:34px;background:rgba(0,0,0,.5);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:20px;color:#fff;cursor:pointer;}
 .cv-body{padding:14px 14px 80px;}
-.cv-title{font-family:var(--font-display);font-size:var(--fs-xl);font-weight:var(--fw-bold);color:var(--c-text-90);margin-bottom:4px;}
+.cv-title{font-family:'Playfair Display',serif;font-size:18px;font-weight:700;color:#fff;margin-bottom:4px;}
 .cv-artist{display:flex;align-items:center;gap:10px;margin-bottom:14px;}
-.cv-av{width:32px;height:32px;border-radius:var(--r-circle);display:flex;align-items:center;justify-content:center;font-size:15px;border:1px solid var(--c-border-strong);}
-.cv-artist-name{font-size:var(--fs-xs);font-weight:var(--fw-semibold);color:var(--c-text-90);}
-.cv-artist-loc{font-size:var(--fs-3xs);color:var(--c-text-30);}
-.cv-action-row{display:flex;gap:0;background:var(--c-surface);border-radius:var(--r-lg);overflow:hidden;margin-bottom:14px;}
-.cv-action{flex:1;padding:12px 4px;text-align:center;cursor:pointer;border-right:1px solid var(--c-border-soft);}
+.cv-av{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:15px;border:1px solid rgba(255,255,255,.1);}
+.cv-artist-name{font-size:11px;font-weight:600;color:#fff;}
+.cv-artist-loc{font-size:9px;color:rgba(255,255,255,.3);}
+.cv-action-row{display:flex;gap:0;background:#111118;border-radius:12px;overflow:hidden;margin-bottom:14px;}
+.cv-action{flex:1;padding:12px 4px;text-align:center;cursor:pointer;border-right:1px solid rgba(255,255,255,.05);}
 .cv-action:last-child{border-right:none;}
-.cv-action-icon{font-size:var(--fs-xl);margin-bottom:3px;}
-.cv-action-label{font-size:var(--fs-4xs);color:var(--c-text-40);}
-.cv-action-count{font-size:var(--fs-2xs);font-weight:var(--fw-semibold);color:var(--c-text-90);}
-.cv-desc{font-size:var(--fs-xs);color:rgba(255,255,255,.45);line-height:1.7;margin-bottom:16px;}
-.cv-credits{background:var(--c-surface);border-radius:var(--r-lg);padding:14px;border-left:3px solid var(--c-gold);}
-.cv-credits-title{font-size:var(--fs-4xs);letter-spacing:2px;text-transform:uppercase;color:var(--c-text-25);margin-bottom:10px;}
+.cv-action-icon{font-size:18px;margin-bottom:3px;}
+.cv-action-label{font-size:8px;color:rgba(255,255,255,.4);}
+.cv-action-count{font-size:10px;font-weight:600;color:#fff;}
+.cv-desc{font-size:11px;color:rgba(255,255,255,.45);line-height:1.7;margin-bottom:16px;}
+.cv-credits{background:#111118;border-radius:12px;padding:14px;border-left:3px solid #e8b830;}
+.cv-credits-title{font-size:8px;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.25);margin-bottom:10px;}
 .cv-credit-row{display:flex;align-items:center;gap:10px;margin-bottom:8px;}
-.cv-credit-av{width:28px;height:28px;border-radius:var(--r-circle);display:flex;align-items:center;justify-content:center;font-size:var(--fs-base);border:1px solid var(--c-white-08);}
-.cv-credit-name{font-size:var(--fs-2xs);font-weight:var(--fw-semibold);color:var(--c-text-90);}
-.cv-credit-role{font-size:var(--fs-4xs);color:var(--c-text-30);}
-.cv-credit-badge{margin-left:auto;font-size:var(--fs-2xs);}
+.cv-credit-av{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;border:1px solid rgba(255,255,255,.08);}
+.cv-credit-name{font-size:10px;font-weight:600;color:#fff;}
+.cv-credit-role{font-size:8px;color:rgba(255,255,255,.3);}
+.cv-credit-badge{margin-left:auto;font-size:10px;}
 
 /* --- BACKSTAGE --- */
-.bs-hero{padding:28px 14px 24px;text-align:center;background:linear-gradient(180deg,#0e0820,var(--c-bg));}
+.bs-hero{padding:28px 14px 24px;text-align:center;background:linear-gradient(180deg,#0e0820,#08080f);}
 .bs-hero-icon{font-size:36px;margin-bottom:10px;}
-.bs-hero-title{font-family:var(--font-display);font-size:var(--fs-2xl);font-weight:var(--fw-black);color:var(--c-text-90);margin-bottom:6px;}
-.bs-hero-sub{font-size:var(--fs-xs);color:var(--c-text-35);line-height:1.6;}
-.bs-price-toggle{display:flex;margin:0 14px 16px;background:var(--c-surface);border-radius:var(--r-base);padding:3px;}
-.bs-toggle-btn{flex:1;padding:7px;border-radius:var(--r-md);font-size:var(--fs-2xs);font-weight:var(--fw-semibold);text-align:center;cursor:pointer;color:var(--c-text-40);}
-.bs-toggle-btn.on{background:#1e1830;color:var(--c-text-90);}
-.bs-price-card{margin:0 14px 14px;background:var(--c-surface);border-radius:var(--r-2xl);padding:20px 16px;border:1px solid rgba(232,184,48,.15);}
-.bs-price{font-size:var(--fs-3xl);font-weight:var(--fw-bold);color:var(--c-text-90);margin-bottom:2px;}
-.bs-price-per{font-size:var(--fs-2xs);color:var(--c-text-30);margin-bottom:14px;}
-.bs-feature{display:flex;align-items:center;gap:10px;margin-bottom:10px;font-size:var(--fs-2xs);color:var(--c-text-60);}
-.bs-feature-icon{font-size:var(--fs-md);}
-.bs-cta{width:100%;padding:13px;background:linear-gradient(135deg,var(--c-gold-dim),var(--c-gold));border:none;border-radius:var(--r-base);font-family:var(--font-display);font-size:var(--fs-md);font-weight:var(--fw-bold);color:var(--c-bg);cursor:pointer;margin-top:14px;}
-.bs-free-note{font-size:var(--fs-3xs);color:var(--c-text-20);text-align:center;margin-top:8px;}
+.bs-hero-title{font-family:'Playfair Display',serif;font-size:22px;font-weight:900;color:#fff;margin-bottom:6px;}
+.bs-hero-sub{font-size:11px;color:rgba(255,255,255,.35);line-height:1.6;}
+.bs-price-toggle{display:flex;margin:0 14px 16px;background:#111118;border-radius:10px;padding:3px;}
+.bs-toggle-btn{flex:1;padding:7px;border-radius:8px;font-size:10px;font-weight:600;text-align:center;cursor:pointer;color:rgba(255,255,255,.4);}
+.bs-toggle-btn.on{background:#1e1830;color:#fff;}
+.bs-price-card{margin:0 14px 14px;background:#111118;border-radius:16px;padding:20px 16px;border:1px solid rgba(232,184,48,.15);}
+.bs-price{font-size:28px;font-weight:700;color:#fff;margin-bottom:2px;}
+.bs-price-per{font-size:10px;color:rgba(255,255,255,.3);margin-bottom:14px;}
+.bs-feature{display:flex;align-items:center;gap:10px;margin-bottom:10px;font-size:10px;color:rgba(255,255,255,.6);}
+.bs-feature-icon{font-size:14px;}
+.bs-cta{width:100%;padding:13px;background:linear-gradient(135deg,#8a6018,#e8b830);border:none;border-radius:10px;font-family:'Playfair Display',serif;font-size:14px;font-weight:700;color:#08080f;cursor:pointer;margin-top:14px;}
+.bs-free-note{font-size:9px;color:rgba(255,255,255,.2);text-align:center;margin-top:8px;}
 
 /* --- POST WANTED SCREEN --- */
 .form-screen{padding:14px 14px 80px;}
-.form-label{font-size:var(--fs-3xs);letter-spacing:2px;text-transform:uppercase;color:var(--c-text-30);margin-bottom:7px;}
-.form-input{width:100%;background:var(--chip-bg-idle);border:1px solid var(--c-white-08);border-radius:var(--r-base);padding:11px 14px;color:var(--c-text-90);font-size:var(--fs-sm);font-family:var(--font-body);outline:none;margin-bottom:14px;}
+.form-label{font-size:9px;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.3);margin-bottom:7px;}
+.form-input{width:100%;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:11px 14px;color:#fff;font-size:12px;font-family:'Inter',sans-serif;outline:none;margin-bottom:14px;}
 .form-input:focus{border-color:rgba(232,184,48,.3);}
-.form-textarea{width:100%;background:var(--chip-bg-idle);border:1px solid var(--c-white-08);border-radius:var(--r-base);padding:11px 14px;color:var(--c-text-90);font-size:var(--fs-sm);font-family:var(--font-body);outline:none;resize:none;min-height:90px;margin-bottom:14px;}
+.form-textarea{width:100%;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:11px 14px;color:#fff;font-size:12px;font-family:'Inter',sans-serif;outline:none;resize:none;min-height:90px;margin-bottom:14px;}
 .form-textarea:focus{border-color:rgba(232,184,48,.3);}
 .form-chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px;}
-.form-chip{padding:7px 13px;background:var(--c-surface);border-radius:var(--r-pill);font-size:var(--fs-3xs);color:var(--c-text-40);cursor:pointer;border:1px solid var(--c-border);}
-.form-chip.on{background:var(--c-gold-10);color:var(--c-gold);border-color:var(--c-gold-25);}
-.form-submit{width:100%;padding:14px;background:linear-gradient(135deg,var(--c-gold-dim),var(--c-gold));border:none;border-radius:var(--r-lg);font-family:var(--font-display);font-size:var(--fs-md);font-weight:var(--fw-bold);color:var(--c-bg);cursor:pointer;}
+.form-chip{padding:7px 13px;background:#111118;border-radius:20px;font-size:9px;color:rgba(255,255,255,.4);cursor:pointer;border:1px solid rgba(255,255,255,.07);}
+.form-chip.on{background:rgba(232,184,48,.1);color:#e8b830;border-color:rgba(232,184,48,.25);}
+.form-submit{width:100%;padding:14px;background:linear-gradient(135deg,#8a6018,#e8b830);border:none;border-radius:12px;font-family:'Playfair Display',serif;font-size:14px;font-weight:700;color:#08080f;cursor:pointer;}
 .form-remote-row{display:flex;align-items:center;gap:12px;margin-bottom:14px;}
-.form-remote-label{font-size:var(--fs-xs);color:var(--c-text-40);}
-.form-toggle{width:44px;height:24px;border-radius:var(--r-lg);background:linear-gradient(135deg,var(--c-purple-dark),var(--c-purple-light));cursor:pointer;position:relative;flex-shrink:0;}
-.form-toggle-dot{position:absolute;top:3px;right:3px;width:18px;height:18px;border-radius:var(--r-circle);background:var(--c-text-90);}
-.form-toggle.off{background:var(--c-border-strong);}
+.form-remote-label{font-size:11px;color:rgba(255,255,255,.4);}
+.form-toggle{width:44px;height:24px;border-radius:12px;background:linear-gradient(135deg,#2a1888,#4a30a8);cursor:pointer;position:relative;flex-shrink:0;}
+.form-toggle-dot{position:absolute;top:3px;right:3px;width:18px;height:18px;border-radius:50%;background:#fff;}
+.form-toggle.off{background:rgba(255,255,255,.1);}
 .form-toggle.off .form-toggle-dot{right:auto;left:3px;}
-.form-remote-val{font-size:var(--fs-xs);color:var(--c-success);}
+.form-remote-val{font-size:11px;color:rgba(40,200,80,.7);}
 
 /* --- EDIT PROFILE SCREEN --- */
 .role-chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px;}
-.role-chip{padding:7px 13px;background:var(--c-surface);border-radius:var(--r-pill);font-size:var(--fs-3xs);color:var(--c-text-40);cursor:pointer;border:1px solid var(--c-border);}
-.role-chip.on{background:var(--c-purple-12);color:rgba(180,160,255,.9);border-color:rgba(100,80,255,.3);}
+.role-chip{padding:7px 13px;background:#111118;border-radius:20px;font-size:9px;color:rgba(255,255,255,.4);cursor:pointer;border:1px solid rgba(255,255,255,.07);}
+.role-chip.on{background:rgba(100,80,255,.12);color:rgba(180,160,255,.9);border-color:rgba(100,80,255,.3);}
 
 /* --- BACK BUTTON --- */
-.bk{display:flex;align-items:center;gap:6px;font-size:var(--fs-base);color:var(--c-text-50);cursor:pointer;padding:2px 0;}
+.bk{display:flex;align-items:center;gap:6px;font-size:13px;color:rgba(255,255,255,.5);cursor:pointer;padding:2px 0;}
 .bk-icon{font-size:20px;line-height:1;}
 
 /* --- SCREEN-TOP --- */
-.screen-top{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;background:var(--c-bg);flex-shrink:0;border-bottom:1px solid var(--c-border-soft);}
-.screen-top-title{font-size:var(--fs-md);font-weight:var(--fw-bold);color:var(--c-text-90);}
+.screen-top{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;background:#08080f;flex-shrink:0;border-bottom:1px solid rgba(255,255,255,.05);}
+.screen-top-title{font-size:14px;font-weight:700;color:#fff;}
 
 /* --- ALERT --- */
-.toast{position:fixed;bottom:70px;left:14px;right:14px;background:var(--c-surface-raised);border:1px solid rgba(100,80,255,.3);border-radius:var(--r-lg);padding:12px 16px;font-size:var(--fs-xs);color:var(--c-text-100);z-index:9999;display:none;text-align:center;line-height:1.5;}
+.toast{position:fixed;bottom:70px;left:14px;right:14px;background:#1a1828;border:1px solid rgba(100,80,255,.3);border-radius:12px;padding:12px 16px;font-size:11px;color:#f0f0f5;z-index:9999;display:none;text-align:center;line-height:1.5;}
 
 /* --- NACKL CHIP --- */
-.nackl-chip{display:inline-flex;align-items:center;gap:5px;padding:4px 10px;background:var(--c-gold-08);border:1px solid rgba(232,184,48,.15);border-radius:var(--r-pill);font-size:var(--fs-3xs);color:rgba(232,184,48,.7);}
+.nackl-chip{display:inline-flex;align-items:center;gap:5px;padding:4px 10px;background:rgba(232,184,48,.08);border:1px solid rgba(232,184,48,.15);border-radius:20px;font-size:9px;color:rgba(232,184,48,.7);}
 
 /* GRADIENTS for screen covers */
 .grad-purple{background:linear-gradient(160deg,#1a0840,#0a1040);}
@@ -1074,15 +354,53 @@ html,body{width:100%;height:100%;background:var(--c-bg);color:var(--c-text-100);
 <body>
 
 <!-- ==========================================
+     AUTH: EMAIL
+========================================== -->
+<div class="screen" id="screen-authemail">
+  <div class="sa" style="display:flex;flex-direction:column;justify-content:center;padding:0 28px;">
+    <div style="text-align:center;margin-bottom:44px;">
+      <div class="logo" style="font-size:32px;letter-spacing:-1px;text-shadow:0 0 30px rgba(232,184,48,.25);">STA<em>G</em>ERZ</div>
+      <div style="font-size:10px;color:rgba(255,255,255,.35);margin-top:8px;letter-spacing:.5px;">Your world stage</div>
+    </div>
+    <div class="form-label">Email</div>
+    <input class="form-input" id="authEmail" type="email" placeholder="you@example.com" autocomplete="email" onkeydown="if(event.key==='Enter')sendOtp();">
+    <button class="form-submit" id="authEmailBtn" onclick="sendOtp()">CONTINUE</button>
+    <div style="font-size:8px;color:rgba(255,255,255,.2);text-align:center;margin-top:14px;line-height:1.5;">We'll email you a 6-digit code.<br>No password needed.</div>
+  </div>
+</div>
+
+<!-- ==========================================
+     AUTH: OTP VERIFY
+========================================== -->
+<div class="screen" id="screen-authotp">
+  <div class="screen-top">
+    <div class="bk" onclick="goTo('authemail')"><div class="bk-icon">&lsaquo;</div> Back</div>
+    <div class="screen-top-title">Verify</div>
+    <div style="width:60px;"></div>
+  </div>
+  <div class="sa" style="display:flex;flex-direction:column;justify-content:center;padding:0 28px;">
+    <div style="text-align:center;margin-bottom:28px;">
+      <div style="font-size:22px;margin-bottom:10px;">&#128231;</div>
+      <div style="font-size:11px;font-weight:600;color:#fff;margin-bottom:4px;">Check your email</div>
+      <div style="font-size:9px;color:rgba(255,255,255,.35);" id="authOtpSentTo">We sent a verification code to your email.</div>
+    </div>
+    <div class="form-label" style="text-align:center;">6-digit code</div>
+    <input class="form-input" id="authOtpCode" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="6" placeholder="000000" autocomplete="one-time-code" style="text-align:center;font-size:22px;letter-spacing:8px;font-weight:600;" onkeydown="if(event.key==='Enter')verifyOtpCode();">
+    <button class="form-submit" id="authOtpBtn" onclick="verifyOtpCode()">VERIFY</button>
+    <div style="font-size:9px;color:rgba(232,184,48,.6);text-align:center;margin-top:16px;cursor:pointer;" onclick="sendOtp(true)">Didn't get a code? Resend</div>
+  </div>
+</div>
+
+<!-- ==========================================
      SCREEN 1: STAGE (Home)
 ========================================== -->
-<div class="screen active" id="screen-stage">
+<div class="screen" id="screen-stage">
   <!-- Top bar -->
-  <div class="main-header main-header-compact" style="display:flex;align-items:center;justify-content:space-between;padding:12px 14px 0;background:#08080f;flex-shrink:0;">
+  <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 14px 0;background:#08080f;flex-shrink:0;">
     <div class="logo" style="font-size:26px;letter-spacing:-1px;text-shadow:0 0 30px rgba(232,184,48,.25);">STA<em>G</em>ERZ</div>
-    <div class="main-header-actions" style="display:flex;gap:10px;">
-      <div class="tb-icon btn btn-icon" onclick="goTo('search')">&#128269;</div>
-      <div class="tb-icon btn btn-icon">&#128276;</div>
+    <div style="display:flex;gap:10px;">
+      <div class="tb-icon" onclick="goTo('search')">&#128269;</div>
+      <div class="tb-icon">&#128276;</div>
     </div>
   </div>
   <!-- Stage tabs -->
@@ -1095,13 +413,13 @@ html,body{width:100%;height:100%;background:var(--c-bg);color:var(--c-text-100);
   </div>
   <!-- Category chips — only shown in Channels tab -->
   <div id="stageCatChips" style="overflow-x:auto;padding:8px 14px;gap:8px;scrollbar-width:none;flex-shrink:0;border-bottom:1px solid rgba(255,255,255,.06);">
-    <div class="cat-chip on chip chip-interactive" onclick="setStageCat(this,'all')">&#127757; All</div>
-    <div class="cat-chip chip chip-interactive" onclick="setStageCat(this,'music')">&#127925; Music</div>
-    <div class="cat-chip chip chip-interactive" onclick="setStageCat(this,'film')">&#127916; Film</div>
-    <div class="cat-chip chip chip-interactive" onclick="setStageCat(this,'dance')">&#128131; Dance</div>
-    <div class="cat-chip chip chip-interactive" onclick="setStageCat(this,'photo')">&#128247; Photo</div>
-    <div class="cat-chip chip chip-interactive" onclick="setStageCat(this,'ai')">&#129302; AI</div>
-    <div class="cat-chip chip chip-interactive" onclick="setStageCat(this,'art')">&#127912; Art</div>
+    <div class="cat-chip on" onclick="setStageCat(this,'all')">&#127757; All</div>
+    <div class="cat-chip" onclick="setStageCat(this,'music')">&#127925; Music</div>
+    <div class="cat-chip" onclick="setStageCat(this,'film')">&#127916; Film</div>
+    <div class="cat-chip" onclick="setStageCat(this,'dance')">&#128131; Dance</div>
+    <div class="cat-chip" onclick="setStageCat(this,'photo')">&#128247; Photo</div>
+    <div class="cat-chip" onclick="setStageCat(this,'ai')">&#129302; AI</div>
+    <div class="cat-chip" onclick="setStageCat(this,'art')">&#127912; Art</div>
   </div>
   <div style="height:1px;background:rgba(255,255,255,.06);flex-shrink:0;"></div>
   <div class="sa">
@@ -1128,13 +446,13 @@ html,body{width:100%;height:100%;background:var(--c-bg);color:var(--c-text-100);
     </div>
     <div id="searchCount" style="font-size:9px;color:rgba(255,255,255,.25);padding:0 2px 8px;"></div>
     <div class="skill-chips" id="searchCats">
-      <div class="skill-chip on chip chip-interactive" onclick="setSearchCat(this,'all')">All</div>
-      <div class="skill-chip chip chip-interactive" onclick="setSearchCat(this,'music')">🎵 Music</div>
-      <div class="skill-chip chip chip-interactive" onclick="setSearchCat(this,'film')">🎬 Film</div>
-      <div class="skill-chip chip chip-interactive" onclick="setSearchCat(this,'dance')">💃 Dance</div>
-      <div class="skill-chip chip chip-interactive" onclick="setSearchCat(this,'photo')">📷 Photo</div>
-      <div class="skill-chip chip chip-interactive" onclick="setSearchCat(this,'ai')">🤖 AI</div>
-      <div class="skill-chip chip chip-interactive" onclick="setSearchCat(this,'art')">🎨 Art</div>
+      <div class="skill-chip on" onclick="setSearchCat(this,'all')">All</div>
+      <div class="skill-chip" onclick="setSearchCat(this,'music')">🎵 Music</div>
+      <div class="skill-chip" onclick="setSearchCat(this,'film')">🎬 Film</div>
+      <div class="skill-chip" onclick="setSearchCat(this,'dance')">💃 Dance</div>
+      <div class="skill-chip" onclick="setSearchCat(this,'photo')">📷 Photo</div>
+      <div class="skill-chip" onclick="setSearchCat(this,'ai')">🤖 AI</div>
+      <div class="skill-chip" onclick="setSearchCat(this,'art')">🎨 Art</div>
     </div>
   </div>
   <div class="sa">
@@ -1153,12 +471,12 @@ html,body{width:100%;height:100%;background:var(--c-bg);color:var(--c-text-100);
      SCREEN 3: WANTED
 ========================================== -->
 <div class="screen" id="screen-wanted">
-  <div class="tb main-header main-header-default">
+  <div class="tb">
     <div class="logo">WAN<em>T</em>ED</div>
     <div style="font-size:10px;color:rgba(255,255,255,.3);" id="wantedCount">loading...</div>
   </div>
   <div class="sa">
-    <div class="w-post-btn btn btn-promo" onclick="goTo('postwanted')">
+    <div class="w-post-btn" onclick="goTo('postwanted')">
       <div class="w-post-icon">🎯</div>
       <div>
         <div class="w-post-label">POST A WANTED</div>
@@ -1181,7 +499,7 @@ html,body{width:100%;height:100%;background:var(--c-bg);color:var(--c-text-100);
      SCREEN 4: FAMEMAKER
 ========================================== -->
 <div class="screen" id="screen-famemaker">
-  <div class="tb main-header main-header-default">
+  <div class="tb">
     <div class="logo" style="font-size:18px;">Fame<em>M</em>aker</div>
   </div>
   <div class="fm-tabs">
@@ -1213,52 +531,52 @@ html,body{width:100%;height:100%;background:var(--c-bg);color:var(--c-text-100);
         <div class="fm-tool">Loop</div>
         <div class="fm-tool">Undo</div>
       </div>
-      <button class="fm-pub btn btn-primary-gold btn-full btn-radius-lg" onclick="showToast('Taking the Stage! Publishing coming in full version.')">TAKE THE STAGE</button>
+      <button class="fm-pub" onclick="showToast('Taking the Stage! Publishing coming in full version.')">TAKE THE STAGE</button>
       <div class="fm-pub-sub">Published instantly · Visible to the world</div>
     </div>
     <!-- Upload tab -->
     <div class="fm-content" id="fmUpload" style="display:none;">
-      <div class="fm-upload-area upload-panel upload-panel-default" onclick="showToast('File uploads coming in full version.')">
+      <div class="fm-upload-area" onclick="showToast('File uploads coming in full version.')">
         <div class="fm-upload-icon">📁</div>
         <div class="fm-upload-label">Tap to upload</div>
         <div class="fm-upload-sub">Video, Audio, Image · Max 500MB</div>
       </div>
-      <div class="form-label field-label">Title</div>
-      <input class="form-input field field-standard field-single" type="text" placeholder="Name your work...">
-      <div class="form-label field-label">Category</div>
-      <div class="form-chips field-group" id="uploadCatPicker">
-        <div class="form-chip on chip chip-interactive" onclick="pickChip(this,'uploadCatPicker')">&#127925; Music</div>
-        <div class="form-chip chip chip-interactive" onclick="pickChip(this,'uploadCatPicker')">&#127916; Film</div>
-        <div class="form-chip chip chip-interactive" onclick="pickChip(this,'uploadCatPicker')">&#128131; Dance</div>
-        <div class="form-chip chip chip-interactive" onclick="pickChip(this,'uploadCatPicker')">&#128247; Photo</div>
-        <div class="form-chip chip chip-interactive" onclick="pickChip(this,'uploadCatPicker')">&#129302; AI</div>
-        <div class="form-chip chip chip-interactive" onclick="pickChip(this,'uploadCatPicker')">&#127912; Art</div>
+      <div class="form-label">Title</div>
+      <input class="form-input" type="text" placeholder="Name your work...">
+      <div class="form-label">Category</div>
+      <div class="form-chips" id="uploadCatPicker">
+        <div class="form-chip on" onclick="pickChip(this,'uploadCatPicker')">&#127925; Music</div>
+        <div class="form-chip" onclick="pickChip(this,'uploadCatPicker')">&#127916; Film</div>
+        <div class="form-chip" onclick="pickChip(this,'uploadCatPicker')">&#128131; Dance</div>
+        <div class="form-chip" onclick="pickChip(this,'uploadCatPicker')">&#128247; Photo</div>
+        <div class="form-chip" onclick="pickChip(this,'uploadCatPicker')">&#129302; AI</div>
+        <div class="form-chip" onclick="pickChip(this,'uploadCatPicker')">&#127912; Art</div>
       </div>
-      <div class="form-label field-label">Mood / Genre</div>
-      <div class="form-chips field-group" id="uploadMoodPicker">
-        <div class="form-chip on chip chip-interactive" onclick="pickChip(this,'uploadMoodPicker')">&#127775; Chill</div>
-        <div class="form-chip chip chip-interactive" onclick="pickChip(this,'uploadMoodPicker')">&#128293; Energetic</div>
-        <div class="form-chip chip chip-interactive" onclick="pickChip(this,'uploadMoodPicker')">&#127963; Cinematic</div>
-        <div class="form-chip chip chip-interactive" onclick="pickChip(this,'uploadMoodPicker')">&#128131; Rhythmic</div>
-        <div class="form-chip chip chip-interactive" onclick="pickChip(this,'uploadMoodPicker')">&#129302; Experimental</div>
+      <div class="form-label">Mood / Genre</div>
+      <div class="form-chips" id="uploadMoodPicker">
+        <div class="form-chip on" onclick="pickChip(this,'uploadMoodPicker')">&#127775; Chill</div>
+        <div class="form-chip" onclick="pickChip(this,'uploadMoodPicker')">&#128293; Energetic</div>
+        <div class="form-chip" onclick="pickChip(this,'uploadMoodPicker')">&#127963; Cinematic</div>
+        <div class="form-chip" onclick="pickChip(this,'uploadMoodPicker')">&#128131; Rhythmic</div>
+        <div class="form-chip" onclick="pickChip(this,'uploadMoodPicker')">&#129302; Experimental</div>
       </div>
-      <div class="form-label field-label">Description</div>
-      <textarea class="form-textarea field field-standard field-multiline" placeholder="Tell the story behind this work..."></textarea>
-      <button class="form-submit btn btn-primary-gold btn-full btn-radius-lg" onclick="showToast('Upload coming in full version.')">TAKE THE STAGE</button>
+      <div class="form-label">Description</div>
+      <textarea class="form-textarea" placeholder="Tell the story behind this work..."></textarea>
+      <button class="form-submit" onclick="showToast('Upload coming in full version.')">TAKE THE STAGE</button>
     </div>
     <!-- Showcase tab -->
     <div class="fm-content" id="fmShowcase" style="display:none;">
-      <div class="fm-showcase-card panel panel-form">
+      <div class="fm-showcase-card">
         <div class="fm-showcase-label">Showcase Title</div>
-        <input class="fm-showcase-input field field-compact field-single" type="text" placeholder="e.g. My 2025 Portfolio">
+        <input class="fm-showcase-input" type="text" placeholder="e.g. My 2025 Portfolio">
         <div class="fm-showcase-label">Cover Image</div>
-        <div class="fm-upload-area upload-panel upload-panel-compact" style="height:80px;margin-bottom:8px;" onclick="showToast('Image upload coming in full version.')">
+        <div class="fm-upload-area" style="height:80px;margin-bottom:8px;" onclick="showToast('Image upload coming in full version.')">
           <div class="fm-upload-icon" style="font-size:20px;">🖼</div>
           <div class="fm-upload-sub">Tap to add cover</div>
         </div>
         <div class="fm-showcase-label">Description</div>
-        <textarea class="fm-showcase-input field field-compact field-multiline" style="min-height:70px;" placeholder="What is this showcase about?"></textarea>
-        <button class="form-submit btn btn-primary-gold btn-full btn-radius-lg" onclick="showToast('Showcase coming in full version.')">CREATE SHOWCASE</button>
+        <textarea class="fm-showcase-input" style="min-height:70px;" placeholder="What is this showcase about?"></textarea>
+        <button class="form-submit" onclick="showToast('Showcase coming in full version.')">CREATE SHOWCASE</button>
       </div>
     </div>
   </div>
@@ -1280,12 +598,12 @@ html,body{width:100%;height:100%;background:var(--c-bg);color:var(--c-text-100);
       <div class="p-av-wrap">
         <div class="p-av grad-purple" id="profileAvatar">🎸</div>
       </div>
-      <div class="p-edit-btn btn btn-secondary btn-edit-pill" onclick="goTo('editprofile')">✏ EDIT</div>
+      <div class="p-edit-btn" onclick="goTo('editprofile')">✏ EDIT</div>
     </div>
     <div class="p-body">
       <div class="p-name-row">
         <div class="p-name" id="profileName">Your Name</div>
-        <div class="p-verified verified-badge verified-badge-lg" id="profileVerified" style="display:none;">🔵</div>
+        <div class="p-verified" id="profileVerified" style="display:none;">🔵</div>
       </div>
       <div class="p-role" id="profileRole">Set up your artist profile</div>
       <div class="p-stats">
@@ -1295,8 +613,11 @@ html,body{width:100%;height:100%;background:var(--c-bg);color:var(--c-text-100);
         <div class="p-stat"><div class="p-stat-num" id="nacklCount" style="color:#e8b830;text-shadow:0 0 12px rgba(232,184,48,.4);">0</div><div class="p-stat-label" style="color:rgba(232,184,48,.5);">NACKL</div></div>
       </div>
       <div class="p-actions">
-        <div class="p-btn-primary btn btn-ghost-gold" onclick="goTo('backstage')">⭐ BACKSTAGE</div>
-        <div class="p-btn-secondary btn btn-secondary" onclick="goTo('famemaker')">🎬 FAMEMAKER</div>
+        <div class="p-btn-primary" onclick="goTo('backstage')">⭐ BACKSTAGE</div>
+        <div class="p-btn-secondary" onclick="goTo('famemaker')">🎬 FAMEMAKER</div>
+      </div>
+      <div style="padding:0 0 4px;text-align:center;">
+        <div style="display:inline-block;font-size:9px;color:rgba(255,255,255,.3);cursor:pointer;padding:6px 12px;" onclick="logout()">Log Out</div>
       </div>
       <div class="section-title" style="margin-bottom:8px;">On Stage</div>
       <div class="p-gallery" id="profileGallery">
@@ -1335,33 +656,33 @@ html,body{width:100%;height:100%;background:var(--c-bg);color:var(--c-text-100);
      SCREEN 6: EDIT PROFILE
 ========================================== -->
 <div class="screen" id="screen-editprofile">
-  <div class="screen-top sub-header">
-    <div class="bk sub-header-back" onclick="goTo('profile')"><div class="bk-icon">‹</div> Profile</div>
-    <div class="screen-top-title sub-header-title">Edit Profile</div>
+  <div class="screen-top">
+    <div class="bk" onclick="goTo('profile')"><div class="bk-icon">‹</div> Profile</div>
+    <div class="screen-top-title">Edit Profile</div>
     <div style="width:60px;"></div>
   </div>
   <div class="sa">
     <div class="form-screen">
-      <div class="form-label field-label">Display Name</div>
-      <input class="form-input field field-standard field-single" id="editName" type="text" placeholder="Your artist name">
-      <div class="form-label field-label">I am a...</div>
+      <div class="form-label">Display Name</div>
+      <input class="form-input" id="editName" type="text" placeholder="Your artist name">
+      <div class="form-label">I am a...</div>
       <div class="role-chips" id="rolePicker">
-        <div class="role-chip on chip chip-interactive" onclick="pickRole(this,'🎸 Musician')">🎸 Musician</div>
-        <div class="role-chip chip chip-interactive" onclick="pickRole(this,'🎬 Filmmaker')">🎬 Filmmaker</div>
-        <div class="role-chip chip chip-interactive" onclick="pickRole(this,'💃 Dancer')">💃 Dancer</div>
-        <div class="role-chip chip chip-interactive" onclick="pickRole(this,'📷 Photographer')">📷 Photographer</div>
-        <div class="role-chip chip chip-interactive" onclick="pickRole(this,'🎨 Visual Artist')">🎨 Visual Artist</div>
-        <div class="role-chip chip chip-interactive" onclick="pickRole(this,'🤖 AI Creator')">🤖 AI Creator</div>
-        <div class="role-chip chip chip-interactive" onclick="pickRole(this,'🎤 Singer')">🎤 Singer</div>
-        <div class="role-chip chip chip-interactive" onclick="pickRole(this,'🎵 Producer')">🎵 Producer</div>
+        <div class="role-chip on" onclick="pickRole(this,'🎸 Musician')">🎸 Musician</div>
+        <div class="role-chip" onclick="pickRole(this,'🎬 Filmmaker')">🎬 Filmmaker</div>
+        <div class="role-chip" onclick="pickRole(this,'💃 Dancer')">💃 Dancer</div>
+        <div class="role-chip" onclick="pickRole(this,'📷 Photographer')">📷 Photographer</div>
+        <div class="role-chip" onclick="pickRole(this,'🎨 Visual Artist')">🎨 Visual Artist</div>
+        <div class="role-chip" onclick="pickRole(this,'🤖 AI Creator')">🤖 AI Creator</div>
+        <div class="role-chip" onclick="pickRole(this,'🎤 Singer')">🎤 Singer</div>
+        <div class="role-chip" onclick="pickRole(this,'🎵 Producer')">🎵 Producer</div>
       </div>
-      <div class="form-label field-label">Location</div>
-      <input class="form-input field field-standard field-single" id="editLocation" type="text" placeholder="City, Country">
-      <div class="form-label field-label">Bio</div>
-      <textarea class="form-textarea field field-standard field-multiline" id="editBio" placeholder="Tell the world who you are and what you create..."></textarea>
-      <div class="form-label field-label">Skills (comma separated)</div>
-      <input class="form-input field field-standard field-single" id="editSkills" type="text" placeholder="Guitar, Vocals, Songwriting...">
-      <button class="form-submit btn btn-primary-gold btn-full btn-radius-lg" onclick="saveProfile()">SAVE PROFILE</button>
+      <div class="form-label">Location</div>
+      <input class="form-input" id="editLocation" type="text" placeholder="City, Country">
+      <div class="form-label">Bio</div>
+      <textarea class="form-textarea" id="editBio" placeholder="Tell the world who you are and what you create..."></textarea>
+      <div class="form-label">Skills (comma separated)</div>
+      <input class="form-input" id="editSkills" type="text" placeholder="Guitar, Vocals, Songwriting...">
+      <button class="form-submit" onclick="saveProfile()">SAVE PROFILE</button>
     </div>
   </div>
 </div>
@@ -1370,28 +691,28 @@ html,body{width:100%;height:100%;background:var(--c-bg);color:var(--c-text-100);
      SCREEN 7: POST WANTED
 ========================================== -->
 <div class="screen" id="screen-postwanted">
-  <div class="screen-top sub-header">
-    <div class="bk sub-header-back" onclick="goTo('wanted')"><div class="bk-icon">‹</div> Wanted</div>
-    <div class="screen-top-title sub-header-title">Post a Wanted</div>
+  <div class="screen-top">
+    <div class="bk" onclick="goTo('wanted')"><div class="bk-icon">‹</div> Wanted</div>
+    <div class="screen-top-title">Post a Wanted</div>
     <div style="width:60px;"></div>
   </div>
   <div class="sa">
     <div class="form-screen">
-      <div class="form-label field-label">What are you looking for?</div>
-      <input class="form-input field field-standard field-single" id="pwTitle" type="text" placeholder="e.g. Guitarist for Afrobeat EP">
-      <div class="form-label field-label">Role needed</div>
-      <input class="form-input field field-standard field-single" id="pwRole" type="text" placeholder="e.g. Guitarist, Cinematographer...">
-      <div class="form-label field-label">Category</div>
-      <div class="form-chips field-group" id="pwCatPicker">
-        <div class="form-chip on chip chip-interactive" onclick="pickChip(this,'pwCatPicker')">🎵 Music</div>
-        <div class="form-chip chip chip-interactive" onclick="pickChip(this,'pwCatPicker')">🎬 Film</div>
-        <div class="form-chip chip chip-interactive" onclick="pickChip(this,'pwCatPicker')">💃 Dance</div>
-        <div class="form-chip chip chip-interactive" onclick="pickChip(this,'pwCatPicker')">📷 Photo</div>
-        <div class="form-chip chip chip-interactive" onclick="pickChip(this,'pwCatPicker')">🤖 AI</div>
-        <div class="form-chip chip chip-interactive" onclick="pickChip(this,'pwCatPicker')">🎨 Art</div>
+      <div class="form-label">What are you looking for?</div>
+      <input class="form-input" id="pwTitle" type="text" placeholder="e.g. Guitarist for Afrobeat EP">
+      <div class="form-label">Role needed</div>
+      <input class="form-input" id="pwRole" type="text" placeholder="e.g. Guitarist, Cinematographer...">
+      <div class="form-label">Category</div>
+      <div class="form-chips" id="pwCatPicker">
+        <div class="form-chip on" onclick="pickChip(this,'pwCatPicker')">🎵 Music</div>
+        <div class="form-chip" onclick="pickChip(this,'pwCatPicker')">🎬 Film</div>
+        <div class="form-chip" onclick="pickChip(this,'pwCatPicker')">💃 Dance</div>
+        <div class="form-chip" onclick="pickChip(this,'pwCatPicker')">📷 Photo</div>
+        <div class="form-chip" onclick="pickChip(this,'pwCatPicker')">🤖 AI</div>
+        <div class="form-chip" onclick="pickChip(this,'pwCatPicker')">🎨 Art</div>
       </div>
-      <div class="form-label field-label">Location</div>
-      <input class="form-input field field-standard field-single" id="pwLocation" type="text" placeholder="City, Country">
+      <div class="form-label">Location</div>
+      <input class="form-input" id="pwLocation" type="text" placeholder="City, Country">
       <div class="form-remote-row">
         <div class="form-remote-label">Remote OK?</div>
         <div class="form-toggle" id="pwRemote" onclick="toggleRemote()">
@@ -1399,15 +720,15 @@ html,body{width:100%;height:100%;background:var(--c-bg);color:var(--c-text-100);
         </div>
         <div class="form-remote-val" id="pwRemoteVal">Yes</div>
       </div>
-      <div class="form-label field-label">Compensation</div>
-      <div class="form-chips field-group" id="pwCompPicker">
-        <div class="form-chip on chip chip-interactive" onclick="pickChip(this,'pwCompPicker')">💰 Paid</div>
-        <div class="form-chip chip chip-interactive" onclick="pickChip(this,'pwCompPicker')">🤝 Rev Share</div>
-        <div class="form-chip chip chip-interactive" onclick="pickChip(this,'pwCompPicker')">⭐ Credit</div>
+      <div class="form-label">Compensation</div>
+      <div class="form-chips" id="pwCompPicker">
+        <div class="form-chip on" onclick="pickChip(this,'pwCompPicker')">💰 Paid</div>
+        <div class="form-chip" onclick="pickChip(this,'pwCompPicker')">🤝 Rev Share</div>
+        <div class="form-chip" onclick="pickChip(this,'pwCompPicker')">⭐ Credit</div>
       </div>
-      <div class="form-label field-label">Description</div>
-      <textarea class="form-textarea field field-standard field-multiline" id="pwDesc" placeholder="Tell artists about the project, timeline, what you expect..."></textarea>
-      <button class="form-submit btn btn-primary-gold btn-full btn-radius-lg" onclick="submitWanted()">🎯 POST TO THE WORLD</button>
+      <div class="form-label">Description</div>
+      <textarea class="form-textarea" id="pwDesc" placeholder="Tell artists about the project, timeline, what you expect..."></textarea>
+      <button class="form-submit" onclick="submitWanted()">🎯 POST TO THE WORLD</button>
       <div style="font-size:8px;color:rgba(255,255,255,.2);text-align:center;margin-top:8px;">Visible to artists worldwide instantly</div>
     </div>
   </div>
@@ -1420,8 +741,8 @@ html,body{width:100%;height:100%;background:var(--c-bg);color:var(--c-text-100);
   <div class="sa">
     <div class="cv-thumb grad-purple" id="cvThumb" style="height:220px;">
       <div style="font-size:60px;opacity:.6;" id="cvEmoji">🎤</div>
-      <div class="cv-play btn btn-icon" onclick="showToast('Playback coming in full version.')">▶</div>
-      <div class="cv-back btn btn-icon" onclick="goTo('stage')">‹</div>
+      <div class="cv-play" onclick="showToast('Playback coming in full version.')">▶</div>
+      <div class="cv-back" onclick="goTo('stage')">‹</div>
     </div>
     <div class="cv-body">
       <div class="cv-title" id="cvTitle">Midnight in Lagos</div>
@@ -1482,7 +803,7 @@ html,body{width:100%;height:100%;background:var(--c-bg);color:var(--c-text-100);
   <div class="sa">
     <div class="ap-cover" id="apCover" style="background:linear-gradient(160deg,#1a0840,#0a1040);">
       <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:50px;opacity:.5;" id="apEmoji">🎸</div>
-      <div class="ap-back btn btn-icon" onclick="goTo('stage')">‹</div>
+      <div class="ap-back" onclick="goTo('stage')">‹</div>
     </div>
     <div style="padding:14px;">
       <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:12px;">
@@ -1490,7 +811,7 @@ html,body{width:100%;height:100%;background:var(--c-bg);color:var(--c-text-100);
           <div style="font-size:18px;font-weight:700;color:#fff;margin-bottom:3px;" id="apName">Maya Rivera</div>
           <div style="font-size:10px;color:rgba(255,255,255,.35);" id="apRole">🎸 Musician · Singer · Berlin</div>
         </div>
-        <div class="verified-badge verified-badge-lg" style="font-size:24px;" id="apVerified">🔵</div>
+        <div style="font-size:24px;" id="apVerified">🔵</div>
       </div>
       <div style="font-size:11px;color:rgba(255,255,255,.45);line-height:1.7;margin-bottom:14px;" id="apBio">Multi-genre musician blending indie, jazz and electronic. Open to global collabs.</div>
       <div class="p-stats" style="margin-bottom:14px;">
@@ -1525,7 +846,7 @@ html,body{width:100%;height:100%;background:var(--c-bg);color:var(--c-text-100);
       <div class="bs-toggle-btn on" id="bsMonthly" onclick="switchBilling('monthly')">Monthly</div>
       <div class="bs-toggle-btn" id="bsYearly" onclick="switchBilling('yearly')">Yearly · Save 40%</div>
     </div>
-    <div class="bs-price-card panel panel-gold">
+    <div class="bs-price-card">
       <div class="bs-price" id="bsPrice">EUR 9.99</div>
       <div class="bs-price-per" id="bsPer">per month · billed monthly</div>
       <div class="bs-feature"><div class="bs-feature-icon">🚀</div>Unlimited Stage posts</div>
@@ -1535,7 +856,7 @@ html,body{width:100%;height:100%;background:var(--c-bg);color:var(--c-text-100);
       <div class="bs-feature"><div class="bs-feature-icon">💎</div>NACKL mining tracked</div>
       <div class="bs-feature"><div class="bs-feature-icon">📊</div>Analytics & insights</div>
       <div class="bs-feature"><div class="bs-feature-icon">🎬</div>Priority in Wanted search</div>
-      <button class="bs-cta btn btn-primary-gold btn-full" onclick="showToast('Payment launches with full app. Price locked for early users!')">JOIN BACKSTAGE</button>
+      <button class="bs-cta" onclick="showToast('Payment launches with full app. Price locked for early users!')">JOIN BACKSTAGE</button>
       <div class="bs-free-note">Free tier: 1 Stage post · 1 Wanted · No verification</div>
     </div>
     <div style="height:20px;"></div>
@@ -1554,10 +875,115 @@ function haptic(t){ try{ if(tg&&tg.HapticFeedback){ if(t==='success'||t==='error
 // --- SUPABASE ---
 var SUPA_URL = 'https://edxicnafggnnvcdvxemk.supabase.co';
 var SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVkeGljbmFmZ2dubnZjZHZ4ZW1rIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI0MDcxOTcsImV4cCI6MjA5Nzk4MzE5N30.RDe1DRdhz6EmHbctEGJOsMjU39p6-bxYCfROd7yBVAo';
-function supaHeaders(extra){ var h={'Content-Type':'application/json','apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY,'Prefer':'return=representation'}; if(extra) Object.assign(h,extra); return h; }
-async function supaSelect(table,filters){ try{ var url=SUPA_URL+'/rest/v1/'+table+'?select=*'; if(filters) url+='&'+filters; var r=await fetch(url,{method:'GET',headers:supaHeaders(),mode:'cors'}); if(!r.ok) return null; return await r.json(); }catch(e){ return null; } }
-async function supaInsert(table,data){ try{ var r=await fetch(SUPA_URL+'/rest/v1/'+table,{method:'POST',headers:supaHeaders(),body:JSON.stringify(data),mode:'cors'}); if(!r.ok) return null; return await r.json(); }catch(e){ return null; } }
-async function supaUpsert(table,data){ try{ var r=await fetch(SUPA_URL+'/rest/v1/'+table,{method:'POST',headers:supaHeaders({'Prefer':'resolution=merge-duplicates,return=representation'}),body:JSON.stringify(data),mode:'cors'}); if(!r.ok) return null; return await r.json(); }catch(e){ return null; } }
+var supabaseClient = supabase.createClient(SUPA_URL, SUPA_KEY);
+
+// REST helpers now attach the live session's access token when one
+// exists, so RLS-protected reads/writes resolve to the signed-in
+// user rather than only ever using the anon key. Falls back to the
+// anon key for genuinely public, unauthenticated calls.
+async function supaHeaders(extra){
+  var h={'Content-Type':'application/json','apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY,'Prefer':'return=representation'};
+  try{
+    var s = await supabaseClient.auth.getSession();
+    if(s && s.data && s.data.session && s.data.session.access_token){ h['Authorization'] = 'Bearer '+s.data.session.access_token; }
+  }catch(e){}
+  if(extra) Object.assign(h,extra);
+  return h;
+}
+async function supaSelect(table,filters){ try{ var url=SUPA_URL+'/rest/v1/'+table+'?select=*'; if(filters) url+='&'+filters; var r=await fetch(url,{method:'GET',headers:await supaHeaders(),mode:'cors'}); if(!r.ok) return null; return await r.json(); }catch(e){ return null; } }
+async function supaInsert(table,data){ try{ var r=await fetch(SUPA_URL+'/rest/v1/'+table,{method:'POST',headers:await supaHeaders(),body:JSON.stringify(data),mode:'cors'}); if(!r.ok) return null; return await r.json(); }catch(e){ return null; } }
+async function supaUpsert(table,data){ try{ var r=await fetch(SUPA_URL+'/rest/v1/'+table,{method:'POST',headers:await supaHeaders({'Prefer':'resolution=merge-duplicates,return=representation'}),body:JSON.stringify(data),mode:'cors'}); if(!r.ok) return null; return await r.json(); }catch(e){ return null; } }
+
+// --- AUTH: EMAIL OTP ---
+var authPendingEmail = '';
+
+async function sendOtp(isResend){
+  var emailInput = document.getElementById('authEmail');
+  var email = (isResend ? authPendingEmail : (emailInput ? emailInput.value.trim() : '')) || authPendingEmail;
+  if(!isResend){
+    if(!email){ showToast('Please enter your email.'); return; }
+    if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){ showToast('Please enter a valid email address.'); return; }
+  }
+  var btn = document.getElementById(isResend ? null : 'authEmailBtn');
+  if(btn){ btn.textContent = 'SENDING...'; btn.style.opacity = '.6'; }
+  try{
+    var res = await supabaseClient.auth.signInWithOtp({ email: email, options: { shouldCreateUser: true } });
+    if(res.error){
+      showToast(res.error.message || 'Could not send code. Please try again.');
+      if(btn){ btn.textContent = 'CONTINUE'; btn.style.opacity = '1'; }
+      return;
+    }
+    authPendingEmail = email;
+    document.getElementById('authOtpSentTo').textContent = 'We sent a code to ' + email;
+    document.getElementById('authOtpCode').value = '';
+    showToast('Check your email for the verification code.');
+    haptic('success');
+    goTo('authotp');
+  }catch(e){
+    showToast('Network error. Please try again.');
+  }
+  if(btn){ btn.textContent = 'CONTINUE'; btn.style.opacity = '1'; }
+}
+
+async function verifyOtpCode(){
+  var codeInput = document.getElementById('authOtpCode');
+  var code = codeInput ? codeInput.value.trim() : '';
+  if(!code || code.length !== 6){ showToast('Please enter the 6-digit code.'); return; }
+  if(!authPendingEmail){ showToast('Please request a new code.'); goTo('authemail'); return; }
+  var btn = document.getElementById('authOtpBtn');
+  if(btn){ btn.textContent = 'VERIFYING...'; btn.style.opacity = '.6'; }
+  try{
+    var res = await supabaseClient.auth.verifyOtp({ email: authPendingEmail, token: code, type: 'email' });
+    if(res.error || !res.data || !res.data.session){
+      showToast((res.error && res.error.message) || 'Invalid or expired code.');
+      if(btn){ btn.textContent = 'VERIFY'; btn.style.opacity = '1'; }
+      return;
+    }
+    haptic('success');
+    enterApp();
+  }catch(e){
+    showToast('Network error. Please try again.');
+    if(btn){ btn.textContent = 'VERIFY'; btn.style.opacity = '1'; }
+  }
+}
+
+async function logout(){
+  await supabaseClient.auth.signOut();
+  authPendingEmail = '';
+  goTo('authemail');
+  showToast('Signed out.');
+}
+
+// Called once a session is confirmed present (fresh verify, or a
+// restored session on reload) -- no manual refresh required, since
+// supabase-js's own in-memory session is already live at this point.
+function enterApp(){
+  goTo('stage');
+}
+
+// Session check on startup: getSession() reads the persisted
+// session from local storage and transparently refreshes it if
+// needed, before any app screen is ever shown.
+async function checkSessionAndStart(){
+  try{
+    var { data: { session } } = await supabaseClient.auth.getSession();
+    if(session){ enterApp(); } else { goTo('authemail'); }
+  }catch(e){
+    goTo('authemail');
+  }
+}
+
+// Keeps the app in sync if the session is revoked or refreshed
+// elsewhere (e.g. another tab, or an expired refresh token) without
+// requiring a manual page reload.
+supabaseClient.auth.onAuthStateChange(function(event, session){
+  if(event === 'SIGNED_OUT'){
+    var authScreenActive = document.getElementById('screen-authemail').classList.contains('active') ||
+                            document.getElementById('screen-authotp').classList.contains('active');
+    if(!authScreenActive){ goTo('authemail'); }
+  }
+});
+
 
 // --- NAVIGATION ---
 function goTo(id){
@@ -1628,9 +1054,9 @@ function buildStageFeed(cat){
 }
 
 function buildCard(item){
-  var badge = item.badge==='new' ? '<div class="card-badge card-badge-new badge badge-gold badge-overlay">NEW</div>' : item.badge==='hot' ? '<div class="card-badge card-badge-hot badge badge-hot badge-overlay">&#128293; HOT</div>' : item.badge==='live' ? '<div class="card-badge card-badge-live badge badge-live badge-overlay">&#128308; LIVE</div>' : '';
+  var badge = item.badge==='new' ? '<div class="card-badge card-badge-new">NEW</div>' : item.badge==='hot' ? '<div class="card-badge card-badge-hot">&#128293; HOT</div>' : item.badge==='live' ? '<div class="card-badge card-badge-live">&#128308; LIVE</div>' : '';
   var dur = item.dur ? '<div class="card-dur">'+item.dur+'</div>' : '';
-  return '<div class="card card-shell card-stage">'+
+  return '<div class="card">'+
     '<div class="card-thumb card-thumb-lg '+item.grad+'"><div class="card-emoji">'+item.emoji+'</div>'+badge+dur+'</div>'+
     '<div class="card-info"><div class="card-av" style="background:'+item.avGrad+'">'+item.avEmoji+'</div>'+
     '<div class="card-meta"><div class="card-title">'+item.title+'</div><div class="card-sub">'+item.artist+' &middot; '+item.loc+(item.views?' &middot; '+item.views+' views':'')+'</div></div></div>'+
@@ -1727,7 +1153,7 @@ function openContent(item){
   if(item.credits && item.credits.length){
     var html = '<div class="cv-credits-title">Made together</div>';
     item.credits.forEach(function(c){
-      html += '<div class="cv-credit-row person-row person-row-compact person-row-static"><div class="cv-credit-av person-avatar" style="background:'+c.bg+'">'+c.e+'</div><div class="person-main"><div class="cv-credit-name person-primary">'+c.n+'</div><div class="cv-credit-role person-secondary">'+c.r+'</div></div><div class="cv-credit-badge person-trailing">'+c.b+'</div></div>';
+      html += '<div class="cv-credit-row"><div class="cv-credit-av" style="background:'+c.bg+'">'+c.e+'</div><div><div class="cv-credit-name">'+c.n+'</div><div class="cv-credit-role">'+c.r+'</div></div><div class="cv-credit-badge">'+c.b+'</div></div>';
     });
     credits.innerHTML = html;
     credits.style.display = 'block';
@@ -1792,15 +1218,15 @@ function renderArtists(){
   }
   list.forEach(function(a){
     var el = document.createElement('div');
-    el.className = 'artist-row person-row person-row-standard person-row-interactive';
+    el.className = 'artist-row';
     el.innerHTML =
-      '<div class="artist-av person-avatar" style="background:'+a.bg+'">'+a.emoji+'</div>'+
-      '<div class="artist-info person-main">'+
-        '<div class="artist-name person-primary">'+a.n+' <span style="color:#e8b830;font-size:10px;">&#128309;</span></div>'+
-        '<div class="artist-role person-secondary">'+a.role+'</div>'+
-        '<div class="artist-loc person-secondary">&#128205; '+a.loc+'</div>'+
+      '<div class="artist-av" style="background:'+a.bg+'">'+a.emoji+'</div>'+
+      '<div class="artist-info">'+
+        '<div class="artist-name">'+a.n+' <span style="color:#e8b830;font-size:10px;">&#128309;</span></div>'+
+        '<div class="artist-role">'+a.role+'</div>'+
+        '<div class="artist-loc">&#128205; '+a.loc+'</div>'+
       '</div>'+
-      '<div class="artist-collab person-trailing" onclick="event.stopPropagation();showToast(\'Collab request sent!\')">+ Collab</div>';
+      '<div class="artist-collab" onclick="event.stopPropagation();showToast(\'Collab request sent!\')">+ Collab</div>';
     el.onclick = function(){ openArtist(a); };
     r.appendChild(el);
   });
@@ -1920,11 +1346,11 @@ function renderWanted(dbData){
   var count = document.getElementById('wantedCount');
   if(count) count.textContent = items.length+' open';
   items.forEach(function(item){
-    var badgeClass = item.badge==='match' ? 'w-badge-gold badge badge-gold badge-inline' : item.badge==='hot' ? 'w-badge-hot badge badge-hot badge-inline' : 'w-badge-new badge badge-gold badge-inline';
+    var badgeClass = item.badge==='match' ? 'w-badge-gold' : item.badge==='hot' ? 'w-badge-hot' : 'w-badge-new';
     var locText = item.remote ? (item.flag||'') + ' Remote' : (item.flag||'') + ' ' + item.loc;
     var verifiedBadge = item.verified ? ' <span style="color:#e8b830;font-size:9px;">&#128309;</span>' : '';
     var el = document.createElement('div');
-    el.className = 'w-card card-shell card-wanted'+(item.badge==='new'?' w-card-alt card-accent-purple':' card-accent-gold');
+    el.className = 'w-card'+(item.badge==='new'?' w-card-alt':'');
     el.innerHTML =
       '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">'+
         '<div class="w-badge '+badgeClass+'">'+item.badgeText+'</div>'+
@@ -2035,7 +1461,7 @@ async function loadMyWanted(){
   }
   data.forEach(function(p){
     var card = document.createElement('div');
-    card.className = 'p-wanted-card card-shell card-wanted-compact card-accent-gold';
+    card.className = 'p-wanted-card';
     var titleRow = document.createElement('div');
     titleRow.style.cssText = 'display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:3px;';
     var title = document.createElement('div');
@@ -2133,6 +1559,7 @@ document.addEventListener('DOMContentLoaded', function(){
   buildStageFeed('all');
   renderArtists();
   renderWanted(null);
+  checkSessionAndStart();
 });
 </script>
 </body>
