@@ -873,8 +873,8 @@ if(tg){ try{tg.ready();}catch(e){} try{tg.expand();}catch(e){} }
 function haptic(t){ try{ if(tg&&tg.HapticFeedback){ if(t==='success'||t==='error'||t==='warning') tg.HapticFeedback.notificationOccurred(t); else tg.HapticFeedback.impactOccurred(t||'light'); } }catch(e){} }
 
 // --- SUPABASE ---
-var SUPA_URL = 'https://edxicnafggnnvcdvxemk.supabase.co';
-var SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVkeGljbmFmZ2dubnZjZHZ4ZW1rIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI0MDcxOTcsImV4cCI6MjA5Nzk4MzE5N30.RDe1DRdhz6EmHbctEGJOsMjU39p6-bxYCfROd7yBVAo';
+var SUPA_URL = 'https://kbnmkyvbwkuvcklywdhk.supabase.co';
+var SUPA_KEY = 'sb_publishable_IEGmrqIhtavD8EtrA9_3NA_zfnU3UIw';
 var supabaseClient = supabase.createClient(SUPA_URL, SUPA_KEY);
 
 // REST helpers now attach the live session's access token when one
