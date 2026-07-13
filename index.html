@@ -880,8 +880,30 @@ async function sendOtp(isResend){
 async function logout(){
   await supabaseClient.auth.signOut();
   authPendingEmail = '';
+  myDomainId = null;
   goTo('authemail');
   showToast('Signed out.');
+}
+
+// Resolves the signed-in user's real STAGERZ domain identity
+// (public.users.id) via the existing user_auth_accounts mapping --
+// the same architecture current_stagerz_user_id() uses server-side,
+// just reached from the client through the identity mapping table
+// RLS already permits the owner to read. Cached per session; reset
+// on logout so a different subsequent user never inherits it.
+var myDomainId = null;
+async function getMyDomainId(){
+  if(myDomainId) return myDomainId;
+  try{
+    var { data: { session } } = await supabaseClient.auth.getSession();
+    if(!session) return null;
+    var rows = await supaSelect('user_auth_accounts', 'auth_user_id=eq.'+session.user.id);
+    if(rows && rows[0] && rows[0].public_user_id){
+      myDomainId = rows[0].public_user_id;
+      return myDomainId;
+    }
+    return null;
+  }catch(e){ return null; }
 }
 
 // Called once a session is confirmed present (Magic Link return, or
@@ -1236,7 +1258,9 @@ function setWantedCat(el, cat){
 }
 
 async function loadMyWantedTab(){
-  var data = await supaSelect('wanted_posts','user_id=eq.999999&status=eq.open&order=created_at.desc');
+  var myId = await getMyDomainId();
+  if(!myId) return;
+  var data = await supaSelect('wanted_posts','user_id=eq.'+myId+'&status=eq.open&order=created_at.desc');
   var container = document.getElementById('wMyList');
   if(!container) return;
   if(!data || !data.length){
@@ -1264,7 +1288,9 @@ async function loadMyWantedTab(){
 }
 
 async function loadWanted(){
-  var data = await supaSelect('wanted_posts','status=eq.open&user_id=neq.999999&order=created_at.desc&limit=20');
+  var myId = await getMyDomainId();
+  var filter = myId ? ('status=eq.open&user_id=neq.'+myId+'&order=created_at.desc&limit=20') : 'status=eq.open&order=created_at.desc&limit=20';
+  var data = await supaSelect('wanted_posts',filter);
   renderWanted(data && data.length ? data : null);
 }
 
@@ -1335,7 +1361,9 @@ async function submitWanted(){
   if(catEl) cat = catEl.textContent.trim().toLowerCase().replace(/[^a-z]/g,'');
   var compEl = document.querySelector('#pwCompPicker .form-chip.on');
   if(compEl) comp = compEl.textContent.trim().toLowerCase().replace(/[^a-z_]/g,'').replace('revshare','rev_share');
-  var result = await supaInsert('wanted_posts',{user_id:999999,title:title,description:desc,role_needed:role,category:cat,location:loc,remote:pwRemoteOn,compensation:comp,status:'open'});
+  var myId = await getMyDomainId();
+  if(!myId){ showToast('Please sign in again.'); goTo('authemail'); return; }
+  var result = await supaInsert('wanted_posts',{user_id:myId,title:title,description:desc,role_needed:role,category:cat,location:loc,remote:pwRemoteOn,compensation:comp,status:'open'});
   if(result){
     document.getElementById('pwTitle').value='';
     document.getElementById('pwRole').value='';
@@ -1357,7 +1385,7 @@ function pickRole(el, role){
   el.classList.add('on');
   myRoleSelected = role;
 }
-function saveProfile(){
+async function saveProfile(){
   var name = document.getElementById('editName').value.trim();
   if(!name){ showToast('Please enter your display name.'); return; }
   myProfile.name = name;
@@ -1367,7 +1395,9 @@ function saveProfile(){
   myProfile.skills = document.getElementById('editSkills').value.trim();
   document.getElementById('profileName').textContent = name;
   document.getElementById('profileRole').textContent = myProfile.role+(myProfile.location?' &middot; '+myProfile.location:'');
-  supaUpsert('profiles',{user_id:999999,display_name:name,role:myRoleSelected,location:myProfile.location,bio:myProfile.bio});
+  var myId = await getMyDomainId();
+  if(!myId){ showToast('Please sign in again.'); goTo('authemail'); return; }
+  supaUpsert('profiles',{user_id:myId,display_name:name,role:myRoleSelected,location:myProfile.location,bio:myProfile.bio});
   showToast('Profile saved! You are now visible to artists worldwide.');
   haptic('success');
   goTo('profile');
@@ -1382,7 +1412,9 @@ function loadMyProfile(){
   tickNACKL();
 }
 async function loadMyWanted(){
-  var data = await supaSelect('wanted_posts','user_id=eq.999999&status=eq.open&order=created_at.desc');
+  var myId = await getMyDomainId();
+  if(!myId) return;
+  var data = await supaSelect('wanted_posts','user_id=eq.'+myId+'&status=eq.open&order=created_at.desc');
   var container = document.getElementById('profileWanted');
   if(!container) return;
   container.innerHTML = '';
