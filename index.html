@@ -971,6 +971,7 @@ function goTo(id){
   if(id==='search') setTimeout(function(){ renderArtists(); },50);
   if(id==='wanted'){ switchWantedTab('my'); }
   if(id==='profile') loadMyProfile();
+  if(id==='editprofile') populateEditProfile();
 }
 
 // --- TOAST ---
@@ -1409,12 +1410,14 @@ async function saveProfile(){
   myProfile.role = myRoleSelected;
   myProfile.location = document.getElementById('editLocation').value.trim();
   myProfile.bio = document.getElementById('editBio').value.trim();
-  myProfile.skills = document.getElementById('editSkills').value.trim();
+  var skillsRaw = document.getElementById('editSkills').value.trim();
+  myProfile.skills = skillsRaw; // kept as display string locally
+  var skillsArray = skillsRaw ? skillsRaw.split(',').map(function(s){ return s.trim(); }).filter(Boolean) : [];
   document.getElementById('profileName').textContent = name;
   document.getElementById('profileRole').textContent = myProfile.role+(myProfile.location?' · '+myProfile.location:'');
   var myId = await getMyDomainId();
   if(!myId){ showToast('Please sign in again.'); goTo('authemail'); return; }
-  var result = await supaUpsert('profiles',{user_id:myId,display_name:name,role:myRoleSelected,location:myProfile.location,bio:myProfile.bio},'user_id');
+  var result = await supaUpsert('profiles',{user_id:myId,display_name:name,role:myRoleSelected,location:myProfile.location,bio:myProfile.bio,skills:skillsArray},'user_id');
   console.log('saveProfile result:', result);
   if(!result || !result.ok){
     console.error('saveProfile FAILED -- real Supabase error:', result && result.error);
@@ -1425,7 +1428,29 @@ async function saveProfile(){
   haptic('success');
   goTo('profile');
 }
-function loadMyProfile(){
+
+// Fetches the real saved profile row from Supabase and populates the
+// local myProfile cache -- this is the actual source of truth on
+// load/refresh; myProfile was previously only ever written by
+// saveProfile() and never read back from the database at all.
+async function fetchMyProfile(){
+  var myId = await getMyDomainId();
+  if(!myId) return null;
+  var rows = await supaSelect('profiles','user_id=eq.'+myId);
+  if(rows && rows[0]){
+    var p = rows[0];
+    myProfile.name = p.display_name || '';
+    myProfile.role = p.role || myRoleSelected;
+    myProfile.location = p.location || '';
+    myProfile.bio = p.bio || '';
+    myProfile.skills = Array.isArray(p.skills) ? p.skills.join(', ') : '';
+    return p;
+  }
+  return null;
+}
+
+async function loadMyProfile(){
+  await fetchMyProfile();
   var name = myProfile.name;
   if(name){
     document.getElementById('profileName').textContent = name;
@@ -1433,6 +1458,18 @@ function loadMyProfile(){
   }
   loadMyWanted();
   tickNACKL();
+}
+
+// Populates the Edit Profile form from the real saved profile.
+// Skills is joined into a plain comma-separated display string --
+// fetchMyProfile() already did this conversion, so no array syntax
+// is ever placed into an input value.
+async function populateEditProfile(){
+  await fetchMyProfile();
+  document.getElementById('editName').value = myProfile.name || '';
+  document.getElementById('editLocation').value = myProfile.location || '';
+  document.getElementById('editBio').value = myProfile.bio || '';
+  document.getElementById('editSkills').value = myProfile.skills || '';
 }
 async function loadMyWanted(){
   var myId = await getMyDomainId();
