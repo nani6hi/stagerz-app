@@ -853,6 +853,63 @@ async function supaUpsert(table,data,conflictCol){
   }
 }
 
+// Narrowly scoped: a real PATCH update against an existing row,
+// used where the Foundation intentionally does not grant INSERT
+// (e.g. profiles -- the signup trigger already creates exactly one
+// row per person, so no client-side insert path should ever exist
+// for it). RLS remains the sole authority on whether the update is
+// permitted; this helper only issues the request and reports the
+// real response, it never assumes success.
+async function supaUpdate(table, filters, data){
+  var url = SUPA_URL + '/rest/v1/' + table + '?' + filters;
+  try{
+    var r = await fetch(url, {
+      method: 'PATCH',
+      headers: await supaHeaders({
+        'Prefer': 'return=representation'
+      }),
+      body: JSON.stringify(data),
+      mode: 'cors'
+    });
+
+    var bodyText = await r.text();
+    var parsed = null;
+    try{
+      parsed = bodyText ? JSON.parse(bodyText) : null;
+    }catch(parseErr){}
+
+    if(!r.ok){
+      console.error('supaUpdate FAILED', {
+        table: table,
+        url: url,
+        status: r.status,
+        statusText: r.statusText,
+        body: parsed || bodyText,
+        requestPayload: data
+      });
+
+      return {
+        ok: false,
+        status: r.status,
+        error: parsed || bodyText
+      };
+    }
+
+    return {
+      ok: true,
+      status: r.status,
+      data: parsed
+    };
+  }catch(error){
+    console.error('supaUpdate NETWORK FAILED', error);
+    return {
+      ok: false,
+      status: 0,
+      error: { message: 'Network error' }
+    };
+  }
+}
+
 // --- AUTH: EMAIL MAGIC LINK (TEST ONLY) ---
 // The disposable test project's hosted email template uses
 // {{ .ConfirmationURL }} and cannot be edited without custom SMTP,
@@ -1397,7 +1454,7 @@ async function submitWanted(){
 
 // --- PROFILE ---
 var myProfile = { name:'', role:'', location:'', bio:'', skills:'' };
-var myRoleSelected = '&#127928; Musician';
+var myRoleSelected = '🎸 Musician';
 function pickRole(el, role){
   document.querySelectorAll('#rolePicker .role-chip').forEach(function(c){ c.classList.remove('on'); });
   el.classList.add('on');
@@ -1417,7 +1474,7 @@ async function saveProfile(){
   document.getElementById('profileRole').textContent = myProfile.role+(myProfile.location?' · '+myProfile.location:'');
   var myId = await getMyDomainId();
   if(!myId){ showToast('Please sign in again.'); goTo('authemail'); return; }
-  var result = await supaUpsert('profiles',{user_id:myId,display_name:name,role:myRoleSelected,location:myProfile.location,bio:myProfile.bio,skills:skillsArray},'user_id');
+  var result = await supaUpdate('profiles', 'user_id=eq.'+myId, {display_name:name,role:myRoleSelected,location:myProfile.location,bio:myProfile.bio,skills:skillsArray});
   console.log('saveProfile result:', result);
   if(!result || !result.ok){
     console.error('saveProfile FAILED -- real Supabase error:', result && result.error);
