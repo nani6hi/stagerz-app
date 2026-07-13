@@ -1404,7 +1404,7 @@ function switchWantedTab(tab){
     commTab.style.display = 'block';
     chips.style.display = 'flex';
     tabMy.classList.remove('on'); tabComm.classList.add('on');
-    renderWanted(null);
+    loadWanted();
   }
 }
 
@@ -1412,7 +1412,7 @@ function setWantedCat(el, cat){
   currentWantedCat = cat;
   document.querySelectorAll('#wCatChips .cat-chip').forEach(function(c){ c.classList.remove('on'); });
   el.classList.add('on');
-  renderWanted(null);
+  loadWanted();
 }
 
 async function loadMyWantedTab(){
