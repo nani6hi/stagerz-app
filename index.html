@@ -938,6 +938,61 @@ async function supaUpdate(table, filters, data){
   }
 }
 
+// Minimal-return variant: for tables where the authenticated role
+// has restricted column-level SELECT (e.g. public.users, where
+// blocked/anonymized_at/is_system are deliberately not selectable),
+// requesting Prefer: return=representation would require reading
+// back the full row and can fail with 42501 even though the UPDATE
+// itself is fully permitted. This variant requests no data back at
+// all, so it only ever needs UPDATE privilege on the touched
+// columns -- no SELECT privilege of any kind, and no database
+// permission is broadened to accommodate it.
+async function supaUpdateMinimal(table, filters, data){
+  var url = SUPA_URL + '/rest/v1/' + table + '?' + filters;
+  try{
+    var r = await fetch(url, {
+      method: 'PATCH',
+      headers: await supaHeaders({
+        'Prefer': 'return=minimal'
+      }),
+      body: JSON.stringify(data),
+      mode: 'cors'
+    });
+    var bodyText = await r.text();
+    var parsed = null;
+    try{
+      parsed = bodyText ? JSON.parse(bodyText) : null;
+    }catch(parseErr){}
+    if(!r.ok){
+      console.error('supaUpdateMinimal FAILED', {
+        table: table,
+        url: url,
+        status: r.status,
+        statusText: r.statusText,
+        body: parsed || bodyText,
+        requestPayload: data
+      });
+      return {
+        ok: false,
+        status: r.status,
+        error: parsed || bodyText
+      };
+    }
+    return {
+      ok: true,
+      status: r.status,
+      data: null
+    };
+  }catch(error){
+    console.error('supaUpdateMinimal NETWORK FAILED', error);
+    return {
+      ok: false,
+      status: 0,
+      error: { message: 'Network error' }
+    };
+  }
+}
+
 // --- AUTH: EMAIL MAGIC LINK (TEST ONLY) ---
 // The disposable test project's hosted email template uses
 // {{ .ConfirmationURL }} and cannot be edited without custom SMTP,
@@ -1540,7 +1595,7 @@ async function saveProfile(){
 
   // Separate PATCH to public.users -- only username, never blocked,
   // anonymized_at, is_system, id, or any other internal field.
-  var usernameResult = await supaUpdate('users', 'id=eq.'+myId, {username: normalizedUsername});
+  var usernameResult = await supaUpdateMinimal('users', 'id=eq.'+myId, {username: normalizedUsername});
   console.log('saveProfile: users PATCH result:', usernameResult);
   if(!usernameResult || !usernameResult.ok){
     console.error('saveProfile FAILED (users/username) -- real Supabase error:', usernameResult && usernameResult.error);
