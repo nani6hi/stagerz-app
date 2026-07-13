@@ -835,7 +835,7 @@ async function supaHeaders(extra){
   if(extra) Object.assign(h,extra);
   return h;
 }
-async function supaSelect(table,filters){ try{ var url=SUPA_URL+'/rest/v1/'+table+'?select=*'; if(filters) url+='&'+filters; var r=await fetch(url,{method:'GET',headers:await supaHeaders(),mode:'cors'}); if(!r.ok) return null; return await r.json(); }catch(e){ return null; } }
+async function supaSelect(table,filters,columns){ try{ var url=SUPA_URL+'/rest/v1/'+table+'?select='+(columns||'*'); if(filters) url+='&'+filters; var r=await fetch(url,{method:'GET',headers:await supaHeaders(),mode:'cors'}); if(!r.ok) return null; return await r.json(); }catch(e){ return null; } }
 async function supaInsert(table,data){
   var url = SUPA_URL+'/rest/v1/'+table;
   console.log('supaInsert REQUEST', { table: table, url: url, requestPayload: data });
@@ -1446,9 +1446,7 @@ async function loadMyWantedTab(){
 }
 
 async function loadWanted(){
-  var myId = await getMyDomainId();
-  var filter = myId ? ('status=eq.open&user_id=neq.'+myId+'&order=created_at.desc&limit=20') : 'status=eq.open&order=created_at.desc&limit=20';
-  var data = await supaSelect('wanted_posts',filter);
+  var data = await supaSelect('wanted_posts','status=eq.open&order=created_at.desc&limit=20');
   renderWanted(data && data.length ? data : null);
 }
 
@@ -1619,7 +1617,12 @@ async function fetchMyProfile(){
   var myId = await getMyDomainId();
   if(!myId) return null;
   var profileRows = await supaSelect('profiles','user_id=eq.'+myId);
-  var userRows = await supaSelect('users','id=eq.'+myId);
+  // Explicit column list -- authenticated does NOT have table-wide
+  // SELECT on users (blocked/anonymized_at/is_system/timestamps are
+  // deliberately withheld), so the default select=* would fail with
+  // the same 42501 permission-denied pattern already fixed on the
+  // write side. Requesting only the granted columns fixes the read.
+  var userRows = await supaSelect('users','id=eq.'+myId,'id,username,first_name,last_name,photo_url,bio,location');
   if(userRows && userRows[0]){
     myProfile.username = userRows[0].username || '';
   }
@@ -1646,6 +1649,20 @@ async function loadMyProfile(){
   tickNACKL();
 }
 
+// Restores the visual role-chip selection to match the actually
+// saved role. Safely falls back: if nothing was saved yet, the
+// default first-chip state is left alone; if a saved role doesn't
+// match any chip's text, no chip is force-selected, but
+// myRoleSelected still holds the real saved value so an untouched
+// Save never silently overwrites it with the default.
+function restoreRoleSelection(role){
+  if(!role) return;
+  var chips = document.querySelectorAll('#rolePicker .role-chip');
+  chips.forEach(function(c){ c.classList.remove('on'); });
+  chips.forEach(function(c){ if(c.textContent.trim() === role) c.classList.add('on'); });
+  myRoleSelected = role;
+}
+
 // Populates the Edit Profile form from the real saved profile and
 // username. Skills is joined into a plain comma-separated display
 // string -- fetchMyProfile() already did this conversion, so no
@@ -1658,6 +1675,7 @@ async function populateEditProfile(){
   document.getElementById('editLocation').value = myProfile.location || '';
   document.getElementById('editBio').value = myProfile.bio || '';
   document.getElementById('editSkills').value = myProfile.skills || '';
+  restoreRoleSelection(myProfile.role);
   document.getElementById('editUsernameError').style.display = 'none';
 }
 async function loadMyWanted(){
