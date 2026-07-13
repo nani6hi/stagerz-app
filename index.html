@@ -914,7 +914,7 @@ async function sendOtp(isResend){
   var btn = document.getElementById(isResend ? null : 'authEmailBtn');
   if(btn){ btn.textContent = 'SENDING...'; btn.style.opacity = '.6'; }
   try{
-    var res = await supabaseClient.auth.signInWithOtp({ email: email, options: { shouldCreateUser: true } });
+    var res = await supabaseClient.auth.signInWithOtp({ email: email, options: { shouldCreateUser: true, emailRedirectTo: 'https://stagerz.app' } });
     if(res.error){
       showToast(res.error.message || 'Could not send email. Please try again.');
       if(btn){ btn.textContent = 'CONTINUE'; btn.style.opacity = '1'; }
