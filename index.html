@@ -370,26 +370,26 @@ html,body{width:100%;height:100%;background:#08080f;color:#f0f0f5;font-family:'I
 </div>
 
 <!-- ==========================================
-     AUTH: OTP VERIFY
+     AUTH: MAGIC LINK WAIT (TEST ONLY -- disposable project's hosted
+     email template sends {{ .ConfirmationURL }}, not a numeric code,
+     and cannot be edited without custom SMTP. See report for details.)
 ========================================== -->
-<div class="screen" id="screen-authotp">
+<div class="screen" id="screen-authwait">
   <div class="screen-top">
     <div class="bk" onclick="goTo('authemail')"><div class="bk-icon">&lsaquo;</div> Back</div>
-    <div class="screen-top-title">Verify</div>
+    <div class="screen-top-title">Check Your Email</div>
     <div style="width:60px;"></div>
   </div>
   <div class="sa" style="display:flex;flex-direction:column;justify-content:center;padding:0 28px;">
-    <div style="text-align:center;margin-bottom:28px;">
+    <div style="text-align:center;margin-bottom:8px;">
       <div style="font-size:22px;margin-bottom:10px;">&#128231;</div>
-      <div style="font-size:11px;font-weight:600;color:#fff;margin-bottom:4px;">Check your email</div>
-      <div style="font-size:9px;color:rgba(255,255,255,.35);" id="authOtpSentTo">We sent a verification code to your email.</div>
+      <div style="font-size:11px;font-weight:600;color:#fff;margin-bottom:4px;">Check your email and tap the sign-in link.</div>
+      <div style="font-size:9px;color:rgba(255,255,255,.35);" id="authWaitSentTo">We sent a link to your email.</div>
     </div>
-    <div class="form-label" style="text-align:center;">6-digit code</div>
-    <input class="form-input" id="authOtpCode" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="6" placeholder="000000" autocomplete="one-time-code" style="text-align:center;font-size:22px;letter-spacing:8px;font-weight:600;" onkeydown="if(event.key==='Enter')verifyOtpCode();">
-    <button class="form-submit" id="authOtpBtn" onclick="verifyOtpCode()">VERIFY</button>
-    <div style="font-size:9px;color:rgba(232,184,48,.6);text-align:center;margin-top:16px;cursor:pointer;" onclick="sendOtp(true)">Didn't get a code? Resend</div>
+    <div style="font-size:9px;color:rgba(232,184,48,.6);text-align:center;margin-top:16px;cursor:pointer;" onclick="sendOtp(true)">Didn't get an email? Resend</div>
   </div>
 </div>
+
 
 <!-- ==========================================
      SCREEN 1: STAGE (Home)
@@ -894,7 +894,14 @@ async function supaSelect(table,filters){ try{ var url=SUPA_URL+'/rest/v1/'+tabl
 async function supaInsert(table,data){ try{ var r=await fetch(SUPA_URL+'/rest/v1/'+table,{method:'POST',headers:await supaHeaders(),body:JSON.stringify(data),mode:'cors'}); if(!r.ok) return null; return await r.json(); }catch(e){ return null; } }
 async function supaUpsert(table,data){ try{ var r=await fetch(SUPA_URL+'/rest/v1/'+table,{method:'POST',headers:await supaHeaders({'Prefer':'resolution=merge-duplicates,return=representation'}),body:JSON.stringify(data),mode:'cors'}); if(!r.ok) return null; return await r.json(); }catch(e){ return null; } }
 
-// --- AUTH: EMAIL OTP ---
+// --- AUTH: EMAIL MAGIC LINK (TEST ONLY) ---
+// The disposable test project's hosted email template uses
+// {{ .ConfirmationURL }} and cannot be edited without custom SMTP,
+// so it sends a Magic Link rather than a numeric code. This test
+// flow still calls signInWithOtp() (Supabase treats Magic Link and
+// numeric-OTP email as the same underlying operation, differing
+// only in which email template is configured) -- only the
+// post-send UI and verification path differ from production.
 var authPendingEmail = '';
 
 async function sendOtp(isResend){
@@ -909,43 +916,24 @@ async function sendOtp(isResend){
   try{
     var res = await supabaseClient.auth.signInWithOtp({ email: email, options: { shouldCreateUser: true } });
     if(res.error){
-      showToast(res.error.message || 'Could not send code. Please try again.');
+      showToast(res.error.message || 'Could not send email. Please try again.');
       if(btn){ btn.textContent = 'CONTINUE'; btn.style.opacity = '1'; }
       return;
     }
     authPendingEmail = email;
-    document.getElementById('authOtpSentTo').textContent = 'We sent a code to ' + email;
-    document.getElementById('authOtpCode').value = '';
-    showToast('Check your email for the verification code.');
+    document.getElementById('authWaitSentTo').textContent = 'We sent a link to ' + email;
+    showToast('Check your email and tap the sign-in link.');
     haptic('success');
-    goTo('authotp');
+    goTo('authwait');
   }catch(e){
     showToast('Network error. Please try again.');
   }
   if(btn){ btn.textContent = 'CONTINUE'; btn.style.opacity = '1'; }
 }
 
-async function verifyOtpCode(){
-  var codeInput = document.getElementById('authOtpCode');
-  var code = codeInput ? codeInput.value.trim() : '';
-  if(!code || code.length !== 6){ showToast('Please enter the 6-digit code.'); return; }
-  if(!authPendingEmail){ showToast('Please request a new code.'); goTo('authemail'); return; }
-  var btn = document.getElementById('authOtpBtn');
-  if(btn){ btn.textContent = 'VERIFYING...'; btn.style.opacity = '.6'; }
-  try{
-    var res = await supabaseClient.auth.verifyOtp({ email: authPendingEmail, token: code, type: 'email' });
-    if(res.error || !res.data || !res.data.session){
-      showToast((res.error && res.error.message) || 'Invalid or expired code.');
-      if(btn){ btn.textContent = 'VERIFY'; btn.style.opacity = '1'; }
-      return;
-    }
-    haptic('success');
-    enterApp();
-  }catch(e){
-    showToast('Network error. Please try again.');
-    if(btn){ btn.textContent = 'VERIFY'; btn.style.opacity = '1'; }
-  }
-}
+// verifyOtpCode() removed in the test version -- there is no code
+// to verify. Session establishment now happens entirely via the
+// Magic Link return + onAuthStateChange below, per requirement 6.
 
 async function logout(){
   await supabaseClient.auth.signOut();
@@ -954,9 +942,8 @@ async function logout(){
   showToast('Signed out.');
 }
 
-// Called once a session is confirmed present (fresh verify, or a
-// restored session on reload) -- no manual refresh required, since
-// supabase-js's own in-memory session is already live at this point.
+// Called once a session is confirmed present (Magic Link return, or
+// a restored session on reload) -- no manual refresh required.
 function enterApp(){
   goTo('stage');
 }
@@ -973,13 +960,19 @@ async function checkSessionAndStart(){
   }
 }
 
-// Keeps the app in sync if the session is revoked or refreshed
-// elsewhere (e.g. another tab, or an expired refresh token) without
-// requiring a manual page reload.
-supabaseClient.auth.onAuthStateChange(function(event, session){
+// Requirement 4/5: listens for the auth state change that fires
+// when the user returns from the Magic Link (supabase-js detects
+// the token in the URL automatically on page load and emits
+// SIGNED_IN), then confirms via getSession() and opens Stage
+// automatically. Also keeps the app in sync on SIGNED_OUT.
+supabaseClient.auth.onAuthStateChange(async function(event, session){
+  if(event === 'SIGNED_IN'){
+    var { data: { session: confirmedSession } } = await supabaseClient.auth.getSession();
+    if(confirmedSession){ haptic('success'); enterApp(); }
+  }
   if(event === 'SIGNED_OUT'){
     var authScreenActive = document.getElementById('screen-authemail').classList.contains('active') ||
-                            document.getElementById('screen-authotp').classList.contains('active');
+                            document.getElementById('screen-authwait').classList.contains('active');
     if(!authScreenActive){ goTo('authemail'); }
   }
 });
