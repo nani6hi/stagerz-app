@@ -833,7 +833,32 @@ async function supaHeaders(extra){
   return h;
 }
 async function supaSelect(table,filters){ try{ var url=SUPA_URL+'/rest/v1/'+table+'?select=*'; if(filters) url+='&'+filters; var r=await fetch(url,{method:'GET',headers:await supaHeaders(),mode:'cors'}); if(!r.ok) return null; return await r.json(); }catch(e){ return null; } }
-async function supaInsert(table,data){ try{ var r=await fetch(SUPA_URL+'/rest/v1/'+table,{method:'POST',headers:await supaHeaders(),body:JSON.stringify(data),mode:'cors'}); if(!r.ok) return null; return await r.json(); }catch(e){ return null; } }
+async function supaInsert(table,data){
+  var url = SUPA_URL+'/rest/v1/'+table;
+  console.log('supaInsert REQUEST', { table: table, url: url, requestPayload: data });
+  try{
+    var r = await fetch(url,{method:'POST',headers:await supaHeaders(),body:JSON.stringify(data),mode:'cors'});
+    var bodyText = await r.text();
+    var parsed = null;
+    try{ parsed = bodyText ? JSON.parse(bodyText) : null; }catch(parseErr){ /* body wasn't JSON */ }
+    if(!r.ok){
+      console.error('supaInsert FAILED', {
+        table: table,
+        url: url,
+        status: r.status,
+        statusText: r.statusText,
+        body: parsed || bodyText,
+        requestPayload: data
+      });
+      return { ok:false, status:r.status, data:null, error: parsed || bodyText };
+    }
+    console.log('supaInsert OK', { table: table, url: url, status: r.status, body: parsed });
+    return { ok:true, status:r.status, data:parsed, error:null };
+  }catch(e){
+    console.error('supaInsert NETWORK ERROR', { table: table, url: url, error: e });
+    return { ok:false, status:0, data:null, error: { message: e.message || 'Network error' } };
+  }
+}
 async function supaUpsert(table,data,conflictCol){
   var url = SUPA_URL+'/rest/v1/'+table + (conflictCol ? ('?on_conflict='+conflictCol) : '');
   try{
@@ -1439,7 +1464,8 @@ async function submitWanted(){
   var myId = await getMyDomainId();
   if(!myId){ showToast('Please sign in again.'); goTo('authemail'); return; }
   var result = await supaInsert('wanted_posts',{user_id:myId,title:title,description:desc,role_needed:role,category:cat,location:loc,remote:pwRemoteOn,compensation:comp,status:'open'});
-  if(result){
+  console.log('submitWanted result:', result);
+  if(result && result.ok){
     document.getElementById('pwTitle').value='';
     document.getElementById('pwRole').value='';
     document.getElementById('pwLocation').value='';
@@ -1448,7 +1474,9 @@ async function submitWanted(){
     goTo('wanted');
     haptic('success');
   } else {
-    showToast('Something went wrong. Please try again.');
+    console.error('submitWanted FAILED -- real Supabase error:', result && result.error);
+    var realMsg = result && result.error && (result.error.message || result.error.hint || result.error.details || JSON.stringify(result.error));
+    showToast('Could not post WANTED: ' + (realMsg || 'unknown error'));
   }
 }
 
