@@ -834,7 +834,24 @@ async function supaHeaders(extra){
 }
 async function supaSelect(table,filters){ try{ var url=SUPA_URL+'/rest/v1/'+table+'?select=*'; if(filters) url+='&'+filters; var r=await fetch(url,{method:'GET',headers:await supaHeaders(),mode:'cors'}); if(!r.ok) return null; return await r.json(); }catch(e){ return null; } }
 async function supaInsert(table,data){ try{ var r=await fetch(SUPA_URL+'/rest/v1/'+table,{method:'POST',headers:await supaHeaders(),body:JSON.stringify(data),mode:'cors'}); if(!r.ok) return null; return await r.json(); }catch(e){ return null; } }
-async function supaUpsert(table,data){ try{ var r=await fetch(SUPA_URL+'/rest/v1/'+table,{method:'POST',headers:await supaHeaders({'Prefer':'resolution=merge-duplicates,return=representation'}),body:JSON.stringify(data),mode:'cors'}); if(!r.ok) return null; return await r.json(); }catch(e){ return null; } }
+async function supaUpsert(table,data,conflictCol){
+  var url = SUPA_URL+'/rest/v1/'+table + (conflictCol ? ('?on_conflict='+conflictCol) : '');
+  try{
+    var r = await fetch(url,{method:'POST',headers:await supaHeaders({'Prefer':'resolution=merge-duplicates,return=representation'}),body:JSON.stringify(data),mode:'cors'});
+    var bodyText = await r.text();
+    var parsed = null;
+    try{ parsed = bodyText ? JSON.parse(bodyText) : null; }catch(parseErr){ /* body wasn't JSON */ }
+    if(!r.ok){
+      console.error('supaUpsert FAILED', { table: table, url: url, status: r.status, statusText: r.statusText, body: parsed || bodyText, requestPayload: data });
+      return { ok:false, status:r.status, error: parsed || bodyText };
+    }
+    console.log('supaUpsert OK', { table: table, url: url, status: r.status, body: parsed });
+    return { ok:true, status:r.status, data: parsed };
+  }catch(e){
+    console.error('supaUpsert NETWORK ERROR', { table: table, url: url, error: e });
+    return { ok:false, status:0, error: e.message };
+  }
+}
 
 // --- AUTH: EMAIL MAGIC LINK (TEST ONLY) ---
 // The disposable test project's hosted email template uses
@@ -1394,10 +1411,16 @@ async function saveProfile(){
   myProfile.bio = document.getElementById('editBio').value.trim();
   myProfile.skills = document.getElementById('editSkills').value.trim();
   document.getElementById('profileName').textContent = name;
-  document.getElementById('profileRole').textContent = myProfile.role+(myProfile.location?' &middot; '+myProfile.location:'');
+  document.getElementById('profileRole').textContent = myProfile.role+(myProfile.location?' · '+myProfile.location:'');
   var myId = await getMyDomainId();
   if(!myId){ showToast('Please sign in again.'); goTo('authemail'); return; }
-  supaUpsert('profiles',{user_id:myId,display_name:name,role:myRoleSelected,location:myProfile.location,bio:myProfile.bio});
+  var result = await supaUpsert('profiles',{user_id:myId,display_name:name,role:myRoleSelected,location:myProfile.location,bio:myProfile.bio},'user_id');
+  console.log('saveProfile result:', result);
+  if(!result || !result.ok){
+    console.error('saveProfile FAILED -- real Supabase error:', result && result.error);
+    showToast('Could not save profile: ' + (result && result.error && (result.error.message || JSON.stringify(result.error)) || 'unknown error'));
+    return;
+  }
   showToast('Profile saved! You are now visible to artists worldwide.');
   haptic('success');
   goTo('profile');
@@ -1406,7 +1429,7 @@ function loadMyProfile(){
   var name = myProfile.name;
   if(name){
     document.getElementById('profileName').textContent = name;
-    document.getElementById('profileRole').textContent = myProfile.role+(myProfile.location?' &middot; '+myProfile.location:'');
+    document.getElementById('profileRole').textContent = myProfile.role+(myProfile.location?' · '+myProfile.location:'');
   }
   loadMyWanted();
   tickNACKL();
