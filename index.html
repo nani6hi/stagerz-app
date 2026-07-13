@@ -607,6 +607,9 @@ html,body{width:100%;height:100%;background:#08080f;color:#f0f0f5;font-family:'I
     <div class="form-screen">
       <div class="form-label">Display Name</div>
       <input class="form-input" id="editName" type="text" placeholder="Your artist name">
+      <div class="form-label">Username</div>
+      <input class="form-input" id="editUsername" type="text" placeholder="yourusername" autocapitalize="off" autocorrect="off">
+      <div id="editUsernameError" style="font-size:9px;color:#e85050;margin-top:-8px;margin-bottom:12px;display:none;"></div>
       <div class="form-label">I am a...</div>
       <div class="role-chips" id="rolePicker">
         <div class="role-chip on" onclick="pickRole(this,'🎸 Musician')">🎸 Musician</div>
@@ -1481,16 +1484,40 @@ async function submitWanted(){
 }
 
 // --- PROFILE ---
-var myProfile = { name:'', role:'', location:'', bio:'', skills:'' };
+var myProfile = { name:'', role:'', location:'', bio:'', skills:'', username:'' };
 var myRoleSelected = '🎸 Musician';
 function pickRole(el, role){
   document.querySelectorAll('#rolePicker .role-chip').forEach(function(c){ c.classList.remove('on'); });
   el.classList.add('on');
   myRoleSelected = role;
 }
+// Normalizes a raw username input: strips a leading @, trims
+// whitespace, lowercases, and does not silently derive anything
+// from Display Name -- the two fields are independent inputs.
+function normalizeUsername(raw){
+  var v = (raw || '').trim();
+  if(v.charAt(0) === '@') v = v.slice(1);
+  return v.toLowerCase();
+}
+
 async function saveProfile(){
   var name = document.getElementById('editName').value.trim();
   if(!name){ showToast('Please enter your display name.'); return; }
+
+  var usernameErrorEl = document.getElementById('editUsernameError');
+  usernameErrorEl.style.display = 'none';
+  var normalizedUsername = normalizeUsername(document.getElementById('editUsername').value);
+  if(!normalizedUsername){
+    usernameErrorEl.textContent = 'Username is required.';
+    usernameErrorEl.style.display = 'block';
+    return;
+  }
+  if(!/^[a-z0-9_.]+$/.test(normalizedUsername)){
+    usernameErrorEl.textContent = 'Username may only contain letters, numbers, underscore, and period.';
+    usernameErrorEl.style.display = 'block';
+    return;
+  }
+
   myProfile.name = name;
   myProfile.role = myRoleSelected;
   myProfile.location = document.getElementById('editLocation').value.trim();
@@ -1498,32 +1525,51 @@ async function saveProfile(){
   var skillsRaw = document.getElementById('editSkills').value.trim();
   myProfile.skills = skillsRaw; // kept as display string locally
   var skillsArray = skillsRaw ? skillsRaw.split(',').map(function(s){ return s.trim(); }).filter(Boolean) : [];
-  document.getElementById('profileName').textContent = name;
-  document.getElementById('profileRole').textContent = myProfile.role+(myProfile.location?' · '+myProfile.location:'');
+  myProfile.username = normalizedUsername;
+
   var myId = await getMyDomainId();
   if(!myId){ showToast('Please sign in again.'); goTo('authemail'); return; }
-  var result = await supaUpdate('profiles', 'user_id=eq.'+myId, {display_name:name,role:myRoleSelected,location:myProfile.location,bio:myProfile.bio,skills:skillsArray});
-  console.log('saveProfile result:', result);
-  if(!result || !result.ok){
-    console.error('saveProfile FAILED -- real Supabase error:', result && result.error);
-    showToast('Could not save profile: ' + (result && result.error && (result.error.message || JSON.stringify(result.error)) || 'unknown error'));
+
+  var profileResult = await supaUpdate('profiles', 'user_id=eq.'+myId, {display_name:name,role:myRoleSelected,location:myProfile.location,bio:myProfile.bio,skills:skillsArray});
+  console.log('saveProfile: profiles PATCH result:', profileResult);
+  if(!profileResult || !profileResult.ok){
+    console.error('saveProfile FAILED (profiles) -- real Supabase error:', profileResult && profileResult.error);
+    showToast('Could not save profile: ' + (profileResult && profileResult.error && (profileResult.error.message || JSON.stringify(profileResult.error)) || 'unknown error'));
     return;
   }
+
+  // Separate PATCH to public.users -- only username, never blocked,
+  // anonymized_at, is_system, id, or any other internal field.
+  var usernameResult = await supaUpdate('users', 'id=eq.'+myId, {username: normalizedUsername});
+  console.log('saveProfile: users PATCH result:', usernameResult);
+  if(!usernameResult || !usernameResult.ok){
+    console.error('saveProfile FAILED (users/username) -- real Supabase error:', usernameResult && usernameResult.error);
+    showToast('Could not save username: ' + (usernameResult && usernameResult.error && (usernameResult.error.message || JSON.stringify(usernameResult.error)) || 'unknown error'));
+    return;
+  }
+
+  // Only shown once both writes have actually succeeded.
+  await fetchMyProfile();
+  document.getElementById('profileName').textContent = myProfile.name;
+  document.getElementById('profileRole').textContent = myProfile.role+(myProfile.location?' · '+myProfile.location:'');
   showToast('Profile saved! You are now visible to artists worldwide.');
   haptic('success');
   goTo('profile');
 }
 
-// Fetches the real saved profile row from Supabase and populates the
-// local myProfile cache -- this is the actual source of truth on
-// load/refresh; myProfile was previously only ever written by
-// saveProfile() and never read back from the database at all.
+// Fetches the real saved profile row AND the real users.username
+// from Supabase, populating the local myProfile cache -- the
+// actual source of truth on load/refresh.
 async function fetchMyProfile(){
   var myId = await getMyDomainId();
   if(!myId) return null;
-  var rows = await supaSelect('profiles','user_id=eq.'+myId);
-  if(rows && rows[0]){
-    var p = rows[0];
+  var profileRows = await supaSelect('profiles','user_id=eq.'+myId);
+  var userRows = await supaSelect('users','id=eq.'+myId);
+  if(userRows && userRows[0]){
+    myProfile.username = userRows[0].username || '';
+  }
+  if(profileRows && profileRows[0]){
+    var p = profileRows[0];
     myProfile.name = p.display_name || '';
     myProfile.role = p.role || myRoleSelected;
     myProfile.location = p.location || '';
@@ -1545,16 +1591,19 @@ async function loadMyProfile(){
   tickNACKL();
 }
 
-// Populates the Edit Profile form from the real saved profile.
-// Skills is joined into a plain comma-separated display string --
-// fetchMyProfile() already did this conversion, so no array syntax
-// is ever placed into an input value.
+// Populates the Edit Profile form from the real saved profile and
+// username. Skills is joined into a plain comma-separated display
+// string -- fetchMyProfile() already did this conversion, so no
+// array syntax is ever placed into an input value. username is
+// loaded exactly as stored, or an empty string if null.
 async function populateEditProfile(){
   await fetchMyProfile();
   document.getElementById('editName').value = myProfile.name || '';
+  document.getElementById('editUsername').value = myProfile.username || '';
   document.getElementById('editLocation').value = myProfile.location || '';
   document.getElementById('editBio').value = myProfile.bio || '';
   document.getElementById('editSkills').value = myProfile.skills || '';
+  document.getElementById('editUsernameError').style.display = 'none';
 }
 async function loadMyWanted(){
   var myId = await getMyDomainId();
