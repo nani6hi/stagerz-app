@@ -1499,10 +1499,28 @@ async function loadMyWantedTab(){
 
 async function loadWanted(){
   var data = await supaSelect('wanted_posts','status=eq.open&order=created_at.desc&limit=20');
-  renderWanted(data && data.length ? data : null);
+
+  var appliedIds = new Set();
+  var myId = await getMyDomainId();
+  if(myId){
+    var applications = await supaSelect('wanted_applications', 'applicant_id=eq.'+myId, 'wanted_post_id');
+    if(applications === null){
+      // supaSelect() returns null specifically on a real failure
+      // (network error or non-2xx response) -- distinct from a
+      // legitimate empty array, which means zero applications and
+      // is not an error. Only the real-failure case is logged here;
+      // render proceeds either way with an empty Set, so no card
+      // claims an applied state that was never actually confirmed.
+      console.error('loadWanted: failed to load existing applications for', myId);
+    } else {
+      appliedIds = new Set(applications.map(function(a){ return a.wanted_post_id; }));
+    }
+  }
+
+  renderWanted(data && data.length ? data : null, appliedIds);
 }
 
-function renderWanted(dbData){
+function renderWanted(dbData, appliedIds){
   var feed = document.getElementById('wantedFeed');
   if(!feed) return;
   feed.innerHTML = '';
@@ -1539,10 +1557,16 @@ function renderWanted(dbData){
       // fetched row above, never from anything user-suppliable.
       var realPostId = item.dbId;
       var realOwnerId = item.ownerId;
-      applyBtn.onclick = function(e){
-        e.stopPropagation();
-        applyToWanted(realPostId, realOwnerId, applyBtn);
-      };
+      var alreadyApplied = appliedIds?.has(item.dbId);
+      if(alreadyApplied){
+        applyBtn.textContent = 'APPLIED';
+        applyBtn.disabled = true;
+      } else {
+        applyBtn.onclick = function(e){
+          e.stopPropagation();
+          applyToWanted(realPostId, realOwnerId, applyBtn);
+        };
+      }
     } else {
       // Local static demo card -- no real wanted_post id exists, so
       // no insert is ever attempted for it.
