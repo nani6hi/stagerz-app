@@ -1509,7 +1509,7 @@ function renderWanted(dbData){
   var items = currentWantedCat==='all' ? wantedData.slice() : wantedData.filter(function(d){ return d.cat.toLowerCase()===currentWantedCat; });
   if(dbData){
     dbData.forEach(function(p){
-      items.unshift({id:p.id,title:p.title,role:p.role_needed,cat:p.category,loc:p.location,remote:p.remote,comp:p.compensation,badge:'new',badgeText:'&#129001; Live',user:'Artist',time:'Just now',fromDB:true,dbId:p.id});
+      items.unshift({id:p.id,title:p.title,role:p.role_needed,cat:p.category,loc:p.location,remote:p.remote,comp:p.compensation,badge:'new',badgeText:'&#129001; Live',user:'Artist',time:'Just now',fromDB:true,dbId:p.id,ownerId:p.user_id});
     });
   }
   var count = document.getElementById('wantedCount');
@@ -1533,10 +1533,24 @@ function renderWanted(dbData){
         (item.remote?'<div class="w-tag">&#127757; Remote OK</div>':'')+
       '</div>'+
       '<button class="w-apply">APPLY NOW</button>';
-    el.querySelector('.w-apply').onclick = function(e){
-      e.stopPropagation();
-      showToast('Application sent! The artist will receive your profile.');
-    };
+    var applyBtn = el.querySelector('.w-apply');
+    if(item.fromDB){
+      // Real database post -- id and owner id come only from the
+      // fetched row above, never from anything user-suppliable.
+      var realPostId = item.dbId;
+      var realOwnerId = item.ownerId;
+      applyBtn.onclick = function(e){
+        e.stopPropagation();
+        applyToWanted(realPostId, realOwnerId, applyBtn);
+      };
+    } else {
+      // Local static demo card -- no real wanted_post id exists, so
+      // no insert is ever attempted for it.
+      applyBtn.onclick = function(e){
+        e.stopPropagation();
+        showToast('Applications are available for live Wanted posts.');
+      };
+    }
     feed.appendChild(el);
   });
 }
@@ -1635,6 +1649,60 @@ async function closeWantedPost(id){
     var closeMsg = result && result.error && (result.error.message || result.error.hint || result.error.details || JSON.stringify(result.error));
     showToast('Could not close post: ' + (closeMsg || 'unknown error'));
   }
+}
+
+// Real application insert, replacing the previous cosmetic-only
+// APPLY NOW behavior. postId/ownerId are only ever the values
+// resolved and rendered from the actual database row in
+// renderWanted() -- never anything user- or form-suppliable.
+async function applyToWanted(postId, ownerId, btnEl){
+  var myId = await getMyDomainId();
+  if(!myId){
+    showToast('Please sign in again.');
+    goTo('authemail');
+    return;
+  }
+
+  if(myId === ownerId){
+    // Client-side check only, for immediate feedback -- the real
+    // enforcement is the INSERT policy's own WITH CHECK, which
+    // re-derives the post's true owner from the database regardless
+    // of this check. No Supabase call is made in this branch.
+    showToast('You cannot apply to your own Wanted.');
+    return;
+  }
+
+  var result = await supaInsert('wanted_applications', { wanted_post_id: postId, applicant_id: myId });
+  console.log('applyToWanted result:', result);
+
+  if(result && result.ok){
+    showToast('Application sent.');
+    haptic('success');
+    if(btnEl){ btnEl.textContent = 'APPLIED'; btnEl.disabled = true; btnEl.onclick = null; }
+    return;
+  }
+
+  var errCode = result && result.error && result.error.code;
+
+  if(errCode === '23505'){
+    showToast('You already applied.');
+    if(btnEl){ btnEl.textContent = 'APPLIED'; btnEl.disabled = true; btnEl.onclick = null; }
+    return;
+  }
+
+  var isRlsRejection = errCode === '42501' || (result && result.error && typeof result.error.message === 'string' && result.error.message.indexOf('row-level security') !== -1);
+  if(isRlsRejection){
+    // The client-side owner check above already excludes the
+    // "own post" case before ever reaching Supabase, so a genuine
+    // RLS rejection reaching this point can only be the remaining
+    // condition the INSERT policy checks: the post is no longer open.
+    showToast('This Wanted is no longer open.');
+    return;
+  }
+
+  console.error('applyToWanted FAILED -- real Supabase error:', result && result.error);
+  var realMsg = result && result.error && (result.error.message || result.error.hint || result.error.details || JSON.stringify(result.error));
+  showToast(realMsg || 'Could not send application.');
 }
 function toggleRemote(){
   pwRemoteOn = !pwRemoteOn;
