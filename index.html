@@ -637,8 +637,8 @@ html,body{width:100%;height:100%;background:#08080f;color:#f0f0f5;font-family:'I
 ========================================== -->
 <div class="screen" id="screen-postwanted">
   <div class="screen-top">
-    <div class="bk" onclick="goTo('wanted')"><div class="bk-icon">‹</div> Wanted</div>
-    <div class="screen-top-title">Post a Wanted</div>
+    <div class="bk" onclick="cancelPostWanted()"><div class="bk-icon">‹</div> Wanted</div>
+    <div class="screen-top-title" id="pwScreenTitle">Post a Wanted</div>
     <div style="width:60px;"></div>
   </div>
   <div class="sa">
@@ -673,7 +673,7 @@ html,body{width:100%;height:100%;background:#08080f;color:#f0f0f5;font-family:'I
       </div>
       <div class="form-label">Description</div>
       <textarea class="form-textarea" id="pwDesc" placeholder="Tell artists about the project, timeline, what you expect..."></textarea>
-      <button class="form-submit" onclick="submitWanted()">🎯 POST TO THE WORLD</button>
+      <button class="form-submit" id="pwSubmitBtn" onclick="submitWanted()">🎯 POST TO THE WORLD</button>
       <div style="font-size:8px;color:rgba(255,255,255,.2);text-align:center;margin-top:8px;">Visible to artists worldwide instantly</div>
     </div>
   </div>
@@ -1516,6 +1516,78 @@ function renderWanted(dbData){
 
 // --- POST WANTED ---
 var pwRemoteOn = true;
+var editingWantedId = null;
+
+// Forces the remote toggle to a specific value (unlike
+// toggleRemote(), which always flips the current state) -- used
+// both to reset to the default and to restore a saved post's value.
+function setRemoteToggle(value){
+  pwRemoteOn = !!value;
+  var t = document.getElementById('pwRemote');
+  var v = document.getElementById('pwRemoteVal');
+  t.className = 'form-toggle'+(pwRemoteOn?'':' off');
+  v.textContent = pwRemoteOn?'Yes':'No';
+  v.style.color = pwRemoteOn?'rgba(40,200,80,.7)':'rgba(255,255,255,.3)';
+}
+
+// Selects the chip within a picker whose normalized text matches a
+// stored value (the inverse of submitWanted()'s own normalization),
+// falling back to leaving the picker's current default selection
+// untouched if nothing matches.
+function selectChipByValue(pickerId, value, normalizeFn){
+  var group = document.getElementById(pickerId);
+  if(!group || !value) return;
+  var chips = group.querySelectorAll('.form-chip');
+  var matched = false;
+  chips.forEach(function(c){
+    if(normalizeFn(c.textContent) === value){
+      chips.forEach(function(cc){ cc.classList.remove('on'); });
+      c.classList.add('on');
+      matched = true;
+    }
+  });
+}
+function normalizeCategoryText(t){ return t.trim().toLowerCase().replace(/[^a-z]/g,''); }
+function normalizeCompensationText(t){ return t.trim().toLowerCase().replace(/[^a-z_]/g,'').replace('revshare','rev_share'); }
+
+// Clears the form and restores Create mode -- used both when
+// cancelling and after either a successful create or a successful
+// edit, so the screen never carries stale data into its next open.
+function resetPostWantedForm(){
+  document.getElementById('pwTitle').value = '';
+  document.getElementById('pwRole').value = '';
+  document.getElementById('pwLocation').value = '';
+  document.getElementById('pwDesc').value = '';
+  var catGroup = document.getElementById('pwCatPicker');
+  catGroup.querySelectorAll('.form-chip').forEach(function(c,i){ c.classList.toggle('on', i===0); });
+  var compGroup = document.getElementById('pwCompPicker');
+  compGroup.querySelectorAll('.form-chip').forEach(function(c,i){ c.classList.toggle('on', i===0); });
+  setRemoteToggle(true);
+  editingWantedId = null;
+  document.getElementById('pwScreenTitle').textContent = 'Post a Wanted';
+  document.getElementById('pwSubmitBtn').textContent = '🎯 POST TO THE WORLD';
+}
+
+function cancelPostWanted(){
+  resetPostWantedForm();
+  goTo('wanted');
+}
+
+// Opens the existing Post a Wanted screen pre-filled with an
+// existing post's editable fields, switching it into Edit mode.
+function openEditWanted(post){
+  editingWantedId = post.id;
+  document.getElementById('pwTitle').value = post.title || '';
+  document.getElementById('pwRole').value = post.role_needed || '';
+  document.getElementById('pwLocation').value = post.location || '';
+  document.getElementById('pwDesc').value = post.description || '';
+  selectChipByValue('pwCatPicker', post.category, normalizeCategoryText);
+  selectChipByValue('pwCompPicker', post.compensation, normalizeCompensationText);
+  setRemoteToggle(post.remote);
+  document.getElementById('pwScreenTitle').textContent = 'Edit Wanted';
+  document.getElementById('pwSubmitBtn').textContent = 'SAVE CHANGES';
+  goTo('postwanted');
+}
 function toggleRemote(){
   pwRemoteOn = !pwRemoteOn;
   var t = document.getElementById('pwRemote');
@@ -1544,13 +1616,33 @@ async function submitWanted(){
   if(compEl) comp = compEl.textContent.trim().toLowerCase().replace(/[^a-z_]/g,'').replace('revshare','rev_share');
   var myId = await getMyDomainId();
   if(!myId){ showToast('Please sign in again.'); goTo('authemail'); return; }
+
+  if(editingWantedId){
+    // Edit mode: PATCH only the editable fields -- id, user_id, and
+    // created_at are never included, so they can never be touched
+    // by this write regardless of what else changes here.
+    var editPayload = {title:title,description:desc,role_needed:role,category:cat,location:loc,remote:pwRemoteOn,compensation:comp};
+    var editResult = await supaUpdate('wanted_posts', 'id=eq.'+editingWantedId, editPayload);
+    console.log('submitWanted (edit) result:', editResult);
+    if(editResult && editResult.ok){
+      resetPostWantedForm();
+      showToast('Your WANTED has been updated.');
+      haptic('success');
+      await loadMyWanted();
+      await loadWanted();
+      goTo('profile');
+    } else {
+      console.error('submitWanted (edit) FAILED -- real Supabase error:', editResult && editResult.error);
+      var editMsg = editResult && editResult.error && (editResult.error.message || editResult.error.hint || editResult.error.details || JSON.stringify(editResult.error));
+      showToast('Could not save changes: ' + (editMsg || 'unknown error'));
+    }
+    return;
+  }
+
   var result = await supaInsert('wanted_posts',{user_id:myId,title:title,description:desc,role_needed:role,category:cat,location:loc,remote:pwRemoteOn,compensation:comp,status:'open'});
   console.log('submitWanted result:', result);
   if(result && result.ok){
-    document.getElementById('pwTitle').value='';
-    document.getElementById('pwRole').value='';
-    document.getElementById('pwLocation').value='';
-    document.getElementById('pwDesc').value='';
+    resetPostWantedForm();
     showToast('Your WANTED is live! Artists worldwide can now see it.');
     goTo('wanted');
     haptic('success');
@@ -1732,7 +1824,7 @@ async function loadMyWanted(){
     var editBtn = document.createElement('button');
     editBtn.style.cssText = 'padding:2px 8px;background:rgba(100,80,255,.1);border:1px solid rgba(100,80,255,.25);border-radius:6px;font-size:8px;color:rgba(180,160,255,.8);cursor:pointer;';
     editBtn.textContent = 'Edit';
-    editBtn.onclick = function(){ showToast('Edit coming in full version.'); };
+    editBtn.onclick = (function(post){ return function(){ openEditWanted(post); }; })(p);
     var closeBtn = document.createElement('button');
     closeBtn.style.cssText = 'padding:2px 8px;background:rgba(255,60,60,.08);border:1px solid rgba(255,60,60,.2);border-radius:6px;font-size:8px;color:rgba(255,100,100,.8);cursor:pointer;';
     closeBtn.textContent = 'Close';
