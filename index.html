@@ -1134,7 +1134,7 @@ function goTo(id){
   }
   haptic('light');
   if(id==='search') setTimeout(function(){ renderArtists(); },50);
-  if(id==='wanted'){ switchWantedTab('my'); }
+  if(id==='wanted'){ loadWanted(); }
   if(id==='profile') loadMyProfile();
   if(id==='editprofile') populateEditProfile();
 }
