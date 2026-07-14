@@ -680,6 +680,20 @@ html,body{width:100%;height:100%;background:#08080f;color:#f0f0f5;font-family:'I
 </div>
 
 <!-- ==========================================
+     SCREEN: WANTED APPLICANTS (Phase 2, read-only)
+========================================== -->
+<div class="screen" id="screen-wantedapplicants">
+  <div class="screen-top">
+    <div class="bk" onclick="goTo('profile')"><div class="bk-icon">&lsaquo;</div> Profile</div>
+    <div class="screen-top-title" id="waScreenTitle">Applicants</div>
+    <div style="width:60px;"></div>
+  </div>
+  <div class="sa" style="padding:14px;">
+    <div id="waList"></div>
+  </div>
+</div>
+
+<!-- ==========================================
      SCREEN 8: CONTENT VIEW
 ========================================== -->
 <div class="screen" id="screen-content">
@@ -1950,6 +1964,18 @@ async function loadMyWanted(){
     container.appendChild(empty);
     return;
   }
+
+  // One batched query for applicant counts across all of this
+  // user's posts, rather than one query per card.
+  var postIds = data.map(function(p){ return p.id; }).join(',');
+  var allApplications = await supaSelect('wanted_applications', 'wanted_post_id=in.('+postIds+')', 'wanted_post_id');
+  var countByPost = {};
+  if(allApplications){
+    allApplications.forEach(function(a){
+      countByPost[a.wanted_post_id] = (countByPost[a.wanted_post_id] || 0) + 1;
+    });
+  }
+
   data.forEach(function(p){
     var card = document.createElement('div');
     card.className = 'p-wanted-card';
@@ -1960,7 +1986,11 @@ async function loadMyWanted(){
     title.style.flex = '1';
     title.textContent = p.title;
     var btnRow = document.createElement('div');
-    btnRow.style.cssText = 'display:flex;gap:5px;flex-shrink:0;';
+    btnRow.style.cssText = 'display:flex;gap:5px;flex-shrink:0;align-items:center;';
+    var applicantBadge = document.createElement('div');
+    applicantBadge.style.cssText = 'padding:2px 7px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);border-radius:6px;font-size:8px;color:rgba(255,255,255,.5);cursor:pointer;white-space:nowrap;';
+    applicantBadge.textContent = '👤 ' + (countByPost[p.id] || 0);
+    applicantBadge.onclick = (function(id,title){ return function(){ openApplicants(id,title); }; })(p.id, p.title);
     var editBtn = document.createElement('button');
     editBtn.style.cssText = 'padding:2px 8px;background:rgba(100,80,255,.1);border:1px solid rgba(100,80,255,.25);border-radius:6px;font-size:8px;color:rgba(180,160,255,.8);cursor:pointer;';
     editBtn.textContent = 'Edit';
@@ -1971,6 +2001,7 @@ async function loadMyWanted(){
     closeBtn.onclick = (function(id){ return function(){
       closeWantedPost(id);
     };})(p.id);
+    btnRow.appendChild(applicantBadge);
     btnRow.appendChild(editBtn);
     btnRow.appendChild(closeBtn);
     titleRow.appendChild(title);
@@ -1984,7 +2015,53 @@ async function loadMyWanted(){
   });
 }
 
-// --- NACKL ---
+// Read-only applicant view (Phase 2) -- no Accept/Reject, no
+// messaging, no collaboration, no profile editing. Fetches via
+// three separate REST calls (wanted_applications, then
+// public_profiles + profiles for the resulting applicant ids),
+// since PostgREST has no arbitrary client-side join -- the same
+// pattern already used by fetchMyProfile() elsewhere in this file.
+async function openApplicants(postId, postTitle){
+  var titleEl = document.getElementById('waScreenTitle');
+  if(titleEl) titleEl.textContent = postTitle || 'Applicants';
+  var listEl = document.getElementById('waList');
+  if(listEl) listEl.innerHTML = '<div style="font-size:9px;color:rgba(255,255,255,.3);text-align:center;padding:20px 0;">Loading...</div>';
+  goTo('wantedapplicants');
+
+  var applications = await supaSelect('wanted_applications', 'wanted_post_id=eq.'+postId+'&order=created_at.desc', 'applicant_id,created_at');
+  if(!listEl) return;
+  if(!applications || !applications.length){
+    listEl.innerHTML = '<div style="font-size:9px;color:rgba(255,255,255,.25);text-align:center;padding:20px 0;">No applicants yet.</div>';
+    return;
+  }
+
+  var applicantIds = applications.map(function(a){ return a.applicant_id; }).join(',');
+  var publicProfiles = await supaSelect('public_profiles', 'id=in.('+applicantIds+')');
+  var profiles = await supaSelect('profiles', 'user_id=in.('+applicantIds+')', 'user_id,role,location');
+
+  var publicById = {};
+  (publicProfiles || []).forEach(function(pp){ publicById[pp.id] = pp; });
+  var profileById = {};
+  (profiles || []).forEach(function(pr){ profileById[pr.user_id] = pr; });
+
+  listEl.innerHTML = '';
+  applications.forEach(function(a){
+    var pub = publicById[a.applicant_id] || {};
+    var prof = profileById[a.applicant_id] || {};
+    var metaParts = [];
+    if(pub.username) metaParts.push('@'+pub.username);
+    if(prof.role) metaParts.push(prof.role);
+    if(prof.location) metaParts.push(prof.location);
+    var appliedDate = a.created_at ? new Date(a.created_at).toLocaleDateString() : '';
+    var card = document.createElement('div');
+    card.style.cssText = 'background:#111118;border-radius:10px;padding:12px;margin-bottom:8px;';
+    card.innerHTML =
+      '<div style="font-weight:600;font-size:11px;color:#fff;">'+(pub.display_name || 'STAGERZ Artist')+'</div>'+
+      '<div style="font-size:9px;color:rgba(255,255,255,.4);margin-top:2px;">'+metaParts.join(' &middot; ')+'</div>'+
+      '<div style="font-size:8px;color:rgba(255,255,255,.2);margin-top:4px;">Applied '+appliedDate+'</div>';
+    listEl.appendChild(card);
+  });
+}
 var nacklVal = 0;
 function tickNACKL(){
   nacklVal += Math.floor(Math.random()*3)+1;
