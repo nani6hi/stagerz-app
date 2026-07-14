@@ -835,7 +835,32 @@ async function supaHeaders(extra){
   if(extra) Object.assign(h,extra);
   return h;
 }
-async function supaSelect(table,filters,columns){ try{ var url=SUPA_URL+'/rest/v1/'+table+'?select='+(columns||'*'); if(filters) url+='&'+filters; var r=await fetch(url,{method:'GET',headers:await supaHeaders(),mode:'cors'}); if(!r.ok) return null; return await r.json(); }catch(e){ return null; } }
+async function supaSelect(table,filters,columns){
+  var url = SUPA_URL+'/rest/v1/'+table+'?select='+(columns||'*');
+  if(filters) url += '&'+filters;
+  try{
+    var r = await fetch(url,{method:'GET',headers:await supaHeaders(),mode:'cors'});
+    var bodyText = await r.text();
+    var parsed = null;
+    try{ parsed = bodyText ? JSON.parse(bodyText) : null; }catch(parseErr){ /* body wasn't JSON */ }
+    console.log('supaSelect', {
+      table: table,
+      url: url,
+      status: r.status,
+      statusText: r.statusText,
+      rawBody: bodyText,
+      parsed: parsed,
+      isNull: parsed === null,
+      isEmptyArray: Array.isArray(parsed) && parsed.length === 0,
+      rowCount: Array.isArray(parsed) ? parsed.length : null
+    });
+    if(!r.ok) return null;
+    return parsed;
+  }catch(e){
+    console.error('supaSelect NETWORK ERROR', { table: table, url: url, error: e });
+    return null;
+  }
+}
 async function supaInsert(table,data){
   var url = SUPA_URL+'/rest/v1/'+table;
   console.log('supaInsert REQUEST', { table: table, url: url, requestPayload: data });
