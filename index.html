@@ -1018,6 +1018,33 @@ async function supaUpdateMinimal(table, filters, data){
   }
 }
 
+// Calls an existing Postgres function via PostgREST's rpc endpoint.
+// Used specifically for functions like close_own_wanted_post() where
+// the security model intentionally restricts direct column PATCHes
+// and requires going through a dedicated, already-granted RPC instead.
+async function supaRpc(fnName, params){
+  var url = SUPA_URL + '/rest/v1/rpc/' + fnName;
+  try{
+    var r = await fetch(url, {
+      method: 'POST',
+      headers: await supaHeaders(),
+      body: JSON.stringify(params || {}),
+      mode: 'cors'
+    });
+    var bodyText = await r.text();
+    var parsed = null;
+    try{ parsed = bodyText ? JSON.parse(bodyText) : null; }catch(parseErr){}
+    if(!r.ok){
+      console.error('supaRpc FAILED', { fnName: fnName, url: url, status: r.status, statusText: r.statusText, body: parsed || bodyText, params: params });
+      return { ok:false, status:r.status, error: parsed || bodyText };
+    }
+    return { ok:true, status:r.status, data: parsed };
+  }catch(error){
+    console.error('supaRpc NETWORK FAILED', { fnName: fnName, url: url, error: error });
+    return { ok:false, status:0, error: { message: 'Network error' } };
+  }
+}
+
 // --- AUTH: EMAIL MAGIC LINK (TEST ONLY) ---
 // The disposable test project's hosted email template uses
 // {{ .ConfirmationURL }} and cannot be edited without custom SMTP,
@@ -1588,6 +1615,27 @@ function openEditWanted(post){
   document.getElementById('pwSubmitBtn').textContent = 'SAVE CHANGES';
   goTo('postwanted');
 }
+
+// Soft-closes a Wanted post via the existing, already-granted
+// close_own_wanted_post() RPC -- never a direct status PATCH, since
+// the security model intentionally restricts that column. No row is
+// ever deleted; status simply moves to 'closed', so both
+// loadMyWanted() and loadWanted() (which already filter
+// status=eq.open) stop showing it the moment they next reload.
+async function closeWantedPost(id){
+  var result = await supaRpc('close_own_wanted_post', { p_post_id: id });
+  console.log('closeWantedPost result:', result);
+  if(result && result.ok){
+    showToast('Post closed.');
+    haptic('success');
+    await loadMyWanted();
+    await loadWanted();
+  } else {
+    console.error('closeWantedPost FAILED -- real Supabase error:', result && result.error);
+    var closeMsg = result && result.error && (result.error.message || result.error.hint || result.error.details || JSON.stringify(result.error));
+    showToast('Could not close post: ' + (closeMsg || 'unknown error'));
+  }
+}
 function toggleRemote(){
   pwRemoteOn = !pwRemoteOn;
   var t = document.getElementById('pwRemote');
@@ -1828,10 +1876,9 @@ async function loadMyWanted(){
     var closeBtn = document.createElement('button');
     closeBtn.style.cssText = 'padding:2px 8px;background:rgba(255,60,60,.08);border:1px solid rgba(255,60,60,.2);border-radius:6px;font-size:8px;color:rgba(255,100,100,.8);cursor:pointer;';
     closeBtn.textContent = 'Close';
-    closeBtn.onclick = (function(id,c){ return function(){
-      showToast('Post closed.');
-      c.remove();
-    };})(p.id, card);
+    closeBtn.onclick = (function(id){ return function(){
+      closeWantedPost(id);
+    };})(p.id);
     btnRow.appendChild(editBtn);
     btnRow.appendChild(closeBtn);
     titleRow.appendChild(title);
