@@ -2406,23 +2406,32 @@ async function openCollaboration(collaborationId){
   var memberCount = (participants || []).length;
 
   var html =
+    // Header -- existing .card-av reused as a small neutral workspace
+    // icon; Status now shown here with real color, not as a fifth
+    // Overview cell (moved per this phase's mobile-width finding).
     '<div style="background:#111118;border-radius:10px;padding:14px;margin-bottom:14px;">'+
-      '<div style="font-weight:600;font-size:13px;color:#fff;">'+collab.title+'</div>'+
-      '<div style="font-size:9px;color:rgba(255,255,255,.4);margin-top:4px;">'+statusLabel+' &middot; Started '+createdDate+'</div>'+
-      (wantedTitle ? '<div style="font-size:9px;color:rgba(232,184,48,.6);margin-top:6px;">From: '+wantedTitle+'</div>' : '')+
+      '<div style="display:flex;align-items:center;gap:10px;">'+
+        '<div class="card-av">&#129309;</div>'+
+        '<div style="flex:1;min-width:0;">'+
+          '<div style="font-weight:600;font-size:13px;color:#fff;">'+collab.title+'</div>'+
+          '<div style="font-size:9px;margin-top:2px;"><span style="color:'+statusColor+';font-weight:600;">'+statusLabel+'</span><span style="color:rgba(255,255,255,.4);"> &middot; Started '+createdDate+'</span></div>'+
+        '</div>'+
+      '</div>'+
+      (wantedTitle ? '<div style="font-size:9px;color:rgba(232,184,48,.6);margin-top:8px;">From: '+wantedTitle+'</div>' : '')+
     '</div>'+
 
+    // Description -- now before Overview, per the corrected final order.
+    '<div class="section-title" style="margin-bottom:8px;">Description</div>'+
+    '<div style="background:#111118;border-radius:10px;padding:14px;margin-bottom:16px;font-size:9px;color:rgba(255,255,255,.25);">No description yet.</div>'+
+
+    // Overview -- four cells only; Status removed (now in Header).
     '<div class="section-title" style="margin-bottom:8px;">Overview</div>'+
     '<div style="display:flex;background:#111118;border-radius:10px;padding:10px 0;margin-bottom:16px;">'+
       '<div class="p-stat"><div class="p-stat-num">'+memberCount+'</div><div class="p-stat-label">Members</div></div>'+
       '<div class="p-stat"><div class="p-stat-num">0</div><div class="p-stat-label">Messages</div></div>'+
       '<div class="p-stat"><div class="p-stat-num">0</div><div class="p-stat-label">Assets</div></div>'+
-      '<div class="p-stat"><div class="p-stat-num">0</div><div class="p-stat-label">Tasks</div></div>'+
-      '<div class="p-stat" style="border-right:none;"><div class="p-stat-num" style="font-size:10px;color:'+statusColor+';">'+statusLabel+'</div><div class="p-stat-label">Status</div></div>'+
+      '<div class="p-stat" style="border-right:none;"><div class="p-stat-num">0</div><div class="p-stat-label">Tasks</div></div>'+
     '</div>'+
-
-    '<div class="section-title" style="margin-bottom:8px;">Description</div>'+
-    '<div style="background:#111118;border-radius:10px;padding:14px;margin-bottom:16px;font-size:9px;color:rgba(255,255,255,.25);">No description yet.</div>'+
 
     '<div class="section-title" style="margin-bottom:8px;">Participants</div>';
 
@@ -2437,11 +2446,21 @@ async function openCollaboration(collaborationId){
     if(prof.location) metaParts.push(prof.location);
     var typeLabel = p.participant_type === 'owner' ? 'Owner' : 'Member';
     var row = document.createElement('div');
-    row.style.cssText = 'display:flex;align-items:center;justify-content:space-between;background:#111118;border-radius:10px;padding:12px;margin-bottom:8px;cursor:pointer;';
+    row.style.cssText = 'display:flex;align-items:center;gap:10px;justify-content:space-between;background:#111118;border-radius:10px;padding:12px;margin-bottom:8px;cursor:pointer;';
+    // .artist-av reused; real photo only when genuinely present,
+    // otherwise a neutral placeholder glyph on a neutral background --
+    // no data invented either way.
+    var avatarStyle = pub.photo_url
+      ? 'background-image:url(\''+pub.photo_url+'\');background-size:cover;background-position:center;'
+      : 'background:#1a1228;';
+    var avatarContent = pub.photo_url ? '' : '&#128100;';
     row.innerHTML =
-      '<div>'+
-        '<div style="font-weight:600;font-size:11px;color:#fff;">'+(pub.display_name || 'STAGERZ Artist')+'</div>'+
-        '<div style="font-size:9px;color:rgba(255,255,255,.4);margin-top:2px;">'+metaParts.join(' &middot; ')+'</div>'+
+      '<div style="display:flex;align-items:center;gap:10px;min-width:0;">'+
+        '<div class="artist-av" style="'+avatarStyle+'">'+avatarContent+'</div>'+
+        '<div style="min-width:0;">'+
+          '<div style="font-weight:600;font-size:11px;color:#fff;">'+(pub.display_name || 'STAGERZ Artist')+'</div>'+
+          '<div style="font-size:9px;color:rgba(255,255,255,.4);margin-top:2px;">'+metaParts.join(' &middot; ')+'</div>'+
+        '</div>'+
       '</div>'+
       '<div style="font-size:9px;color:rgba(232,184,48,.7);flex-shrink:0;">'+typeLabel+'</div>';
     row.onclick = (function(userId){ return function(){ openArtistProfile(userId, 'collaborationdetail'); }; })(p.user_id);
@@ -2457,17 +2476,20 @@ async function openCollaboration(collaborationId){
   contentEl.appendChild(modulesTitle);
 
   var modules = [
-    { label: 'Messages', empty: 'No messages yet.' },
-    { label: 'Assets', empty: 'No assets yet.' },
-    { label: 'Tasks', empty: 'No tasks yet.' },
-    { label: 'Credits', empty: 'No credits assigned yet.' }
+    { icon: '💬', label: 'Messages', empty: 'No messages yet.' },
+    { icon: '📁', label: 'Assets', empty: 'No assets yet.' },
+    { icon: '✅', label: 'Tasks', empty: 'No tasks yet.' },
+    { icon: '🏆', label: 'Credits', empty: 'No credits assigned yet.' }
   ];
   modules.forEach(function(m){
     var card = document.createElement('div');
-    card.style.cssText = 'background:#111118;border-radius:10px;padding:14px;margin-bottom:8px;';
+    card.style.cssText = 'display:flex;align-items:center;gap:10px;background:#111118;border-radius:10px;padding:14px;margin-bottom:8px;';
     card.innerHTML =
-      '<div style="font-weight:600;font-size:11px;color:#fff;">'+m.label+'</div>'+
-      '<div style="font-size:9px;color:rgba(255,255,255,.25);margin-top:4px;">'+m.empty+'</div>';
+      '<div style="font-size:16px;flex-shrink:0;">'+m.icon+'</div>'+
+      '<div>'+
+        '<div style="font-weight:600;font-size:11px;color:#fff;">'+m.label+'</div>'+
+        '<div style="font-size:9px;color:rgba(255,255,255,.25);margin-top:2px;">'+m.empty+'</div>'+
+      '</div>';
     contentEl.appendChild(card);
   });
 }
