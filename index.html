@@ -2455,11 +2455,15 @@ async function openCollaboration(collaborationId){
       '<div class="p-stat" style="border-right:none;"><div class="p-stat-num">0</div><div class="p-stat-label">Tasks</div></div>'+
     '</div>'+
 
-    '<div class="section-title" style="margin-bottom:8px;">Participants</div>';
+    '<div class="section-title" style="margin-bottom:8px;">Members</div>'+
+    '<div style="font-size:9px;color:rgba(255,255,255,.4);margin-bottom:10px;margin-top:-6px;">'+memberCount+' Member'+(memberCount===1?'':'s')+'</div>';
 
   contentEl.innerHTML = html;
 
-  (participants || []).forEach(function(p){
+  var owners = (participants || []).filter(function(p){ return p.participant_type === 'owner'; });
+  var membersOnly = (participants || []).filter(function(p){ return p.participant_type !== 'owner'; });
+
+  function renderParticipantRow(p){
     var pub = publicById[p.user_id] || {};
     var prof = profileById[p.user_id] || {};
     var metaParts = [];
@@ -2471,7 +2475,9 @@ async function openCollaboration(collaborationId){
     row.style.cssText = 'display:flex;align-items:center;gap:10px;justify-content:space-between;background:#111118;border-radius:10px;padding:12px;margin-bottom:8px;cursor:pointer;';
     // .artist-av reused; real photo only when genuinely present,
     // otherwise a neutral placeholder glyph on a neutral background --
-    // no data invented either way.
+    // no data invented either way. created_at is already fetched but
+    // deliberately not shown here -- reserved for a future
+    // Activity/Timeline module.
     var avatarStyle = pub.photo_url
       ? 'background-image:url(\''+pub.photo_url+'\');background-size:cover;background-position:center;'
       : 'background:#1a1228;';
@@ -2487,7 +2493,25 @@ async function openCollaboration(collaborationId){
       '<div style="font-size:9px;color:rgba(232,184,48,.7);flex-shrink:0;">'+typeLabel+'</div>';
     row.onclick = (function(userId){ return function(){ openArtistProfile(userId, 'collaborationdetail'); }; })(p.user_id);
     contentEl.appendChild(row);
-  });
+  }
+
+  if(owners.length){
+    var ownerLabel = document.createElement('div');
+    ownerLabel.className = 'section-title';
+    ownerLabel.style.cssText = 'margin-bottom:8px;font-size:7px;';
+    ownerLabel.textContent = 'Owner';
+    contentEl.appendChild(ownerLabel);
+    owners.forEach(renderParticipantRow);
+  }
+
+  if(membersOnly.length){
+    var membersLabel = document.createElement('div');
+    membersLabel.className = 'section-title';
+    membersLabel.style.cssText = 'margin-bottom:8px;margin-top:10px;font-size:7px;';
+    membersLabel.textContent = 'Members';
+    contentEl.appendChild(membersLabel);
+    membersOnly.forEach(renderParticipantRow);
+  }
 
   // Modules -- non-interactive by design (no onclick at all), per
   // the explicit instruction not to make an inert card look active.
