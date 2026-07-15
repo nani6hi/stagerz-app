@@ -580,6 +580,10 @@ html,body{width:100%;height:100%;background:#08080f;color:#f0f0f5;font-family:'I
           <div style="font-size:8px;color:rgba(232,184,48,.5);margin-top:4px;">Tap to post your first WANTED</div>
         </div>
       </div>
+      <div class="section-title" style="margin-bottom:8px;margin-top:16px;">My Collaborations</div>
+      <div style="background:#111118;border-radius:10px;padding:16px;text-align:center;cursor:pointer;" onclick="goTo('mycollaborations')">
+        <div style="font-size:9px;color:rgba(255,255,255,.4);">View your collaborations</div>
+      </div>
       <div style="padding:20px 0 8px;">
         <div class="p-btn-secondary" style="width:100%;" onclick="logout()">LOG OUT</div>
       </div>
@@ -690,6 +694,34 @@ html,body{width:100%;height:100%;background:#08080f;color:#f0f0f5;font-family:'I
   </div>
   <div class="sa" style="padding:14px;">
     <div id="waList"></div>
+  </div>
+</div>
+
+<!-- ==========================================
+     SCREEN: MY COLLABORATIONS (read-only, Phase 6.1)
+========================================== -->
+<div class="screen" id="screen-mycollaborations">
+  <div class="screen-top">
+    <div class="bk" onclick="goTo('profile')"><div class="bk-icon">&lsaquo;</div> Profile</div>
+    <div class="screen-top-title">My Collaborations</div>
+    <div style="width:60px;"></div>
+  </div>
+  <div class="sa" style="padding:14px;">
+    <div id="mcList"></div>
+  </div>
+</div>
+
+<!-- ==========================================
+     SCREEN: COLLABORATION DETAIL (read-only, Phase 6.1)
+========================================== -->
+<div class="screen" id="screen-collaborationdetail">
+  <div class="screen-top">
+    <div class="bk" onclick="goTo('mycollaborations')"><div class="bk-icon">&lsaquo;</div> Collaborations</div>
+    <div class="screen-top-title" id="cdScreenTitle">Collaboration</div>
+    <div style="width:60px;"></div>
+  </div>
+  <div class="sa" style="padding:14px;">
+    <div id="cdContent"></div>
   </div>
 </div>
 
@@ -1193,6 +1225,7 @@ function goTo(id){
   if(id==='wanted'){ loadWanted(); }
   if(id==='profile') loadMyProfile();
   if(id==='board') loadBoard();
+  if(id==='mycollaborations') loadMyCollaborations();
   if(id==='editprofile') populateEditProfile();
 }
 
@@ -2283,6 +2316,124 @@ async function updateUnreadBadge(){
     badge.style.display = 'none';
   }
 }
+
+// --- COLLABORATIONS (read-only, Phase 6.1) ---
+// No chat, assets, tasks, credits, completion, cancellation, or
+// participant management -- viewing only.
+
+async function loadMyCollaborations(){
+  var listEl = document.getElementById('mcList');
+  if(listEl) listEl.innerHTML = '<div style="font-size:9px;color:rgba(255,255,255,.3);text-align:center;padding:20px 0;">Loading...</div>';
+  var myId = await getMyDomainId();
+  if(!myId){ if(listEl) listEl.innerHTML = ''; return; }
+
+  var myMemberships = await supaSelect('collaboration_participants', 'user_id=eq.'+myId, 'collaboration_id,participant_type');
+  if(!listEl) return;
+  if(!myMemberships || !myMemberships.length){
+    listEl.innerHTML = '<div style="font-size:9px;color:rgba(255,255,255,.25);text-align:center;padding:20px 0;">No collaborations yet.</div>';
+    return;
+  }
+
+  var myTypeByCollabId = {};
+  myMemberships.forEach(function(m){ myTypeByCollabId[m.collaboration_id] = m.participant_type; });
+  var collabIds = myMemberships.map(function(m){ return m.collaboration_id; }).join(',');
+
+  var collaborations = await supaSelect('collaborations', 'id=in.('+collabIds+')', 'id,title,status,wanted_post_id,created_at');
+  var allParticipants = await supaSelect('collaboration_participants', 'collaboration_id=in.('+collabIds+')', 'collaboration_id');
+
+  var countByCollabId = {};
+  (allParticipants || []).forEach(function(p){
+    countByCollabId[p.collaboration_id] = (countByCollabId[p.collaboration_id] || 0) + 1;
+  });
+
+  if(!collaborations || !collaborations.length){
+    listEl.innerHTML = '<div style="font-size:9px;color:rgba(255,255,255,.25);text-align:center;padding:20px 0;">No collaborations yet.</div>';
+    return;
+  }
+
+  listEl.innerHTML = '';
+  collaborations.forEach(function(c){
+    var myType = myTypeByCollabId[c.id] === 'owner' ? 'Owner' : 'Member';
+    var count = countByCollabId[c.id] || 0;
+    var createdDate = c.created_at ? new Date(c.created_at).toLocaleDateString() : '';
+    var statusLabel = c.status.charAt(0).toUpperCase() + c.status.slice(1);
+    var card = document.createElement('div');
+    card.style.cssText = 'background:#111118;border-radius:10px;padding:12px;margin-bottom:8px;cursor:pointer;';
+    card.innerHTML =
+      '<div style="font-weight:600;font-size:11px;color:#fff;">'+c.title+'</div>'+
+      '<div style="font-size:9px;color:rgba(255,255,255,.4);margin-top:2px;">'+statusLabel+' &middot; '+count+' participant'+(count===1?'':'s')+' &middot; '+myType+'</div>'+
+      '<div style="font-size:8px;color:rgba(255,255,255,.2);margin-top:4px;">Started '+createdDate+'</div>';
+    card.onclick = (function(collabId){ return function(){ openCollaboration(collabId); }; })(c.id);
+    listEl.appendChild(card);
+  });
+}
+
+async function openCollaboration(collaborationId){
+  var contentEl = document.getElementById('cdContent');
+  if(contentEl) contentEl.innerHTML = '<div style="font-size:9px;color:rgba(255,255,255,.3);text-align:center;padding:20px 0;">Loading...</div>';
+  goTo('collaborationdetail');
+
+  var collabRows = await supaSelect('collaborations', 'id=eq.'+collaborationId, 'id,title,status,wanted_post_id,created_at');
+  if(!contentEl) return;
+  if(!collabRows || !collabRows[0]){
+    contentEl.innerHTML = '<div style="font-size:9px;color:rgba(255,255,255,.25);text-align:center;padding:20px 0;">Collaboration not found.</div>';
+    return;
+  }
+  var collab = collabRows[0];
+  var titleEl = document.getElementById('cdScreenTitle');
+  if(titleEl) titleEl.textContent = collab.title;
+
+  var participants = await supaSelect('collaboration_participants', 'collaboration_id=eq.'+collaborationId, 'user_id,participant_type,created_at');
+  var userIds = (participants || []).map(function(p){ return p.user_id; }).join(',');
+
+  var publicProfiles = userIds ? await supaSelect('public_profiles', 'id=in.('+userIds+')', 'id,display_name,username,photo_url') : [];
+  var profiles = userIds ? await supaSelect('profiles', 'user_id=in.('+userIds+')', 'user_id,role,location') : [];
+
+  var publicById = {};
+  (publicProfiles || []).forEach(function(pp){ publicById[pp.id] = pp; });
+  var profileById = {};
+  (profiles || []).forEach(function(pr){ profileById[pr.user_id] = pr; });
+
+  var wantedTitle = '';
+  if(collab.wanted_post_id){
+    var wantedRows = await supaSelect('wanted_posts', 'id=eq.'+collab.wanted_post_id, 'title');
+    if(wantedRows && wantedRows[0]) wantedTitle = wantedRows[0].title;
+  }
+
+  var createdDate = collab.created_at ? new Date(collab.created_at).toLocaleDateString() : '';
+  var statusLabel = collab.status.charAt(0).toUpperCase() + collab.status.slice(1);
+
+  var html =
+    '<div style="background:#111118;border-radius:10px;padding:14px;margin-bottom:14px;">'+
+      '<div style="font-weight:600;font-size:13px;color:#fff;">'+collab.title+'</div>'+
+      '<div style="font-size:9px;color:rgba(255,255,255,.4);margin-top:4px;">'+statusLabel+' &middot; Started '+createdDate+'</div>'+
+      (wantedTitle ? '<div style="font-size:9px;color:rgba(232,184,48,.6);margin-top:6px;">From: '+wantedTitle+'</div>' : '')+
+    '</div>'+
+    '<div class="section-title" style="margin-bottom:8px;">Participants</div>';
+
+  contentEl.innerHTML = html;
+
+  (participants || []).forEach(function(p){
+    var pub = publicById[p.user_id] || {};
+    var prof = profileById[p.user_id] || {};
+    var metaParts = [];
+    if(pub.username) metaParts.push('@'+pub.username);
+    if(prof.role) metaParts.push(prof.role);
+    if(prof.location) metaParts.push(prof.location);
+    var typeLabel = p.participant_type === 'owner' ? 'Owner' : 'Member';
+    var row = document.createElement('div');
+    row.style.cssText = 'display:flex;align-items:center;justify-content:space-between;background:#111118;border-radius:10px;padding:12px;margin-bottom:8px;cursor:pointer;';
+    row.innerHTML =
+      '<div>'+
+        '<div style="font-weight:600;font-size:11px;color:#fff;">'+(pub.display_name || 'STAGERZ Artist')+'</div>'+
+        '<div style="font-size:9px;color:rgba(255,255,255,.4);margin-top:2px;">'+metaParts.join(' &middot; ')+'</div>'+
+      '</div>'+
+      '<div style="font-size:9px;color:rgba(232,184,48,.7);flex-shrink:0;">'+typeLabel+'</div>';
+    row.onclick = (function(userId){ return function(){ openArtistProfile(userId, 'collaborationdetail'); }; })(p.user_id);
+    contentEl.appendChild(row);
+  });
+}
+
 function tickNACKL(){
   nacklVal += Math.floor(Math.random()*3)+1;
   var el = document.getElementById('nacklCount');
