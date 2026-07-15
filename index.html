@@ -777,7 +777,7 @@ html,body{width:100%;height:100%;background:#08080f;color:#f0f0f5;font-family:'I
         <div class="p-stat"><div class="p-stat-num" id="apProjects">12</div><div class="p-stat-label">On Stage</div></div>
         <div class="p-stat"><div class="p-stat-num" id="apFollowers">2.4k</div><div class="p-stat-label">Followers</div></div>
         <div class="p-stat"><div class="p-stat-num" id="apCollabs">8</div><div class="p-stat-label">Collabs</div></div>
-        <div class="p-stat"><div class="p-stat-num">4.9</div><div class="p-stat-label">Rating</div></div>
+        <div class="p-stat"><div class="p-stat-num" id="apRating">4.9</div><div class="p-stat-label">Rating</div></div>
       </div>
 
       <div class="section-title" style="margin:14px 0 10px;">On Stage</div>
@@ -1419,6 +1419,7 @@ function openArtist(a){
   document.getElementById('apName').textContent = a.n;
   var apAv = document.getElementById('apAvatar'); if(apAv){ apAv.innerHTML = a.emoji; apAv.style.background = 'linear-gradient(135deg,'+a.bg+',#08080f)'; }
   document.getElementById('apRole').innerHTML = a.role+' &middot; '+a.loc.split(',')[0];
+  document.getElementById('apVerified').style.display = '';
   document.getElementById('apBio').textContent = a.bio;
   document.getElementById('apProjects').textContent = a.projects;
   document.getElementById('apFollowers').textContent = a.followers;
@@ -1434,6 +1435,50 @@ function openArtist(a){
   });
   // Set back button context
   apBackScreen = 'search'; document.querySelector('#screen-artist .ap-back').onclick = function(){ goTo(apBackScreen); };
+  goTo('artist');
+}
+
+// Live-data counterpart to openArtist() -- reuses the exact same
+// screen-artist DOM and CSS, populated from public_profiles +
+// profiles instead of a local demo object. openArtist() itself is
+// untouched; Search's existing demo click-through still uses it
+// unmodified. Fields with no real-schema equivalent (avatar emoji,
+// cover gradient, portfolio "works" gallery, a "verified" concept)
+// are not fabricated -- they fall back to a neutral default or are
+// hidden, never invented to look populated.
+async function openArtistProfile(userId, backScreen){
+  var pubRows = await supaSelect('public_profiles', 'id=eq.'+userId);
+  var profRows = await supaSelect('profiles', 'user_id=eq.'+userId, 'role,location,bio,rating,followers_count,collab_count,project_count');
+  var pub = (pubRows && pubRows[0]) || {};
+  var prof = (profRows && profRows[0]) || {};
+
+  document.getElementById('apCover').style.background = 'linear-gradient(160deg,#1a0840,#0a1040)';
+  document.getElementById('apEmoji').innerHTML = '🎨';
+  document.getElementById('apName').textContent = pub.display_name || 'STAGERZ Artist';
+
+  var roleLocParts = [];
+  if(prof.role) roleLocParts.push(prof.role);
+  if(prof.location) roleLocParts.push(prof.location);
+  document.getElementById('apRole').textContent = roleLocParts.length ? roleLocParts.join(' · ') : (pub.username ? '@'+pub.username : '');
+
+  // No real "verified" concept exists in the schema yet -- hidden
+  // rather than shown as a fabricated badge.
+  document.getElementById('apVerified').style.display = 'none';
+
+  document.getElementById('apBio').textContent = prof.bio || '';
+  document.getElementById('apProjects').textContent = prof.project_count != null ? prof.project_count : 0;
+  document.getElementById('apFollowers').textContent = prof.followers_count != null ? prof.followers_count : 0;
+  document.getElementById('apCollabs').textContent = prof.collab_count != null ? prof.collab_count : 0;
+  var ratingEl = document.getElementById('apRating');
+  if(ratingEl) ratingEl.textContent = prof.rating != null ? Number(prof.rating).toFixed(1) : '-';
+
+  // No real "works"/portfolio data exists yet -- left empty rather
+  // than showing fabricated gallery items.
+  var gallery = document.getElementById('apGallery');
+  if(gallery) gallery.innerHTML = '';
+
+  apBackScreen = backScreen || 'stage';
+  document.querySelector('#screen-artist .ap-back').onclick = function(){ goTo(apBackScreen); };
   goTo('artist');
 }
 
@@ -2054,11 +2099,12 @@ async function openApplicants(postId, postTitle){
     if(prof.location) metaParts.push(prof.location);
     var appliedDate = a.created_at ? new Date(a.created_at).toLocaleDateString() : '';
     var card = document.createElement('div');
-    card.style.cssText = 'background:#111118;border-radius:10px;padding:12px;margin-bottom:8px;';
+    card.style.cssText = 'background:#111118;border-radius:10px;padding:12px;margin-bottom:8px;cursor:pointer;';
     card.innerHTML =
       '<div style="font-weight:600;font-size:11px;color:#fff;">'+(pub.display_name || 'STAGERZ Artist')+'</div>'+
       '<div style="font-size:9px;color:rgba(255,255,255,.4);margin-top:2px;">'+metaParts.join(' &middot; ')+'</div>'+
       '<div style="font-size:8px;color:rgba(255,255,255,.2);margin-top:4px;">Applied '+appliedDate+'</div>';
+    card.onclick = (function(applicantId){ return function(){ openArtistProfile(applicantId, 'wantedapplicants'); }; })(a.applicant_id);
     listEl.appendChild(card);
   });
 }
