@@ -342,7 +342,7 @@ html,body{width:100%;height:100%;background:#08080f;color:#f0f0f5;font-family:'I
     <div class="logo" style="font-size:26px;letter-spacing:-1px;text-shadow:0 0 30px rgba(232,184,48,.25);">STA<em>G</em>ERZ</div>
     <div style="display:flex;gap:10px;">
       <div class="tb-icon" onclick="goTo('search')">&#128269;</div>
-      <div class="tb-icon">&#128276;</div>
+      <div class="tb-icon" style="position:relative;" onclick="goTo('board')">&#128276;<div id="boardUnreadBadge" style="display:none;position:absolute;top:-3px;right:-3px;min-width:15px;height:15px;border-radius:8px;background:#e8b830;color:#08080f;font-size:8px;font-weight:700;line-height:15px;text-align:center;padding:0 3px;"></div></div>
     </div>
   </div>
   <!-- Stage tabs -->
@@ -690,6 +690,20 @@ html,body{width:100%;height:100%;background:#08080f;color:#f0f0f5;font-family:'I
   </div>
   <div class="sa" style="padding:14px;">
     <div id="waList"></div>
+  </div>
+</div>
+
+<!-- ==========================================
+     SCREEN: BOARD (Notifications, Phase 5)
+========================================== -->
+<div class="screen" id="screen-board">
+  <div class="screen-top">
+    <div class="bk" onclick="goTo('stage')"><div class="bk-icon">&lsaquo;</div> Stage</div>
+    <div class="screen-top-title">Board</div>
+    <div style="font-size:9px;color:rgba(232,184,48,.7);cursor:pointer;white-space:nowrap;" onclick="markAllNotificationsRead()">Mark all read</div>
+  </div>
+  <div class="sa" style="padding:14px;">
+    <div id="boardList"></div>
   </div>
 </div>
 
@@ -1133,6 +1147,7 @@ async function getMyDomainId(){
 // a restored session on reload) -- no manual refresh required.
 function enterApp(){
   goTo('stage');
+  updateUnreadBadge();
 }
 
 // Session check on startup: getSession() reads the persisted
@@ -1177,6 +1192,7 @@ function goTo(id){
   if(id==='search') setTimeout(function(){ renderArtists(); },50);
   if(id==='wanted'){ loadWanted(); }
   if(id==='profile') loadMyProfile();
+  if(id==='board') loadBoard();
   if(id==='editprofile') populateEditProfile();
 }
 
@@ -1748,14 +1764,15 @@ async function applyToWanted(postId, ownerId, btnEl){
 
   if(myId === ownerId){
     // Client-side check only, for immediate feedback -- the real
-    // enforcement is the INSERT policy's own WITH CHECK, which
-    // re-derives the post's true owner from the database regardless
-    // of this check. No Supabase call is made in this branch.
+    // enforcement is inside create_wanted_application() itself,
+    // which re-derives the post's true owner from the database
+    // regardless of this check. No Supabase call is made in this
+    // branch.
     showToast('You cannot apply to your own Wanted.');
     return;
   }
 
-  var result = await supaInsert('wanted_applications', { wanted_post_id: postId, applicant_id: myId });
+  var result = await supaRpc('create_wanted_application', { p_wanted_post_id: postId });
   console.log('applyToWanted result:', result);
 
   if(result && result.ok){
@@ -1773,13 +1790,15 @@ async function applyToWanted(postId, ownerId, btnEl){
     return;
   }
 
-  var isRlsRejection = errCode === '42501' || (result && result.error && typeof result.error.message === 'string' && result.error.message.indexOf('row-level security') !== -1);
-  if(isRlsRejection){
-    // The client-side owner check above already excludes the
-    // "own post" case before ever reaching Supabase, so a genuine
-    // RLS rejection reaching this point can only be the remaining
-    // condition the INSERT policy checks: the post is no longer open.
+  if(errCode === 'P0012'){
     showToast('This Wanted is no longer open.');
+    return;
+  }
+
+  if(errCode === 'P0013'){
+    // Server-side backstop for the same case the client-side check
+    // above already normally catches.
+    showToast('You cannot apply to your own Wanted.');
     return;
   }
 
@@ -2156,7 +2175,114 @@ async function respondToApplication(applicationId, newStatus){
     showToast(realMsg || 'Could not update application.');
   }
 }
-var nacklVal = 0;
+
+// --- BOARD (Notifications, Phase 5) ---
+
+var notificationTypeIcons = {
+  'wanted.application.created': '👤',
+  'wanted.application.accepted': '🎉',
+  'wanted.application.rejected': '❌'
+};
+
+function boardTimeAgo(dateStr){
+  var diffMs = Date.now() - new Date(dateStr).getTime();
+  var mins = Math.floor(diffMs / 60000);
+  if(mins < 1) return 'Just now';
+  if(mins < 60) return mins + 'm ago';
+  var hours = Math.floor(mins / 60);
+  if(hours < 24) return hours + 'h ago';
+  var days = Math.floor(hours / 24);
+  return days + 'd ago';
+}
+
+async function loadBoard(){
+  var listEl = document.getElementById('boardList');
+  if(listEl) listEl.innerHTML = '<div style="font-size:9px;color:rgba(255,255,255,.3);text-align:center;padding:20px 0;">Loading...</div>';
+  var myId = await getMyDomainId();
+  if(!myId){ if(listEl) listEl.innerHTML = ''; return; }
+
+  var notifications = await supaSelect(
+    'notifications',
+    'user_id=eq.'+myId+'&order=created_at.desc&limit=50',
+    'id,type,title,message,read,created_at,wanted_post_id,wanted_application_id'
+  );
+  if(!listEl) return;
+
+  if(!notifications || !notifications.length){
+    listEl.innerHTML = '<div style="font-size:9px;color:rgba(255,255,255,.25);text-align:center;padding:20px 0;">No notifications yet.</div>';
+    updateUnreadBadge();
+    return;
+  }
+
+  listEl.innerHTML = '';
+  notifications.forEach(function(n){
+    var icon = notificationTypeIcons[n.type] || '🔔';
+    var card = document.createElement('div');
+    card.style.cssText = 'display:flex;gap:10px;background:#111118;border-radius:10px;padding:12px;margin-bottom:8px;cursor:pointer;'+(n.read ? '' : 'border:1px solid rgba(232,184,48,.25);');
+    var unreadDot = n.read ? '' : ' <span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:#e8b830;margin-left:4px;vertical-align:middle;"></span>';
+    card.innerHTML =
+      '<div style="font-size:18px;flex-shrink:0;">'+icon+'</div>'+
+      '<div style="flex:1;min-width:0;">'+
+        '<div style="font-weight:600;font-size:11px;color:#fff;">'+n.title+unreadDot+'</div>'+
+        '<div style="font-size:9px;color:rgba(255,255,255,.4);margin-top:2px;">'+(n.message||'')+'</div>'+
+        '<div style="font-size:8px;color:rgba(255,255,255,.2);margin-top:4px;">'+boardTimeAgo(n.created_at)+'</div>'+
+      '</div>';
+    card.onclick = (function(notif){ return function(){ handleNotificationTap(notif); }; })(n);
+    listEl.appendChild(card);
+  });
+
+  updateUnreadBadge();
+}
+
+async function handleNotificationTap(n){
+  if(!n.read){
+    await markNotificationRead(n.id);
+  }
+
+  if(n.type === 'wanted.application.created'){
+    var title = 'Applicants';
+    if(n.wanted_post_id){
+      var posts = await supaSelect('wanted_posts', 'id=eq.'+n.wanted_post_id, 'title');
+      if(posts && posts[0] && posts[0].title) title = posts[0].title;
+      openApplicants(n.wanted_post_id, title);
+    } else {
+      goTo('board');
+    }
+  } else if(n.type === 'wanted.application.accepted' || n.type === 'wanted.application.rejected'){
+    goTo('wanted');
+  } else {
+    goTo('board');
+  }
+}
+
+async function markNotificationRead(notificationId){
+  var result = await supaUpdateMinimal('notifications', 'id=eq.'+notificationId, { read: true });
+  console.log('markNotificationRead result:', result);
+  await updateUnreadBadge();
+}
+
+async function markAllNotificationsRead(){
+  var myId = await getMyDomainId();
+  if(!myId) return;
+  var result = await supaUpdateMinimal('notifications', 'user_id=eq.'+myId+'&read=eq.false', { read: true });
+  console.log('markAllNotificationsRead result:', result);
+  await loadBoard();
+}
+
+async function updateUnreadBadge(){
+  var badge = document.getElementById('boardUnreadBadge');
+  if(!badge) return;
+  var myId = await getMyDomainId();
+  if(!myId){ badge.style.display = 'none'; return; }
+  var unread = await supaSelect('notifications', 'user_id=eq.'+myId+'&read=eq.false', 'id');
+  var count = unread ? unread.length : 0;
+  if(count > 0){
+    badge.textContent = count > 99 ? '99+' : String(count);
+    badge.style.display = 'block';
+  } else {
+    badge.style.display = 'none';
+  }
+}
 function tickNACKL(){
   nacklVal += Math.floor(Math.random()*3)+1;
   var el = document.getElementById('nacklCount');
