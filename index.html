@@ -2066,14 +2066,17 @@ async function loadMyWanted(){
 // public_profiles + profiles for the resulting applicant ids),
 // since PostgREST has no arbitrary client-side join -- the same
 // pattern already used by fetchMyProfile() elsewhere in this file.
+var currentApplicantsPostId = null;
+
 async function openApplicants(postId, postTitle){
+  currentApplicantsPostId = postId;
   var titleEl = document.getElementById('waScreenTitle');
   if(titleEl) titleEl.textContent = postTitle || 'Applicants';
   var listEl = document.getElementById('waList');
   if(listEl) listEl.innerHTML = '<div style="font-size:9px;color:rgba(255,255,255,.3);text-align:center;padding:20px 0;">Loading...</div>';
   goTo('wantedapplicants');
 
-  var applications = await supaSelect('wanted_applications', 'wanted_post_id=eq.'+postId+'&order=created_at.desc', 'applicant_id,created_at');
+  var applications = await supaSelect('wanted_applications', 'wanted_post_id=eq.'+postId+'&order=created_at.desc', 'id,applicant_id,status,created_at');
   if(!listEl) return;
   if(!applications || !applications.length){
     listEl.innerHTML = '<div style="font-size:9px;color:rgba(255,255,255,.25);text-align:center;padding:20px 0;">No applicants yet.</div>';
@@ -2100,13 +2103,58 @@ async function openApplicants(postId, postTitle){
     var appliedDate = a.created_at ? new Date(a.created_at).toLocaleDateString() : '';
     var card = document.createElement('div');
     card.style.cssText = 'background:#111118;border-radius:10px;padding:12px;margin-bottom:8px;cursor:pointer;';
+
+    var actionsHtml;
+    if(a.status === 'pending'){
+      actionsHtml =
+        '<div style="display:flex;gap:6px;margin-top:8px;">'+
+          '<button class="wa-accept-btn" style="flex:1;padding:5px;background:rgba(40,200,80,.12);border:1px solid rgba(40,200,80,.3);border-radius:6px;font-size:9px;color:rgba(100,230,140,.9);cursor:pointer;">Accept</button>'+
+          '<button class="wa-reject-btn" style="flex:1;padding:5px;background:rgba(255,60,60,.08);border:1px solid rgba(255,60,60,.2);border-radius:6px;font-size:9px;color:rgba(255,100,100,.8);cursor:pointer;">Reject</button>'+
+        '</div>';
+    } else {
+      var statusColor = a.status === 'accepted' ? 'rgba(100,230,140,.9)' : 'rgba(255,100,100,.8)';
+      var statusLabel = a.status.charAt(0).toUpperCase() + a.status.slice(1);
+      actionsHtml = '<div style="margin-top:8px;font-size:9px;font-weight:600;color:'+statusColor+';">'+statusLabel+'</div>';
+    }
+
     card.innerHTML =
       '<div style="font-weight:600;font-size:11px;color:#fff;">'+(pub.display_name || 'STAGERZ Artist')+'</div>'+
       '<div style="font-size:9px;color:rgba(255,255,255,.4);margin-top:2px;">'+metaParts.join(' &middot; ')+'</div>'+
-      '<div style="font-size:8px;color:rgba(255,255,255,.2);margin-top:4px;">Applied '+appliedDate+'</div>';
+      '<div style="font-size:8px;color:rgba(255,255,255,.2);margin-top:4px;">Applied '+appliedDate+'</div>'+
+      actionsHtml;
+
     card.onclick = (function(applicantId){ return function(){ openArtistProfile(applicantId, 'wantedapplicants'); }; })(a.applicant_id);
+
+    if(a.status === 'pending'){
+      var acceptBtn = card.querySelector('.wa-accept-btn');
+      var rejectBtn = card.querySelector('.wa-reject-btn');
+      acceptBtn.onclick = (function(id){ return function(e){ e.stopPropagation(); respondToApplication(id, 'accepted'); }; })(a.id);
+      rejectBtn.onclick = (function(id){ return function(e){ e.stopPropagation(); respondToApplication(id, 'rejected'); }; })(a.id);
+    }
+
     listEl.appendChild(card);
   });
+}
+
+// Owner-only accept/reject, via the existing one-way RPC. Reloads
+// the same Applicants screen from the real database on success,
+// exactly as every other write path in this file already does,
+// rather than optimistically mutating the DOM locally.
+async function respondToApplication(applicationId, newStatus){
+  var result = await supaRpc('respond_to_wanted_application', { p_application_id: applicationId, p_new_status: newStatus });
+  console.log('respondToApplication result:', result);
+  if(result && result.ok){
+    showToast(newStatus === 'accepted' ? 'Application accepted.' : 'Application rejected.');
+    haptic('success');
+    if(currentApplicantsPostId){
+      var titleEl = document.getElementById('waScreenTitle');
+      await openApplicants(currentApplicantsPostId, titleEl ? titleEl.textContent : '');
+    }
+  } else {
+    console.error('respondToApplication FAILED -- real Supabase error:', result && result.error);
+    var realMsg = result && result.error && (result.error.message || result.error.hint || result.error.details || JSON.stringify(result.error));
+    showToast(realMsg || 'Could not update application.');
+  }
 }
 var nacklVal = 0;
 function tickNACKL(){
