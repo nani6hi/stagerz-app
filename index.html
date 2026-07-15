@@ -2402,6 +2402,8 @@ async function openCollaboration(collaborationId){
 
   var createdDate = collab.created_at ? new Date(collab.created_at).toLocaleDateString() : '';
   var statusLabel = collab.status.charAt(0).toUpperCase() + collab.status.slice(1);
+  var statusColor = collab.status === 'active' ? 'rgba(100,230,140,.9)' : collab.status === 'completed' ? '#e8b830' : 'rgba(255,100,100,.8)';
+  var memberCount = (participants || []).length;
 
   var html =
     '<div style="background:#111118;border-radius:10px;padding:14px;margin-bottom:14px;">'+
@@ -2409,6 +2411,19 @@ async function openCollaboration(collaborationId){
       '<div style="font-size:9px;color:rgba(255,255,255,.4);margin-top:4px;">'+statusLabel+' &middot; Started '+createdDate+'</div>'+
       (wantedTitle ? '<div style="font-size:9px;color:rgba(232,184,48,.6);margin-top:6px;">From: '+wantedTitle+'</div>' : '')+
     '</div>'+
+
+    '<div class="section-title" style="margin-bottom:8px;">Overview</div>'+
+    '<div style="display:flex;background:#111118;border-radius:10px;padding:10px 0;margin-bottom:16px;">'+
+      '<div class="p-stat"><div class="p-stat-num">'+memberCount+'</div><div class="p-stat-label">Members</div></div>'+
+      '<div class="p-stat"><div class="p-stat-num">0</div><div class="p-stat-label">Messages</div></div>'+
+      '<div class="p-stat"><div class="p-stat-num">0</div><div class="p-stat-label">Assets</div></div>'+
+      '<div class="p-stat"><div class="p-stat-num">0</div><div class="p-stat-label">Tasks</div></div>'+
+      '<div class="p-stat" style="border-right:none;"><div class="p-stat-num" style="font-size:10px;color:'+statusColor+';">'+statusLabel+'</div><div class="p-stat-label">Status</div></div>'+
+    '</div>'+
+
+    '<div class="section-title" style="margin-bottom:8px;">Description</div>'+
+    '<div style="background:#111118;border-radius:10px;padding:14px;margin-bottom:16px;font-size:9px;color:rgba(255,255,255,.25);">No description yet.</div>'+
+
     '<div class="section-title" style="margin-bottom:8px;">Participants</div>';
 
   contentEl.innerHTML = html;
@@ -2431,6 +2446,29 @@ async function openCollaboration(collaborationId){
       '<div style="font-size:9px;color:rgba(232,184,48,.7);flex-shrink:0;">'+typeLabel+'</div>';
     row.onclick = (function(userId){ return function(){ openArtistProfile(userId, 'collaborationdetail'); }; })(p.user_id);
     contentEl.appendChild(row);
+  });
+
+  // Modules -- non-interactive by design (no onclick at all), per
+  // the explicit instruction not to make an inert card look active.
+  var modulesTitle = document.createElement('div');
+  modulesTitle.className = 'section-title';
+  modulesTitle.style.cssText = 'margin-bottom:8px;margin-top:16px;';
+  modulesTitle.textContent = 'Modules';
+  contentEl.appendChild(modulesTitle);
+
+  var modules = [
+    { label: 'Messages', empty: 'No messages yet.' },
+    { label: 'Assets', empty: 'No assets yet.' },
+    { label: 'Tasks', empty: 'No tasks yet.' },
+    { label: 'Credits', empty: 'No credits assigned yet.' }
+  ];
+  modules.forEach(function(m){
+    var card = document.createElement('div');
+    card.style.cssText = 'background:#111118;border-radius:10px;padding:14px;margin-bottom:8px;';
+    card.innerHTML =
+      '<div style="font-weight:600;font-size:11px;color:#fff;">'+m.label+'</div>'+
+      '<div style="font-size:9px;color:rgba(255,255,255,.25);margin-top:4px;">'+m.empty+'</div>';
+    contentEl.appendChild(card);
   });
 }
 
