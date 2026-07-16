@@ -587,6 +587,9 @@ html,body{width:100%;height:100%;background:#08080f;color:#f0f0f5;font-family:'I
       <div style="padding:20px 0 8px;">
         <div class="p-btn-secondary" style="width:100%;" onclick="logout()">LOG OUT</div>
       </div>
+      <div style="text-align:center;padding:10px 0;">
+        <div style="display:inline-block;font-size:8px;color:rgba(255,100,100,.5);cursor:pointer;border:1px dashed rgba(255,100,100,.2);padding:5px 10px;border-radius:6px;" onclick="goTo('storagetest')">TEMP: Storage Test Harness (Phase 8.1B — remove after verification)</div>
+      </div>
     </div>
   </div>
   <div class="nb">
@@ -762,6 +765,35 @@ html,body{width:100%;height:100%;background:#08080f;color:#f0f0f5;font-family:'I
     <button class="form-submit" id="ctCreateBtn" onclick="createCollaborationTask()">Create Task</button>
     <div class="section-title" style="margin-bottom:8px;margin-top:20px;">Task List</div>
     <div id="ctList"></div>
+  </div>
+</div>
+
+<!-- ==========================================
+     TEMPORARY: STORAGE VERIFICATION HARNESS
+     Phase 8.1B -- NOT part of the permanent app.
+     Remove this entire screen after manual verification
+     is complete and approved.
+========================================== -->
+<div class="screen" id="screen-storagetest">
+  <div class="screen-top">
+    <div class="bk" onclick="goTo('profile')"><div class="bk-icon">&lsaquo;</div> Profile</div>
+    <div class="screen-top-title" style="color:rgba(255,100,100,.8);">TEMP: Storage Test</div>
+    <div style="width:60px;"></div>
+  </div>
+  <div class="sa" style="padding:14px;">
+    <div style="font-size:8px;color:rgba(255,100,100,.6);margin-bottom:14px;">This screen is a temporary verification harness for Phase 8.1B. It is not part of the STAGERZ product and will be removed.</div>
+
+    <div class="form-label">Collaboration ID (must be a real one you participate in, or not)</div>
+    <input class="form-input" id="stCollabIdInput" type="text" placeholder="collaboration id">
+
+    <div class="form-label">Known object path (for non-participant download-denial test)</div>
+    <input class="form-input" id="stKnownPathInput" type="text" placeholder="e.g. <other-collab-id>/browser-test-....txt">
+
+    <button class="form-submit" style="margin-bottom:10px;" onclick="runStorageVerification(document.getElementById('stCollabIdInput').value.trim())">Run PARTICIPANT Verification</button>
+    <button class="form-submit" style="background:linear-gradient(135deg,#5a1818,#a83030);" onclick="runStorageDenialVerification(document.getElementById('stCollabIdInput').value.trim(), document.getElementById('stKnownPathInput').value.trim())">Run NON-PARTICIPANT Denial Verification</button>
+
+    <div class="section-title" style="margin-bottom:8px;margin-top:20px;">Results</div>
+    <div id="storageTestResults" style="background:#111118;border-radius:10px;padding:10px;"></div>
   </div>
 </div>
 
@@ -2860,6 +2892,96 @@ async function completeCollaborationTask(taskId){
     var realMsg = result && result.error && (result.error.message || result.error.hint || result.error.details || JSON.stringify(result.error));
     showToast(realMsg || 'Could not complete task.');
   }
+}
+
+// ============================================================
+// TEMPORARY: STORAGE VERIFICATION HARNESS -- Phase 8.1B
+// NOT part of the permanent STAGERZ product. Uses the existing
+// real authenticated supabaseClient session and the real Storage
+// API (never raw SQL against storage.objects, never service role,
+// never bypasses RLS). To be removed after manual verification is
+// complete and approved.
+// ============================================================
+
+function storageTestLog(msg, ok){
+  var panel = document.getElementById('storageTestResults');
+  if(!panel) return;
+  var line = document.createElement('div');
+  var color = ok === true ? 'rgba(100,230,140,.9)' : ok === false ? 'rgba(255,100,100,.8)' : 'rgba(255,255,255,.5)';
+  line.style.cssText = 'font-size:9px;padding:5px 0;border-bottom:1px solid rgba(255,255,255,.06);color:'+color+';word-break:break-word;';
+  line.textContent = (ok === true ? '\u2705 ' : ok === false ? '\u274c ' : '\u2139\ufe0f ') + msg;
+  panel.appendChild(line);
+}
+
+function storageTestClear(){
+  var panel = document.getElementById('storageTestResults');
+  if(panel) panel.innerHTML = '';
+}
+
+async function runStorageVerification(collaborationId){
+  storageTestClear();
+  if(!collaborationId){ storageTestLog('Please enter a collaboration id.', false); return; }
+  storageTestLog('PARTICIPANT verification -- collaboration: '+collaborationId, null);
+
+  var uniquePath = collaborationId + '/browser-test-' + Date.now() + '.txt';
+  var testFile = new File(['STAGERZ STORAGE TEST'], 'storage-test.txt', { type: 'text/plain' });
+
+  var uploadRes = await supabaseClient.storage.from('collaboration-assets').upload(uniquePath, testFile, { contentType: 'text/plain', upsert: false });
+  if(uploadRes.error){
+    storageTestLog('1-2. Upload FAILED: '+uploadRes.error.message, false);
+    return;
+  }
+  storageTestLog('1-2. Upload succeeded: '+uniquePath, true);
+
+  var listRes = await supabaseClient.storage.from('collaboration-assets').list(collaborationId);
+  var found = !listRes.error && listRes.data && listRes.data.some(function(f){ return uniquePath.indexOf(f.name) !== -1 || f.name === uniquePath.split('/').pop(); });
+  storageTestLog('3-4. List folder: '+(listRes.error ? listRes.error.message : (found ? 'object found ('+listRes.data.length+' total)' : 'object NOT found')), !!found);
+
+  var downloadRes = await supabaseClient.storage.from('collaboration-assets').download(uniquePath);
+  if(downloadRes.error){
+    storageTestLog('5-7. Download FAILED: '+downloadRes.error.message, false);
+  } else {
+    var text = await downloadRes.data.text();
+    var matches = text === 'STAGERZ STORAGE TEST';
+    storageTestLog('5-7. Downloaded text: "'+text+'" -- exact match: '+matches, matches);
+  }
+
+  var dupRes = await supabaseClient.storage.from('collaboration-assets').upload(uniquePath, testFile, { contentType: 'text/plain', upsert: false });
+  storageTestLog('8-9. Duplicate upload (upsert:false): '+(dupRes.error ? ('correctly rejected -- '+dupRes.error.message) : 'INCORRECTLY SUCCEEDED'), !!dupRes.error);
+
+  var updateRes = await supabaseClient.storage.from('collaboration-assets').update(uniquePath, testFile, { contentType: 'text/plain' });
+  storageTestLog('10. Update/overwrite attempt: '+(updateRes.error ? ('correctly denied -- '+updateRes.error.message) : 'INCORRECTLY SUCCEEDED'), !!updateRes.error);
+
+  var removeRes = await supabaseClient.storage.from('collaboration-assets').remove([uniquePath]);
+  var removeDenied = !!(removeRes.error) || !!(removeRes.data && removeRes.data.length === 0);
+  storageTestLog('11. Remove attempt: '+(removeRes.error ? ('correctly denied -- '+removeRes.error.message) : (removeDenied ? 'no rows removed (correctly denied)' : 'INCORRECTLY SUCCEEDED')), removeDenied);
+
+  storageTestLog('12. Genuine object left in place at: '+uniquePath, null);
+}
+
+async function runStorageDenialVerification(collaborationId, knownObjectPath){
+  storageTestClear();
+  if(!collaborationId){ storageTestLog('Please enter a collaboration id.', false); return; }
+  storageTestLog('NON-PARTICIPANT denial verification -- collaboration: '+collaborationId, null);
+
+  var uniquePath = collaborationId + '/should-not-upload-' + Date.now() + '.txt';
+  var testFile = new File(['STAGERZ STORAGE TEST'], 'storage-test.txt', { type: 'text/plain' });
+
+  var uploadRes = await supabaseClient.storage.from('collaboration-assets').upload(uniquePath, testFile, { contentType: 'text/plain', upsert: false });
+  storageTestLog('1. Upload into foreign folder: '+(uploadRes.error ? ('correctly denied -- '+uploadRes.error.message) : 'INCORRECTLY SUCCEEDED'), !!uploadRes.error);
+
+  var listRes = await supabaseClient.storage.from('collaboration-assets').list(collaborationId);
+  var seesAnything = !listRes.error && listRes.data && listRes.data.length > 0;
+  storageTestLog('2. List foreign folder: '+(listRes.error ? listRes.error.message : (seesAnything ? 'INCORRECTLY sees: '+JSON.stringify(listRes.data.map(function(f){ return f.name; })) : 'correctly empty')), !seesAnything);
+
+  if(knownObjectPath){
+    var downloadRes = await supabaseClient.storage.from('collaboration-assets').download(knownObjectPath);
+    storageTestLog('3. Download known object ('+knownObjectPath+'): '+(downloadRes.error ? ('correctly denied -- '+downloadRes.error.message) : 'INCORRECTLY SUCCEEDED'), !!downloadRes.error);
+  } else {
+    storageTestLog('3. Skipped -- no known object path provided.', null);
+  }
+
+  storageTestLog('4. No existing object was modified by this run (upload/download only attempted, both correctly denied above).', null);
 }
 
 function tickNACKL(){
