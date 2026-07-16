@@ -744,6 +744,28 @@ html,body{width:100%;height:100%;background:#08080f;color:#f0f0f5;font-family:'I
 </div>
 
 <!-- ==========================================
+     SCREEN: COLLABORATION TASKS (Phase 7.1)
+========================================== -->
+<div class="screen" id="screen-collaborationtasks">
+  <div class="screen-top">
+    <div class="bk" onclick="openCollaboration(currentCollaborationId)"><div class="bk-icon">&lsaquo;</div> Workspace</div>
+    <div style="text-align:center;flex:1;min-width:0;">
+      <div class="screen-top-title" id="ctScreenTitle">Tasks</div>
+    </div>
+    <div style="width:60px;"></div>
+  </div>
+  <div class="sa" style="padding:14px;">
+    <div class="section-title" style="margin-bottom:8px;">New Task</div>
+    <input class="form-input" id="ctTitleInput" type="text" placeholder="Task title..." maxlength="300">
+    <div class="form-label">Assignee (optional)</div>
+    <div id="ctAssigneeChips" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px;"></div>
+    <button class="form-submit" id="ctCreateBtn" onclick="createCollaborationTask()">Create Task</button>
+    <div class="section-title" style="margin-bottom:8px;margin-top:20px;">Task List</div>
+    <div id="ctList"></div>
+  </div>
+</div>
+
+<!-- ==========================================
      SCREEN: BOARD (Notifications, Phase 5)
 ========================================== -->
 <div class="screen" id="screen-board">
@@ -1710,6 +1732,8 @@ var pwRemoteOn = true;
 var editingWantedId = null;
 var currentCollaborationId = null;
 var currentCollaborationTitle = '';
+var currentCollaborationParticipants = [];
+var currentCollaborationPublicById = {};
 
 // Forces the remote toggle to a specific value (unlike
 // toggleRemote(), which always flips the current state) -- used
@@ -2416,6 +2440,9 @@ async function openCollaboration(collaborationId){
   var profileById = {};
   (profiles || []).forEach(function(pr){ profileById[pr.user_id] = pr; });
 
+  currentCollaborationParticipants = participants || [];
+  currentCollaborationPublicById = publicById;
+
   var wantedTitle = '';
   if(collab.wanted_post_id){
     var wantedRows = await supaSelect('wanted_posts', 'id=eq.'+collab.wanted_post_id, 'title');
@@ -2568,7 +2595,7 @@ async function openCollaboration(collaborationId){
   ];
   modules.forEach(function(m){
     var card = document.createElement('div');
-    card.style.cssText = 'display:flex;align-items:center;gap:10px;background:#111118;border-radius:10px;padding:14px;margin-bottom:8px;'+(m.key==='messages' ? 'cursor:pointer;' : '');
+    card.style.cssText = 'display:flex;align-items:center;gap:10px;background:#111118;border-radius:10px;padding:14px;margin-bottom:8px;'+((m.key==='messages'||m.key==='tasks') ? 'cursor:pointer;' : '');
     card.innerHTML =
       '<div style="font-size:16px;flex-shrink:0;">'+m.icon+'</div>'+
       '<div>'+
@@ -2577,6 +2604,9 @@ async function openCollaboration(collaborationId){
       '</div>';
     if(m.key === 'messages'){
       card.onclick = function(){ openCollaborationMessages(currentCollaborationId, currentCollaborationTitle); };
+    }
+    if(m.key === 'tasks'){
+      card.onclick = function(){ openCollaborationTasks(currentCollaborationId, currentCollaborationTitle); };
     }
     contentEl.appendChild(card);
   });
@@ -2696,6 +2726,140 @@ async function sendCollaborationMessage(){
   }
 
   if(sendBtn){ sendBtn.disabled = false; sendBtn.style.opacity = '1'; }
+}
+
+// --- COLLABORATION TASKS (Phase 7.1) ---
+// Minimum scope only: create, view, complete. No priority, deadline,
+// labels, subtasks, comments, attachments, edit, delete, or undo.
+// Activity Timeline integration deliberately deferred to a later phase.
+
+var selectedTaskAssigneeId = null;
+
+async function openCollaborationTasks(collaborationId, collaborationTitle){
+  currentCollaborationId = collaborationId;
+  currentCollaborationTitle = collaborationTitle || '';
+  selectedTaskAssigneeId = null;
+  var titleEl = document.getElementById('ctScreenTitle');
+  if(titleEl) titleEl.textContent = collaborationTitle || 'Tasks';
+  var titleInput = document.getElementById('ctTitleInput');
+  if(titleInput) titleInput.value = '';
+
+  // Assignee chips built from data openCollaboration() already
+  // fetched -- no new participant/profile query for this screen.
+  var chipsEl = document.getElementById('ctAssigneeChips');
+  if(chipsEl){
+    chipsEl.innerHTML = '';
+    currentCollaborationParticipants.forEach(function(p){
+      var pub = currentCollaborationPublicById[p.user_id] || {};
+      var chip = document.createElement('div');
+      chip.className = 'form-chip';
+      chip.textContent = pub.display_name || 'STAGERZ Artist';
+      chip.onclick = (function(userId, chipEl){ return function(){
+        var alreadySelected = selectedTaskAssigneeId === userId;
+        chipsEl.querySelectorAll('.form-chip').forEach(function(c){ c.classList.remove('on'); });
+        selectedTaskAssigneeId = alreadySelected ? null : userId;
+        if(!alreadySelected) chipEl.classList.add('on');
+      }; })(p.user_id, chip);
+      chipsEl.appendChild(chip);
+    });
+  }
+
+  goTo('collaborationtasks');
+  await loadCollaborationTasks(collaborationId);
+}
+
+async function loadCollaborationTasks(collaborationId){
+  var listEl = document.getElementById('ctList');
+  if(listEl) listEl.innerHTML = '<div style="font-size:9px;color:rgba(255,255,255,.3);text-align:center;padding:20px 0;">Loading...</div>';
+
+  var tasks = await supaSelect(
+    'collaboration_tasks',
+    'collaboration_id=eq.'+collaborationId+'&order=created_at.asc',
+    'id,creator_id,assignee_id,title,status,completed_at'
+  );
+  if(!listEl) return;
+
+  if(!tasks || !tasks.length){
+    listEl.innerHTML = '<div style="font-size:9px;color:rgba(255,255,255,.25);text-align:center;padding:20px 0;">No tasks yet.</div>';
+    return;
+  }
+
+  listEl.innerHTML = '';
+  tasks.forEach(function(t){
+    var assigneePub = t.assignee_id ? (currentCollaborationPublicById[t.assignee_id] || {}) : null;
+    var metaLine = t.status === 'done'
+      ? 'Completed'
+      : (assigneePub ? 'Assigned to ' + (assigneePub.display_name || 'STAGERZ Artist') : 'Unassigned');
+    var checkGlyph = t.status === 'done' ? '&#10003;' : '&#9744;';
+
+    var row = document.createElement('div');
+    row.style.cssText = 'background:#111118;border-radius:10px;padding:12px;margin-bottom:8px;';
+    row.innerHTML =
+      '<div style="display:flex;align-items:center;gap:8px;">'+
+        '<div style="font-size:13px;color:'+(t.status==='done' ? 'rgba(100,230,140,.9)' : 'rgba(255,255,255,.4)')+';">'+checkGlyph+'</div>'+
+        '<div style="font-weight:600;font-size:11px;color:#fff;'+(t.status==='done' ? 'text-decoration:line-through;opacity:.6;' : '')+'">'+t.title+'</div>'+
+      '</div>'+
+      '<div style="font-size:9px;color:rgba(255,255,255,.35);margin-top:4px;margin-left:21px;">'+metaLine+'</div>';
+
+    if(t.status === 'todo'){
+      var completeBtn = document.createElement('div');
+      completeBtn.className = 'p-btn-primary';
+      completeBtn.style.cssText = 'margin-top:10px;margin-left:21px;display:inline-block;';
+      completeBtn.textContent = 'Complete';
+      completeBtn.onclick = (function(taskId){ return function(){ completeCollaborationTask(taskId); }; })(t.id);
+      row.appendChild(completeBtn);
+    }
+
+    listEl.appendChild(row);
+  });
+}
+
+async function createCollaborationTask(){
+  var titleInput = document.getElementById('ctTitleInput');
+  var createBtn = document.getElementById('ctCreateBtn');
+  var rawTitle = titleInput ? titleInput.value : '';
+  var trimmedTitle = rawTitle.trim();
+  if(!trimmedTitle){ showToast('Please enter a task title.'); return; }
+  if(trimmedTitle.length > 300){ showToast('Title is too long (max 300 characters).'); return; }
+
+  if(createBtn){ createBtn.disabled = true; createBtn.style.opacity = '.6'; }
+
+  var result = await supaRpc('create_collaboration_task', {
+    p_collaboration_id: currentCollaborationId,
+    p_title: trimmedTitle,
+    p_assignee_id: selectedTaskAssigneeId
+  });
+  console.log('createCollaborationTask result:', result);
+
+  if(result && result.ok){
+    if(titleInput) titleInput.value = '';
+    selectedTaskAssigneeId = null;
+    var chipsEl = document.getElementById('ctAssigneeChips');
+    if(chipsEl) chipsEl.querySelectorAll('.form-chip').forEach(function(c){ c.classList.remove('on'); });
+    showToast('Task created.');
+    haptic('success');
+    await loadCollaborationTasks(currentCollaborationId);
+  } else {
+    console.error('createCollaborationTask FAILED -- real Supabase error:', result && result.error);
+    var realMsg = result && result.error && (result.error.message || result.error.hint || result.error.details || JSON.stringify(result.error));
+    showToast(realMsg || 'Could not create task.');
+  }
+
+  if(createBtn){ createBtn.disabled = false; createBtn.style.opacity = '1'; }
+}
+
+async function completeCollaborationTask(taskId){
+  var result = await supaRpc('complete_collaboration_task', { p_task_id: taskId });
+  console.log('completeCollaborationTask result:', result);
+  if(result && result.ok){
+    showToast('Task completed.');
+    haptic('success');
+    await loadCollaborationTasks(currentCollaborationId);
+  } else {
+    console.error('completeCollaborationTask FAILED -- real Supabase error:', result && result.error);
+    var realMsg = result && result.error && (result.error.message || result.error.hint || result.error.details || JSON.stringify(result.error));
+    showToast(realMsg || 'Could not complete task.');
+  }
 }
 
 function tickNACKL(){
