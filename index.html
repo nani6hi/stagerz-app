@@ -2513,6 +2513,45 @@ async function openCollaboration(collaborationId){
     membersOnly.forEach(renderParticipantRow);
   }
 
+  // Activity -- synthesized entirely from data already fetched above
+  // (collab.created_at, participants[].created_at/participant_type,
+  // publicById) -- zero new query, no collaboration_activity table
+  // yet. The owner's join is presented as the creation event, never
+  // as a separate "joined" line, per instruction.
+  var activityTitle = document.createElement('div');
+  activityTitle.className = 'section-title';
+  activityTitle.style.cssText = 'margin-bottom:8px;margin-top:16px;';
+  activityTitle.textContent = 'Activity';
+  contentEl.appendChild(activityTitle);
+
+  var activityItems = (participants || []).map(function(p){
+    var isOwner = p.participant_type === 'owner';
+    return {
+      user_id: p.user_id,
+      created_at: p.created_at,
+      sentence: isOwner ? 'created the collaboration' : 'joined the collaboration'
+    };
+  }).sort(function(a, b){
+    return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+  });
+
+  activityItems.forEach(function(item){
+    var pub = publicById[item.user_id] || {};
+    var avatarStyle = pub.photo_url
+      ? "background-image:url('"+pub.photo_url+"');background-size:cover;background-position:center;"
+      : 'background:#1a1228;';
+    var avatarContent = pub.photo_url ? '' : '&#128100;';
+    var row = document.createElement('div');
+    row.style.cssText = 'display:flex;align-items:center;gap:10px;background:#111118;border-radius:10px;padding:12px;margin-bottom:8px;';
+    row.innerHTML =
+      '<div class="artist-av" style="width:32px;height:32px;font-size:15px;'+avatarStyle+'">'+avatarContent+'</div>'+
+      '<div style="min-width:0;">'+
+        '<div style="font-size:11px;color:#fff;"><span style="font-weight:600;">'+(pub.display_name || 'STAGERZ Artist')+'</span> '+item.sentence+'</div>'+
+        '<div style="font-size:8px;color:rgba(255,255,255,.25);margin-top:2px;">'+boardTimeAgo(item.created_at)+'</div>'+
+      '</div>';
+    contentEl.appendChild(row);
+  });
+
   // Modules -- non-interactive by design (no onclick at all), per
   // the explicit instruction not to make an inert card look active.
   var modulesTitle = document.createElement('div');
