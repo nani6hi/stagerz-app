@@ -781,12 +781,15 @@ html,body{width:100%;height:100%;background:#08080f;color:#f0f0f5;font-family:'I
     <div style="width:60px;"></div>
   </div>
   <div class="sa" style="padding:14px;">
-    <div style="font-size:8px;color:rgba(255,100,100,.6);margin-bottom:14px;">This screen is a temporary verification harness for Phase 8.1B. It is not part of the STAGERZ product and will be removed. No collaboration id or object path needs to be entered manually -- both are auto-detected / auto-remembered.</div>
+    <div style="font-size:8px;color:rgba(255,100,100,.6);margin-bottom:14px;">This screen is a temporary verification harness for Phase 8.1B. It is not part of the STAGERZ product and will be removed. The PARTICIPANT run needs no manual input. The NON-PARTICIPANT run needs only the collaboration id shown by the PARTICIPANT run (the object path itself is fixed and reconstructed automatically -- no full path or browser storage needed).</div>
 
     <div id="storageTestUserBanner" style="background:rgba(232,184,48,.1);border:1px solid rgba(232,184,48,.3);border-radius:8px;padding:10px;font-size:9px;color:#e8b830;font-weight:600;margin-bottom:14px;word-break:break-all;">Current authenticated user: (not yet checked -- tap a button below)</div>
 
-    <button class="form-submit" style="margin-bottom:10px;" onclick="runStorageVerification()">Run PARTICIPANT Verification</button>
-    <button class="form-submit" style="background:linear-gradient(135deg,#5a1818,#a83030);" onclick="runStorageDenialVerification()">Run NON-PARTICIPANT Denial Verification</button>
+    <button class="form-submit" style="margin-bottom:14px;" onclick="runStorageVerification()">Run PARTICIPANT Verification</button>
+
+    <div class="form-label">Collaboration id (from the PARTICIPANT run above, non-participant browser only)</div>
+    <input class="form-input" id="stDenialCollabIdInput" type="text" placeholder="collaboration id">
+    <button class="form-submit" style="background:linear-gradient(135deg,#5a1818,#a83030);" onclick="runStorageDenialVerification(document.getElementById('stDenialCollabIdInput').value.trim())">Run NON-PARTICIPANT Denial Verification</button>
 
     <div class="section-title" style="margin-bottom:8px;margin-top:20px;">Results</div>
     <div id="storageTestResults" style="background:#111118;border-radius:10px;padding:10px;"></div>
@@ -2961,7 +2964,6 @@ function storageTestLog(msg, ok){
   panel.appendChild(line);
 }
 
-var STORAGE_TEST_LS_KEY = 'stagerz_temp_phase81b_object';
 
 async function runStorageVerification(){
   storageTestClear();
@@ -3008,16 +3010,21 @@ async function runStorageVerification(){
   }
   storageTestLog('1-2. Upload succeeded', true);
 
-  // Remember this object's path locally so the non-participant run
-  // (a separate later session) can use it automatically, with no
-  // manual copy/paste. This harness is temporary and will be
-  // deleted after verification, so localStorage use here is scoped
-  // to that lifetime only.
-  try{
-    localStorage.setItem(STORAGE_TEST_LS_KEY, JSON.stringify({ collaborationId: collaborationId, path: uniquePath, uploadedBy: myId, uploadedAt: new Date().toISOString() }));
-    storageTestLog('Remembered object path locally for the non-participant run.', null);
-  }catch(e){
-    storageTestLog('Could not persist path locally (localStorage unavailable): '+e.message, false);
+  // Cross-browser denial test object: a FIXED, deterministic path
+  // (not the timestamped uniquePath above), so a second browser
+  // (User 3) can reconstruct the exact same path from only the
+  // collaboration id -- no shared browser storage, no signed URL,
+  // no full-path copy/paste needed. The path itself carries no
+  // access -- RLS still gates every real read/write to it.
+  var crossBrowserPath = collaborationId + '/cross-browser-known-object.txt';
+  await storageTestPreCallLog('collaboration-assets', crossBrowserPath);
+  var crossBrowserUploadRes = await supabaseClient.storage.from('collaboration-assets').upload(crossBrowserPath, testFile, { contentType: 'text/plain', upsert: true });
+  storageTestPostCallLog('cross-browser fixed-path upload', crossBrowserUploadRes);
+  if(crossBrowserUploadRes.error){
+    storageTestLog('Cross-browser known-object upload FAILED: '+crossBrowserUploadRes.error.message, false);
+  } else {
+    storageTestLog('Cross-browser known object ready at: '+crossBrowserPath, true);
+    storageTestLog('For the non-participant run, enter ONLY this collaboration id: '+collaborationId, null);
   }
 
   await storageTestPreCallLog('collaboration-assets', collaborationId + '/ (list)');
@@ -3075,7 +3082,7 @@ async function runStorageVerification(){
   storageTestLog('12. Genuine object left in place at: '+uniquePath, null);
 }
 
-async function runStorageDenialVerification(){
+async function runStorageDenialVerification(collaborationId){
   storageTestClear();
   await updateStorageTestUserBanner();
 
@@ -3090,22 +3097,17 @@ async function runStorageDenialVerification(){
   if(myId) storageTestLog('STAGERZ domain user id: '+myId, null);
   storageTestLog('Bucket: collaboration-assets', null);
 
-  var remembered = null;
-  try{
-    var raw = localStorage.getItem(STORAGE_TEST_LS_KEY);
-    if(raw) remembered = JSON.parse(raw);
-  }catch(e){}
-
-  if(!remembered){
-    storageTestLog('No remembered object found in this browser. Run the PARTICIPANT verification first (in the participant\'s own session) before running this denial test.', false);
+  if(!collaborationId){
+    storageTestLog('Please enter the collaboration id shown by the PARTICIPANT run (no other value is needed -- the object path is fixed and reconstructed automatically).', false);
     return;
   }
 
-  var collaborationId = remembered.collaborationId;
-  var knownObjectPath = remembered.path;
-  storageTestLog('Using remembered collaboration id: '+collaborationId, null);
-  storageTestLog('Using remembered object path: '+knownObjectPath, null);
-  storageTestLog('(Remembered object was uploaded by domain user: '+remembered.uploadedBy+' at '+remembered.uploadedAt+')', null);
+  // Fixed, deterministic path -- reconstructed here identically to
+  // how the participant run created it. No shared browser storage,
+  // no signed URL, no full path needs to be copied.
+  var knownObjectPath = collaborationId + '/cross-browser-known-object.txt';
+  storageTestLog('Using entered collaboration id: '+collaborationId, null);
+  storageTestLog('Reconstructed known object path: '+knownObjectPath, null);
 
   var uniquePath = collaborationId + '/should-not-upload-' + Date.now() + '.txt';
   var testFile = new File(['STAGERZ STORAGE TEST'], 'storage-test.txt', { type: 'text/plain' });
