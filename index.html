@@ -2964,6 +2964,32 @@ function storageTestLog(msg, ok){
   panel.appendChild(line);
 }
 
+function storageTestLogCollabIdWithCopy(collaborationId, crossBrowserPath){
+  var panel = document.getElementById('storageTestResults');
+  if(!panel) return;
+  var row = document.createElement('div');
+  row.style.cssText = 'padding:8px 0;border-bottom:1px solid rgba(255,255,255,.06);';
+  row.innerHTML =
+    '<div style="font-size:9px;color:rgba(255,255,255,.7);word-break:break-all;">Collaboration id: '+collaborationId+'</div>'+
+    '<div style="font-size:9px;color:rgba(255,255,255,.5);word-break:break-all;margin-top:2px;">Fixed cross-browser object name: '+crossBrowserPath+'</div>'+
+    '<button class="p-btn-secondary" style="margin-top:6px;width:auto;padding:6px 12px;display:inline-block;" id="stCopyCollabIdBtn">Copy Collaboration ID</button>'+
+    '<span id="stCopyConfirm" style="font-size:8px;color:rgba(100,230,140,.9);margin-left:8px;display:none;">Copied!</span>';
+  panel.appendChild(row);
+
+  var btn = row.querySelector('#stCopyCollabIdBtn');
+  var confirmEl = row.querySelector('#stCopyConfirm');
+  btn.onclick = function(){
+    navigator.clipboard.writeText(collaborationId).then(function(){
+      confirmEl.style.display = 'inline';
+      setTimeout(function(){ confirmEl.style.display = 'none'; }, 2000);
+    }).catch(function(){
+      confirmEl.textContent = 'Copy failed -- select text manually.';
+      confirmEl.style.display = 'inline';
+      confirmEl.style.color = 'rgba(255,100,100,.8)';
+    });
+  };
+}
+
 
 async function runStorageVerification(){
   storageTestClear();
@@ -3024,7 +3050,7 @@ async function runStorageVerification(){
     storageTestLog('Cross-browser known-object upload FAILED: '+crossBrowserUploadRes.error.message, false);
   } else {
     storageTestLog('Cross-browser known object ready at: '+crossBrowserPath, true);
-    storageTestLog('For the non-participant run, enter ONLY this collaboration id: '+collaborationId, null);
+    storageTestLogCollabIdWithCopy(collaborationId, crossBrowserPath);
   }
 
   await storageTestPreCallLog('collaboration-assets', collaborationId + '/ (list)');
@@ -3073,7 +3099,7 @@ async function runStorageVerification(){
     if(signedRes.error){
       storageTestLog('Signed URL generation failed: '+signedRes.error.message, null);
     } else {
-      storageTestLog('Signed URL (expires in 60s, private bucket): '+signedRes.data.signedUrl, null);
+      storageTestLog('Signed URL generated successfully (diagnostic only -- URL not displayed)', true);
     }
   }catch(e){
     storageTestLog('Signed URL generation threw: '+e.message, null);
