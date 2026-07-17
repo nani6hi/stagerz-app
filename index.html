@@ -3012,7 +3012,7 @@ async function runStorageVerification(){
 
   // Auto-detect a collaboration this user participates in -- no
   // manual UUID entry required.
-  var memberships = await supaSelect('collaboration_participants', 'user_id=eq.'+myId+'&limit=1', 'collaboration_id');
+  var memberships = await supaSelect('collaboration_participants', 'user_id=eq.'+myId+'&order=collaboration_id.asc&limit=1', 'collaboration_id');
   if(!memberships || !memberships.length){
     storageTestLog('This account is not a participant of any collaboration -- cannot run this test.', false);
     return;
