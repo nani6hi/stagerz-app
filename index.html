@@ -770,7 +770,7 @@ html,body{width:100%;height:100%;background:#08080f;color:#f0f0f5;font-family:'I
 ========================================== -->
 <div class="screen" id="screen-collaborationassets">
   <div class="screen-top">
-    <div class="bk" onclick="openCollaboration(currentCollaborationId)"><div class="bk-icon">&lsaquo;</div> Workspace</div>
+    <div class="bk" onclick="leaveCollaborationAssets()"><div class="bk-icon">&lsaquo;</div> Workspace</div>
     <div style="text-align:center;flex:1;min-width:0;">
       <div class="screen-top-title" id="caScreenTitle">Assets</div>
     </div>
@@ -1754,6 +1754,7 @@ var editingWantedId = null;
 var currentCollaborationId = null;
 var currentCollaborationTitle = '';
 var currentCollaborationParticipants = [];
+var collaborationAssetObjectUrls = {};
 var currentCollaborationPublicById = {};
 
 // Forces the remote toggle to a specific value (unlike
@@ -2924,7 +2925,34 @@ function formatCollaborationAssetSize(bytes){
   return (bytes/(1024*1024)).toFixed(1) + ' MB';
 }
 
+function escapeCollaborationAssetHtml(str){
+  if(str === null || str === undefined) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+function revokeCollaborationAssetObjectUrls(){
+  Object.keys(collaborationAssetObjectUrls).forEach(function(key){
+    try{ URL.revokeObjectURL(collaborationAssetObjectUrls[key]); }catch(e){}
+  });
+  collaborationAssetObjectUrls = {};
+}
+
+function leaveCollaborationAssets(){
+  revokeCollaborationAssetObjectUrls();
+  openCollaboration(currentCollaborationId);
+}
+
 async function openCollaborationAssets(collaborationId, collaborationTitle){
+  // Revoke any object URLs from a previous Assets session before
+  // starting a new one -- prevents stale URLs from ever being
+  // reused across collaborations, per requirement 5.
+  revokeCollaborationAssetObjectUrls();
+
   currentCollaborationId = collaborationId;
   currentCollaborationTitle = collaborationTitle || '';
   var titleEl = document.getElementById('caScreenTitle');
@@ -2952,33 +2980,133 @@ async function loadCollaborationAssets(collaborationId){
   }
 
   var assetTypeIcons = { image: '\ud83d\uddbc\ufe0f', audio: '\ud83c\udfb5', video: '\ud83c\udfac', document: '\ud83d\udcc4', other: '\ud83d\udcce' };
+  var previewableTypes = { image: true, audio: true, video: true };
 
   listEl.innerHTML = '';
   assets.forEach(function(a){
     var uploaderPub = currentCollaborationPublicById[a.uploaded_by] || {};
-    var uploaderName = uploaderPub.display_name || 'STAGERZ Artist';
+    var uploaderName = escapeCollaborationAssetHtml(uploaderPub.display_name || 'STAGERZ Artist');
+    var safeFileName = escapeCollaborationAssetHtml(a.file_name);
     var sizeLabel = formatCollaborationAssetSize(a.file_size);
     var dateLabel = a.created_at ? new Date(a.created_at).toLocaleDateString() : '';
     var icon = assetTypeIcons[a.asset_type] || assetTypeIcons.other;
 
     var row = document.createElement('div');
-    row.style.cssText = 'display:flex;align-items:center;gap:10px;background:#111118;border-radius:10px;padding:12px;margin-bottom:8px;';
+    row.style.cssText = 'background:#111118;border-radius:10px;padding:12px;margin-bottom:8px;';
     row.innerHTML =
-      '<div style="font-size:18px;flex-shrink:0;">'+icon+'</div>'+
-      '<div style="flex:1;min-width:0;">'+
-        '<div style="font-weight:600;font-size:11px;color:#fff;word-break:break-word;">'+a.file_name+'</div>'+
-        '<div style="font-size:9px;color:rgba(255,255,255,.4);margin-top:2px;">'+a.asset_type+' &middot; '+sizeLabel+' &middot; '+uploaderName+' &middot; '+dateLabel+'</div>'+
+      '<div style="display:flex;align-items:center;gap:10px;">'+
+        '<div style="font-size:18px;flex-shrink:0;">'+icon+'</div>'+
+        '<div style="flex:1;min-width:0;">'+
+          '<div style="font-weight:600;font-size:11px;color:#fff;word-break:break-word;">'+safeFileName+'</div>'+
+          '<div style="font-size:9px;color:rgba(255,255,255,.4);margin-top:2px;">'+a.asset_type+' &middot; '+sizeLabel+' &middot; '+uploaderName+' &middot; '+dateLabel+'</div>'+
+        '</div>'+
       '</div>';
+
+    var actionsRow = document.createElement('div');
+    actionsRow.style.cssText = 'display:flex;gap:8px;margin-top:8px;';
 
     var downloadBtn = document.createElement('div');
     downloadBtn.className = 'p-btn-secondary';
-    downloadBtn.style.cssText = 'width:auto;padding:6px 12px;flex-shrink:0;cursor:pointer;';
+    downloadBtn.style.cssText = 'width:auto;padding:6px 12px;cursor:pointer;';
     downloadBtn.textContent = 'Download';
     downloadBtn.onclick = (function(path, name){ return function(){ downloadCollaborationAsset(path, name); }; })(a.storage_path, a.file_name);
-    row.appendChild(downloadBtn);
+    actionsRow.appendChild(downloadBtn);
+
+    var previewContainerId = null;
+    // Preview is opt-in only (requirement 4) -- document/other assets
+    // never get a preview control at all, matching requirement 2.
+    if(previewableTypes[a.asset_type]){
+      previewContainerId = 'assetPreview-' + a.id;
+      var previewBtn = document.createElement('div');
+      previewBtn.className = 'p-btn-primary';
+      previewBtn.style.cssText = 'width:auto;padding:6px 12px;cursor:pointer;';
+      previewBtn.textContent = 'Load Preview';
+      previewBtn.onclick = (function(assetId, path, type, containerId, btnEl){ return function(){
+        btnEl.style.display = 'none';
+        loadCollaborationAssetPreview(assetId, path, type, containerId);
+      }; })(a.id, a.storage_path, a.asset_type, previewContainerId, previewBtn);
+      actionsRow.appendChild(previewBtn);
+    }
+
+    row.appendChild(actionsRow);
+
+    if(previewContainerId){
+      var previewContainer = document.createElement('div');
+      previewContainer.id = previewContainerId;
+      row.appendChild(previewContainer);
+    }
 
     listEl.appendChild(row);
   });
+}
+
+// Lazy preview loader -- only runs when the user taps "Load
+// Preview" for a specific asset. Downloads via authenticated
+// Storage.download() (never a public or signed URL), caches the
+// resulting object URL per asset id, and fails independently of
+// every other asset's card/download action.
+async function loadCollaborationAssetPreview(assetId, storagePath, assetType, containerId){
+  var container = document.getElementById(containerId);
+  if(!container) return;
+
+  if(collaborationAssetObjectUrls[assetId]){
+    renderCollaborationAssetPreviewMedia(container, assetType, collaborationAssetObjectUrls[assetId]);
+    return;
+  }
+
+  container.innerHTML = '<div style="font-size:9px;color:rgba(255,255,255,.4);margin-top:8px;">Loading preview...</div>';
+
+  var result = await supabaseClient.storage.from('collaboration-assets').download(storagePath);
+  if(!container.isConnected) return; // screen was left mid-download
+  if(result.error){
+    container.innerHTML = '<div style="font-size:9px;color:rgba(255,100,100,.8);margin-top:8px;">Preview unavailable: '+escapeCollaborationAssetHtml(result.error.message)+'</div>';
+    return;
+  }
+
+  var objectUrl = URL.createObjectURL(result.data);
+  collaborationAssetObjectUrls[assetId] = objectUrl;
+  renderCollaborationAssetPreviewMedia(container, assetType, objectUrl);
+}
+
+function renderCollaborationAssetPreviewMedia(container, assetType, objectUrl){
+  container.innerHTML = '';
+  if(assetType === 'image'){
+    var img = document.createElement('img');
+    img.src = objectUrl;
+    img.style.cssText = 'max-width:100%;border-radius:8px;cursor:pointer;margin-top:8px;display:block;';
+    img.onclick = function(){ openCollaborationAssetFullscreenPreview(objectUrl); };
+    container.appendChild(img);
+  } else if(assetType === 'audio'){
+    var audio = document.createElement('audio');
+    audio.controls = true;
+    audio.autoplay = false;
+    audio.preload = 'metadata';
+    audio.src = objectUrl;
+    audio.style.cssText = 'width:100%;margin-top:8px;';
+    container.appendChild(audio);
+  } else if(assetType === 'video'){
+    var video = document.createElement('video');
+    video.controls = true;
+    video.autoplay = false;
+    video.preload = 'metadata';
+    video.src = objectUrl;
+    video.style.cssText = 'width:100%;border-radius:8px;margin-top:8px;';
+    container.appendChild(video);
+  }
+}
+
+// Simple full-screen image preview -- an overlay on top of the
+// current screen, not a new route; closes on tap, reuses the same
+// already-loaded object URL (no second download).
+function openCollaborationAssetFullscreenPreview(objectUrl){
+  var overlay = document.createElement('div');
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px;';
+  overlay.onclick = function(){ if(overlay.parentNode) document.body.removeChild(overlay); };
+  var img = document.createElement('img');
+  img.src = objectUrl;
+  img.style.cssText = 'max-width:100%;max-height:100%;border-radius:8px;';
+  overlay.appendChild(img);
+  document.body.appendChild(overlay);
 }
 
 async function handleCollaborationAssetFileSelected(){
