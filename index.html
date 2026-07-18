@@ -1015,6 +1015,35 @@ async function supaSelect(table,filters,columns){
     return null;
   }
 }
+
+// Exact row count via PostgREST's count=exact + a minimal Range,
+// never transferring the underlying rows themselves. Returns a
+// number, or null on any failure (never throws) -- callers must
+// treat null as "count unavailable", not zero.
+async function supaSelectCount(table, filters){
+  var url = SUPA_URL+'/rest/v1/'+table+'?select=id'+(filters ? '&'+filters : '');
+  try{
+    var r = await fetch(url, {
+      method: 'GET',
+      headers: await supaHeaders({ 'Prefer': 'count=exact', 'Range': '0-0' }),
+      mode: 'cors'
+    });
+    if(!r.ok){
+      console.error('supaSelectCount FAILED', { table: table, url: url, status: r.status, statusText: r.statusText });
+      return null;
+    }
+    var contentRange = r.headers.get('content-range'); // e.g. "0-0/42"
+    if(!contentRange) return null;
+    var total = contentRange.split('/')[1];
+    if(total === undefined || total === '*') return null;
+    var parsedTotal = parseInt(total, 10);
+    return isNaN(parsedTotal) ? null : parsedTotal;
+  }catch(e){
+    console.error('supaSelectCount NETWORK ERROR', { table: table, url: url, error: e });
+    return null;
+  }
+}
+
 async function supaInsert(table,data){
   var url = SUPA_URL+'/rest/v1/'+table;
   console.log('supaInsert REQUEST', { table: table, url: url, requestPayload: data });
@@ -2506,6 +2535,48 @@ async function openCollaboration(collaborationId){
   var myParticipantRow = (participants || []).find(function(p){ return p.user_id === myId; });
   currentCollaborationIsOwner = !!(myParticipantRow && myParticipantRow.participant_type === 'owner');
 
+  // Phase 10.3 -- Dashboard metrics, fetched concurrently. None of
+  // these helpers ever throw (supaSelect/supaSelectCount both catch
+  // their own errors and resolve to null on failure), so Promise.all
+  // itself cannot reject here -- a failure in one metric surfaces as
+  // a null entry in this array, never blocks the others, and never
+  // prevents the Workspace from rendering.
+  var dashboardResults = await Promise.all([
+    supaSelectCount('collaboration_messages', 'collaboration_id=eq.'+collaborationId),
+    supaSelect('collaboration_messages', 'collaboration_id=eq.'+collaborationId+'&order=created_at.desc&limit=1', 'created_at'),
+    supaSelect('collaboration_tasks', 'collaboration_id=eq.'+collaborationId, 'id,status'),
+    supaSelect('collaboration_assets', 'collaboration_id=eq.'+collaborationId, 'id,file_size,created_at'),
+    supaSelect('collaboration_credits', 'collaboration_id=eq.'+collaborationId, 'id,user_id'),
+    supaSelect('collaboration_activity', 'collaboration_id=eq.'+collaborationId+'&order=created_at.desc&limit=50', 'id,actor_user_id,activity_type,reference_id,metadata,created_at')
+  ]);
+  var messageCount = dashboardResults[0];               // number or null
+  var lastMessageRows = dashboardResults[1];             // array or null
+  var taskRows = dashboardResults[2];                    // array or null
+  var assetRows = dashboardResults[3];                   // array or null
+  var creditRows = dashboardResults[4];                  // array or null
+  var activityRows = dashboardResults[5];                // array or null, reused by the Activity section below
+
+  var lastMessageAt = (lastMessageRows && lastMessageRows[0]) ? lastMessageRows[0].created_at : null;
+
+  var taskTotal = taskRows ? taskRows.length : null;
+  var taskCompleted = taskRows ? taskRows.filter(function(t){ return t.status === 'done'; }).length : null;
+  var taskOpen = taskRows ? taskRows.filter(function(t){ return t.status !== 'done'; }).length : null;
+  var taskCompletionPct = (taskTotal !== null && taskTotal > 0) ? Math.round((taskCompleted / taskTotal) * 100) : (taskTotal === 0 ? 0 : null);
+
+  var assetTotal = assetRows ? assetRows.length : null;
+  var assetTotalSize = assetRows ? assetRows.reduce(function(sum, a){ return sum + (a.file_size || 0); }, 0) : null;
+  var assetLatestUpload = (assetRows && assetRows.length)
+    ? assetRows.reduce(function(latest, a){ return (!latest || new Date(a.created_at) > new Date(latest)) ? a.created_at : latest; }, null)
+    : null;
+
+  var creditTotal = creditRows ? creditRows.length : null;
+  var creditedUserIds = creditRows ? creditRows.map(function(c){ return c.user_id; }) : null;
+  // "Missing credits" reuses the participant list already fetched
+  // above -- no new query for the participant side at all.
+  var participantsWithoutCredits = (creditedUserIds !== null)
+    ? (participants || []).filter(function(p){ return creditedUserIds.indexOf(p.user_id) === -1; })
+    : null;
+
   var wantedTitle = '';
   if(collab.wanted_post_id){
     var wantedRows = await supaSelect('wanted_posts', 'id=eq.'+collab.wanted_post_id, 'title');
@@ -2516,6 +2587,14 @@ async function openCollaboration(collaborationId){
   var statusLabel = collab.status.charAt(0).toUpperCase() + collab.status.slice(1);
   var statusColor = collab.status === 'active' ? 'rgba(100,230,140,.9)' : collab.status === 'completed' ? '#e8b830' : 'rgba(255,100,100,.8)';
   var memberCount = (participants || []).length;
+
+  // Collaboration Health -- informational only, never changes status.
+  var latestActivityAt = (activityRows && activityRows[0]) ? activityRows[0].created_at : null;
+  var noRecentActivity = activityRows === null ? null
+    : (activityRows.length === 0 ? true
+    : (Date.now() - new Date(latestActivityAt).getTime()) > (14 * 24 * 60 * 60 * 1000));
+  var missingCreditsCount = participantsWithoutCredits !== null ? participantsWithoutCredits.length : null;
+  var readyToComplete = (collab.status === 'active' && taskTotal !== null && taskTotal > 0 && taskOpen === 0);
 
   // Owner-only status controls -- server-side transition rules are
   // enforced entirely by change_collaboration_status(); this is
@@ -2558,12 +2637,71 @@ async function openCollaboration(collaborationId){
     '<div style="background:#111118;border-radius:10px;padding:14px;margin-bottom:16px;font-size:9px;color:rgba(255,255,255,.25);">No description yet.</div>'+
 
     // Overview -- four cells only; Status removed (now in Header).
+    // Uses the exact same dashboard-computed values as the Dashboard
+    // section below -- one computation, never two disagreeing sources.
     '<div class="section-title" style="margin-bottom:8px;">Overview</div>'+
     '<div style="display:flex;background:#111118;border-radius:10px;padding:10px 0;margin-bottom:16px;">'+
       '<div class="p-stat"><div class="p-stat-num">'+memberCount+'</div><div class="p-stat-label">Members</div></div>'+
-      '<div class="p-stat"><div class="p-stat-num" id="cdMessagesCount">0</div><div class="p-stat-label">Messages</div></div>'+
-      '<div class="p-stat"><div class="p-stat-num">0</div><div class="p-stat-label">Assets</div></div>'+
-      '<div class="p-stat" style="border-right:none;"><div class="p-stat-num">0</div><div class="p-stat-label">Tasks</div></div>'+
+      '<div class="p-stat"><div class="p-stat-num">'+(messageCount !== null ? messageCount : '\u2014')+'</div><div class="p-stat-label">Messages</div></div>'+
+      '<div class="p-stat"><div class="p-stat-num">'+(assetTotal !== null ? assetTotal : '\u2014')+'</div><div class="p-stat-label">Assets</div></div>'+
+      '<div class="p-stat" style="border-right:none;"><div class="p-stat-num">'+(taskTotal !== null ? taskTotal : '\u2014')+'</div><div class="p-stat-label">Tasks</div></div>'+
+    '</div>'+
+
+    // Dashboard -- extra detail beyond Overview's raw totals, all
+    // from the exact same concurrently-fetched values above. Any
+    // metric that failed to load shows "unavailable" rather than a
+    // wrong or misleading number.
+    '<div class="section-title" style="margin-bottom:8px;">Dashboard</div>'+
+    '<div style="background:#111118;border-radius:10px;padding:12px;margin-bottom:8px;">'+
+      '<div style="font-weight:600;font-size:10px;color:#fff;">Messages</div>'+
+      '<div style="font-size:9px;color:rgba(255,255,255,.4);margin-top:2px;">'+
+        (messageCount !== null ? messageCount+' total' : 'Count unavailable')+
+        (lastMessageAt ? ' &middot; Last ' + boardTimeAgo(lastMessageAt) : (messageCount === 0 ? ' &middot; None yet' : ''))+
+      '</div>'+
+    '</div>'+
+    '<div style="background:#111118;border-radius:10px;padding:12px;margin-bottom:8px;">'+
+      '<div style="font-weight:600;font-size:10px;color:#fff;">Tasks</div>'+
+      '<div style="font-size:9px;color:rgba(255,255,255,.4);margin-top:2px;">'+
+        (taskTotal !== null ? taskCompleted+' / '+taskTotal+' completed ('+taskCompletionPct+'%)' : 'Unavailable')+
+      '</div>'+
+    '</div>'+
+    '<div style="background:#111118;border-radius:10px;padding:12px;margin-bottom:8px;">'+
+      '<div style="font-weight:600;font-size:10px;color:#fff;">Assets</div>'+
+      '<div style="font-size:9px;color:rgba(255,255,255,.4);margin-top:2px;">'+
+        (assetTotal !== null ? assetTotal+' file'+(assetTotal===1?'':'s')+' &middot; '+formatCollaborationAssetSize(assetTotalSize) : 'Unavailable')+
+        (assetLatestUpload ? ' &middot; Latest ' + boardTimeAgo(assetLatestUpload) : '')+
+      '</div>'+
+    '</div>'+
+    '<div style="background:#111118;border-radius:10px;padding:12px;margin-bottom:8px;">'+
+      '<div style="font-weight:600;font-size:10px;color:#fff;">Credits</div>'+
+      '<div style="font-size:9px;color:rgba(255,255,255,.4);margin-top:2px;">'+
+        (creditTotal !== null ? creditTotal+' credit'+(creditTotal===1?'':'s')+' &middot; '+missingCreditsCount+' participant'+(missingCreditsCount===1?'':'s')+' without credit' : 'Unavailable')+
+      '</div>'+
+    '</div>'+
+    '<div style="background:#111118;border-radius:10px;padding:12px;margin-bottom:16px;">'+
+      '<div style="font-weight:600;font-size:10px;color:#fff;">Latest Activity</div>'+
+      '<div style="font-size:9px;color:rgba(255,255,255,.4);margin-top:2px;">'+
+        (activityRows === null ? 'Unavailable' : (activityRows.length === 0 ? 'No activity yet' :
+          escapeCollaborationAssetHtml((publicById[activityRows[0].actor_user_id] || {}).display_name || 'STAGERZ Artist') + ' &middot; ' + boardTimeAgo(activityRows[0].created_at)))+
+      '</div>'+
+    '</div>'+
+
+    // Collaboration Health -- informational only. Never changes
+    // status automatically; no action is taken here beyond display.
+    '<div class="section-title" style="margin-bottom:8px;">Collaboration Health</div>'+
+    '<div style="background:#111118;border-radius:10px;padding:12px;margin-bottom:16px;">'+
+      '<div style="font-size:9px;color:'+(taskOpen === null ? 'rgba(255,255,255,.3)' : taskOpen > 0 ? 'rgba(255,180,60,.8)' : 'rgba(100,230,140,.8)')+';margin-bottom:4px;">'+
+        (taskOpen === null ? '\u2014 Open tasks unavailable' : taskOpen+' open task'+(taskOpen===1?'':'s')+' remaining')+
+      '</div>'+
+      '<div style="font-size:9px;color:'+(missingCreditsCount === null ? 'rgba(255,255,255,.3)' : missingCreditsCount > 0 ? 'rgba(255,180,60,.8)' : 'rgba(100,230,140,.8)')+';margin-bottom:4px;">'+
+        (missingCreditsCount === null ? '\u2014 Missing credits unavailable' : missingCreditsCount+' participant'+(missingCreditsCount===1?'':'s')+' missing credit'+(missingCreditsCount===1?'':'s')+' (informational only)')+
+      '</div>'+
+      '<div style="font-size:9px;color:'+(noRecentActivity === null ? 'rgba(255,255,255,.3)' : noRecentActivity ? 'rgba(255,180,60,.8)' : 'rgba(100,230,140,.8)')+';margin-bottom:4px;">'+
+        (noRecentActivity === null ? '\u2014 Recent activity unavailable' : noRecentActivity ? 'No recent activity (14+ days)' : 'Recently active')+
+      '</div>'+
+      '<div style="font-size:9px;color:'+(readyToComplete ? 'rgba(100,230,140,.8)' : 'rgba(255,255,255,.3)')+';">'+
+        (readyToComplete ? '\u2713 Ready to complete -- no open tasks remain' : 'Not yet marked ready to complete')+
+      '</div>'+
     '</div>'+
 
     '<div class="section-title" style="margin-bottom:8px;">Members</div>'+
@@ -2634,12 +2772,6 @@ async function openCollaboration(collaborationId){
   activityTitle.style.cssText = 'margin-bottom:8px;margin-top:16px;';
   activityTitle.textContent = 'Activity';
   contentEl.appendChild(activityTitle);
-
-  var activityRows = await supaSelect(
-    'collaboration_activity',
-    'collaboration_id=eq.'+collaborationId+'&order=created_at.desc&limit=50',
-    'id,actor_user_id,activity_type,reference_id,metadata,created_at'
-  );
 
   (activityRows || []).forEach(function(item){
     var pub = publicById[item.actor_user_id] || {};
@@ -2800,12 +2932,6 @@ async function loadCollaborationMessages(collaborationId){
     'id,sender_id,body,created_at'
   );
   if(!listEl) return;
-
-  // Reflects the real count into the Workspace's Overview stat,
-  // reusing data already being fetched here -- no separate query
-  // added solely for the count, per instruction.
-  var countEl = document.getElementById('cdMessagesCount');
-  if(countEl) countEl.textContent = messages ? messages.length : 0;
 
   if(!messages || !messages.length){
     listEl.innerHTML = '<div style="font-size:9px;color:rgba(255,255,255,.25);text-align:center;padding:20px 0;">No messages yet.</div>';
