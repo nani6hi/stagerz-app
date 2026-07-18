@@ -787,6 +787,29 @@ html,body{width:100%;height:100%;background:#08080f;color:#f0f0f5;font-family:'I
 </div>
 
 <!-- ==========================================
+     SCREEN: COLLABORATION CREDITS (Phase 9.1)
+========================================== -->
+<div class="screen" id="screen-collaborationcredits">
+  <div class="screen-top">
+    <div class="bk" onclick="openCollaboration(currentCollaborationId)"><div class="bk-icon">&lsaquo;</div> Workspace</div>
+    <div style="text-align:center;flex:1;min-width:0;">
+      <div class="screen-top-title" id="ccScreenTitle">Credits</div>
+    </div>
+    <div style="width:60px;"></div>
+  </div>
+  <div class="sa" style="padding:14px;">
+    <div class="section-title" style="margin-bottom:8px;">Add Credit</div>
+    <div class="form-label">Participant</div>
+    <div id="ccParticipantChips" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px;"></div>
+    <div class="form-label">Role</div>
+    <input class="form-input" id="ccRoleInput" type="text" placeholder="e.g. Producer, Vocalist, Mixer..." maxlength="100">
+    <button class="form-submit" id="ccSaveBtn" onclick="createCollaborationCredit()">Save Credit</button>
+    <div class="section-title" style="margin-bottom:8px;margin-top:20px;">Credits</div>
+    <div id="ccList"></div>
+  </div>
+</div>
+
+<!-- ==========================================
      SCREEN: BOARD (Notifications, Phase 5)
 ========================================== -->
 <div class="screen" id="screen-board">
@@ -2618,7 +2641,7 @@ async function openCollaboration(collaborationId){
   ];
   modules.forEach(function(m){
     var card = document.createElement('div');
-    card.style.cssText = 'display:flex;align-items:center;gap:10px;background:#111118;border-radius:10px;padding:14px;margin-bottom:8px;'+((m.key==='messages'||m.key==='tasks'||m.key==='assets') ? 'cursor:pointer;' : '');
+    card.style.cssText = 'display:flex;align-items:center;gap:10px;background:#111118;border-radius:10px;padding:14px;margin-bottom:8px;'+((m.key==='messages'||m.key==='tasks'||m.key==='assets'||m.key==='credits') ? 'cursor:pointer;' : '');
     card.innerHTML =
       '<div style="font-size:16px;flex-shrink:0;">'+m.icon+'</div>'+
       '<div>'+
@@ -2633,6 +2656,9 @@ async function openCollaboration(collaborationId){
     }
     if(m.key === 'assets'){
       card.onclick = function(){ openCollaborationAssets(currentCollaborationId, currentCollaborationTitle); };
+    }
+    if(m.key === 'credits'){
+      card.onclick = function(){ openCollaborationCredits(currentCollaborationId, currentCollaborationTitle); };
     }
     contentEl.appendChild(card);
   });
@@ -2760,6 +2786,7 @@ async function sendCollaborationMessage(){
 // Activity Timeline integration deliberately deferred to a later phase.
 
 var selectedTaskAssigneeId = null;
+var selectedCreditParticipantId = null;
 
 async function openCollaborationTasks(collaborationId, collaborationTitle){
   currentCollaborationId = collaborationId;
@@ -3233,6 +3260,120 @@ async function downloadCollaborationAsset(storagePath, fileName){
   document.body.removeChild(a);
   URL.revokeObjectURL(blobUrl);
   showToast('Download started.');
+}
+
+// --- COLLABORATION CREDITS (Phase 9.1) ---
+// Minimum scope only: list ordered by credit_order, add one credit
+// at a time (participant + free-text role). No editing, deleting,
+// drag-and-drop, or custom ordering UI -- new credits are simply
+// appended after the current highest order.
+
+async function openCollaborationCredits(collaborationId, collaborationTitle){
+  currentCollaborationId = collaborationId;
+  currentCollaborationTitle = collaborationTitle || '';
+  selectedCreditParticipantId = null;
+  var titleEl = document.getElementById('ccScreenTitle');
+  if(titleEl) titleEl.textContent = collaborationTitle || 'Credits';
+  var roleInput = document.getElementById('ccRoleInput');
+  if(roleInput) roleInput.value = '';
+
+  // Participant chips built from data openCollaboration() already
+  // fetched -- no new participant/profile query, mirroring Tasks'
+  // assignee picker exactly.
+  var chipsEl = document.getElementById('ccParticipantChips');
+  if(chipsEl){
+    chipsEl.innerHTML = '';
+    currentCollaborationParticipants.forEach(function(p){
+      var pub = currentCollaborationPublicById[p.user_id] || {};
+      var chip = document.createElement('div');
+      chip.className = 'form-chip';
+      chip.textContent = pub.display_name || 'STAGERZ Artist';
+      chip.onclick = (function(userId, chipEl){ return function(){
+        chipsEl.querySelectorAll('.form-chip').forEach(function(c){ c.classList.remove('on'); });
+        selectedCreditParticipantId = userId;
+        chipEl.classList.add('on');
+      }; })(p.user_id, chip);
+      chipsEl.appendChild(chip);
+    });
+  }
+
+  goTo('collaborationcredits');
+  await loadCollaborationCredits(collaborationId);
+}
+
+async function loadCollaborationCredits(collaborationId){
+  var listEl = document.getElementById('ccList');
+  if(listEl) listEl.innerHTML = '<div style="font-size:9px;color:rgba(255,255,255,.3);text-align:center;padding:20px 0;">Loading...</div>';
+
+  var credits = await supaSelect(
+    'collaboration_credits',
+    'collaboration_id=eq.'+collaborationId+'&order=credit_order.asc',
+    'id,user_id,credit_role,credit_order,created_at'
+  );
+  if(!listEl) return;
+
+  if(!credits || !credits.length){
+    listEl.innerHTML = '<div style="font-size:9px;color:rgba(255,255,255,.25);text-align:center;padding:20px 0;">No credits yet.</div>';
+    return;
+  }
+
+  listEl.innerHTML = '';
+  credits.forEach(function(c){
+    var pub = currentCollaborationPublicById[c.user_id] || {};
+    var name = escapeCollaborationAssetHtml(pub.display_name || 'STAGERZ Artist');
+    var role = escapeCollaborationAssetHtml(c.credit_role);
+    var row = document.createElement('div');
+    row.style.cssText = 'display:flex;align-items:center;gap:10px;background:#111118;border-radius:10px;padding:12px;margin-bottom:8px;';
+    row.innerHTML =
+      '<div class="artist-av" style="background:#1a1228;">&#128100;</div>'+
+      '<div style="flex:1;min-width:0;">'+
+        '<div style="font-weight:600;font-size:11px;color:#fff;">'+name+'</div>'+
+        '<div style="font-size:9px;color:rgba(232,184,48,.7);margin-top:2px;">'+role+'</div>'+
+      '</div>';
+    listEl.appendChild(row);
+  });
+}
+
+async function createCollaborationCredit(){
+  var roleInput = document.getElementById('ccRoleInput');
+  var saveBtn = document.getElementById('ccSaveBtn');
+  var trimmedRole = (roleInput ? roleInput.value : '').trim();
+
+  if(!selectedCreditParticipantId){ showToast('Please select a participant.'); return; }
+  if(!trimmedRole){ showToast('Please enter a role.'); return; }
+
+  var myId = await getMyDomainId();
+  if(!myId){ showToast('Please sign in again.'); goTo('authemail'); return; }
+
+  if(saveBtn){ saveBtn.disabled = true; saveBtn.style.opacity = '.6'; }
+
+  var existing = await supaSelect('collaboration_credits', 'collaboration_id=eq.'+currentCollaborationId+'&order=credit_order.desc&limit=1', 'credit_order');
+  var nextOrder = (existing && existing.length) ? (existing[0].credit_order + 1) : 0;
+
+  var result = await supaInsert('collaboration_credits', {
+    collaboration_id: currentCollaborationId,
+    user_id: selectedCreditParticipantId,
+    credit_role: trimmedRole,
+    credit_order: nextOrder,
+    created_by: myId
+  });
+  console.log('createCollaborationCredit result:', result);
+
+  if(result && result.ok){
+    if(roleInput) roleInput.value = '';
+    selectedCreditParticipantId = null;
+    var chipsEl = document.getElementById('ccParticipantChips');
+    if(chipsEl) chipsEl.querySelectorAll('.form-chip').forEach(function(c){ c.classList.remove('on'); });
+    showToast('Credit added.');
+    haptic('success');
+    await loadCollaborationCredits(currentCollaborationId);
+  } else {
+    console.error('createCollaborationCredit FAILED -- real Supabase error:', result && result.error);
+    var realMsg = result && result.error && (result.error.message || result.error.hint || result.error.details || JSON.stringify(result.error));
+    showToast(realMsg || 'Could not add credit.');
+  }
+
+  if(saveBtn){ saveBtn.disabled = false; saveBtn.style.opacity = '1'; }
 }
 
 function tickNACKL(){
