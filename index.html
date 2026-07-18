@@ -2345,7 +2345,15 @@ async function respondToApplication(applicationId, newStatus){
 var notificationTypeIcons = {
   'wanted.application.created': '👤',
   'wanted.application.accepted': '🎉',
-  'wanted.application.rejected': '❌'
+  'wanted.application.rejected': '❌',
+  'collaboration_message_posted': '💬',
+  'collaboration_task_created': '✅',
+  'collaboration_task_completed': '🎯',
+  'collaboration_asset_uploaded': '📁',
+  'collaboration_credit_added': '🏆',
+  'collaboration_completed': '🏁',
+  'collaboration_reopened': '🔓',
+  'collaboration_archived': '📦'
 };
 
 function boardTimeAgo(dateStr){
@@ -2387,8 +2395,8 @@ async function loadBoard(){
     card.innerHTML =
       '<div style="font-size:18px;flex-shrink:0;">'+icon+'</div>'+
       '<div style="flex:1;min-width:0;">'+
-        '<div style="font-weight:600;font-size:11px;color:#fff;">'+n.title+unreadDot+'</div>'+
-        '<div style="font-size:9px;color:rgba(255,255,255,.4);margin-top:2px;">'+(n.message||'')+'</div>'+
+        '<div style="font-weight:600;font-size:11px;color:#fff;">'+escapeCollaborationAssetHtml(n.title)+unreadDot+'</div>'+
+        '<div style="font-size:9px;color:rgba(255,255,255,.4);margin-top:2px;">'+escapeCollaborationAssetHtml(n.message||'')+'</div>'+
         '<div style="font-size:8px;color:rgba(255,255,255,.2);margin-top:4px;">'+boardTimeAgo(n.created_at)+'</div>'+
       '</div>';
     card.onclick = (function(notif){ return function(){ handleNotificationTap(notif); }; })(n);
@@ -2414,6 +2422,17 @@ async function handleNotificationTap(n){
     }
   } else if(n.type === 'wanted.application.accepted' || n.type === 'wanted.application.rejected'){
     goTo('wanted');
+  } else if(
+    n.type === 'collaboration_message_posted' || n.type === 'collaboration_task_created' ||
+    n.type === 'collaboration_task_completed' || n.type === 'collaboration_asset_uploaded' ||
+    n.type === 'collaboration_credit_added' || n.type === 'collaboration_completed' ||
+    n.type === 'collaboration_reopened' || n.type === 'collaboration_archived'
+  ){
+    // Phase 11.1: the notifications table has no collaboration
+    // reference column (deliberately deferred to a future generic
+    // navigation/reference design, not added here). Board is the
+    // correct minimum target for these types today.
+    goTo('board');
   } else {
     goTo('board');
   }
