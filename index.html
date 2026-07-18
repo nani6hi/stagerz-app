@@ -781,15 +781,15 @@ html,body{width:100%;height:100%;background:#08080f;color:#f0f0f5;font-family:'I
     <div style="width:60px;"></div>
   </div>
   <div class="sa" style="padding:14px;">
-    <div style="font-size:8px;color:rgba(255,100,100,.6);margin-bottom:14px;">This screen is a temporary verification harness for Phase 8.1B. It is not part of the STAGERZ product and will be removed. The PARTICIPANT run needs no manual input. The NON-PARTICIPANT run needs only the collaboration id shown by the PARTICIPANT run (the object path itself is fixed and reconstructed automatically -- no full path or browser storage needed).</div>
+    <div style="font-size:8px;color:rgba(255,100,100,.6);margin-bottom:14px;">This screen is a temporary verification harness for Phase 8.1B. It is not part of the STAGERZ product and will be removed. The PARTICIPANT run needs no manual input. The NON-PARTICIPANT run needs the full object path shown by the PARTICIPANT run (use its "Copy Full Object Path" button) -- this is the exact same real object, created by a single INSERT-only upload, never a second/fixed-name upload.</div>
 
     <div id="storageTestUserBanner" style="background:rgba(232,184,48,.1);border:1px solid rgba(232,184,48,.3);border-radius:8px;padding:10px;font-size:9px;color:#e8b830;font-weight:600;margin-bottom:14px;word-break:break-all;">Current authenticated user: (not yet checked -- tap a button below)</div>
 
     <button class="form-submit" style="margin-bottom:14px;" onclick="runStorageVerification()">Run PARTICIPANT Verification</button>
 
-    <div class="form-label">Collaboration id (from the PARTICIPANT run above, non-participant browser only)</div>
-    <input class="form-input" id="stDenialCollabIdInput" type="text" placeholder="collaboration id">
-    <button class="form-submit" style="background:linear-gradient(135deg,#5a1818,#a83030);" onclick="runStorageDenialVerification(document.getElementById('stDenialCollabIdInput').value.trim())">Run NON-PARTICIPANT Denial Verification</button>
+    <div class="form-label">Full object path (from the PARTICIPANT run above, non-participant browser only)</div>
+    <input class="form-input" id="stDenialPathInput" type="text" placeholder="collaboration-id/browser-test-....txt">
+    <button class="form-submit" style="background:linear-gradient(135deg,#5a1818,#a83030);" onclick="runStorageDenialVerification(document.getElementById('stDenialPathInput').value.trim())">Run NON-PARTICIPANT Denial Verification</button>
 
     <div class="section-title" style="margin-bottom:8px;margin-top:20px;">Results</div>
     <div id="storageTestResults" style="background:#111118;border-radius:10px;padding:10px;"></div>
@@ -2964,22 +2964,21 @@ function storageTestLog(msg, ok){
   panel.appendChild(line);
 }
 
-function storageTestLogCollabIdWithCopy(collaborationId, crossBrowserPath){
+function storageTestLogFullPathWithCopy(fullPath){
   var panel = document.getElementById('storageTestResults');
   if(!panel) return;
   var row = document.createElement('div');
   row.style.cssText = 'padding:8px 0;border-bottom:1px solid rgba(255,255,255,.06);';
   row.innerHTML =
-    '<div style="font-size:9px;color:rgba(255,255,255,.7);word-break:break-all;">Collaboration id: '+collaborationId+'</div>'+
-    '<div style="font-size:9px;color:rgba(255,255,255,.5);word-break:break-all;margin-top:2px;">Fixed cross-browser object name: '+crossBrowserPath+'</div>'+
-    '<button class="p-btn-secondary" style="margin-top:6px;width:auto;padding:6px 12px;display:inline-block;" id="stCopyCollabIdBtn">Copy Collaboration ID</button>'+
+    '<div style="font-size:9px;color:rgba(255,255,255,.7);word-break:break-all;">Full object path (created via INSERT only, already exists): '+fullPath+'</div>'+
+    '<button class="p-btn-secondary" style="margin-top:6px;width:auto;padding:6px 12px;display:inline-block;" id="stCopyPathBtn">Copy Full Object Path</button>'+
     '<span id="stCopyConfirm" style="font-size:8px;color:rgba(100,230,140,.9);margin-left:8px;display:none;">Copied!</span>';
   panel.appendChild(row);
 
-  var btn = row.querySelector('#stCopyCollabIdBtn');
+  var btn = row.querySelector('#stCopyPathBtn');
   var confirmEl = row.querySelector('#stCopyConfirm');
   btn.onclick = function(){
-    navigator.clipboard.writeText(collaborationId).then(function(){
+    navigator.clipboard.writeText(fullPath).then(function(){
       confirmEl.style.display = 'inline';
       setTimeout(function(){ confirmEl.style.display = 'none'; }, 2000);
     }).catch(function(){
@@ -3036,22 +3035,13 @@ async function runStorageVerification(){
   }
   storageTestLog('1-2. Upload succeeded', true);
 
-  // Cross-browser denial test object: a FIXED, deterministic path
-  // (not the timestamped uniquePath above), so a second browser
-  // (User 3) can reconstruct the exact same path from only the
-  // collaboration id -- no shared browser storage, no signed URL,
-  // no full-path copy/paste needed. The path itself carries no
-  // access -- RLS still gates every real read/write to it.
-  var crossBrowserPath = collaborationId + '/cross-browser-known-object.txt';
-  await storageTestPreCallLog('collaboration-assets', crossBrowserPath);
-  var crossBrowserUploadRes = await supabaseClient.storage.from('collaboration-assets').upload(crossBrowserPath, testFile, { contentType: 'text/plain', upsert: true });
-  storageTestPostCallLog('cross-browser fixed-path upload', crossBrowserUploadRes);
-  if(crossBrowserUploadRes.error){
-    storageTestLog('Cross-browser known-object upload FAILED: '+crossBrowserUploadRes.error.message, false);
-  } else {
-    storageTestLog('Cross-browser known object ready at: '+crossBrowserPath, true);
-    storageTestLogCollabIdWithCopy(collaborationId, crossBrowserPath);
-  }
+  // Cross-browser denial test object: reuses THIS SAME already-
+  // uploaded object (uniquePath), created via a single plain
+  // upsert:false INSERT above -- no second upload, no upsert, no
+  // UPDATE/DELETE dependency of any kind. The full path (including
+  // its timestamp) is copyable so a second browser (User 3) can
+  // attempt to download this exact, already-existing object.
+  storageTestLogFullPathWithCopy(uniquePath);
 
   await storageTestPreCallLog('collaboration-assets', collaborationId + '/ (list)');
   var listRes = await supabaseClient.storage.from('collaboration-assets').list(collaborationId);
@@ -3108,7 +3098,7 @@ async function runStorageVerification(){
   storageTestLog('12. Genuine object left in place at: '+uniquePath, null);
 }
 
-async function runStorageDenialVerification(collaborationId){
+async function runStorageDenialVerification(knownObjectPath){
   storageTestClear();
   await updateStorageTestUserBanner();
 
@@ -3123,17 +3113,14 @@ async function runStorageDenialVerification(collaborationId){
   if(myId) storageTestLog('STAGERZ domain user id: '+myId, null);
   storageTestLog('Bucket: collaboration-assets', null);
 
-  if(!collaborationId){
-    storageTestLog('Please enter the collaboration id shown by the PARTICIPANT run (no other value is needed -- the object path is fixed and reconstructed automatically).', false);
+  if(!knownObjectPath || knownObjectPath.indexOf('/') === -1){
+    storageTestLog('Please paste the full object path shown by the PARTICIPANT run (use the "Copy Full Object Path" button there).', false);
     return;
   }
 
-  // Fixed, deterministic path -- reconstructed here identically to
-  // how the participant run created it. No shared browser storage,
-  // no signed URL, no full path needs to be copied.
-  var knownObjectPath = collaborationId + '/cross-browser-known-object.txt';
-  storageTestLog('Using entered collaboration id: '+collaborationId, null);
-  storageTestLog('Reconstructed known object path: '+knownObjectPath, null);
+  var collaborationId = knownObjectPath.split('/')[0];
+  storageTestLog('Using pasted object path: '+knownObjectPath, null);
+  storageTestLog('Derived collaboration id (from path prefix): '+collaborationId, null);
 
   var uniquePath = collaborationId + '/should-not-upload-' + Date.now() + '.txt';
   var testFile = new File(['STAGERZ STORAGE TEST'], 'storage-test.txt', { type: 'text/plain' });
