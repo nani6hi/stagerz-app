@@ -766,6 +766,27 @@ html,body{width:100%;height:100%;background:#08080f;color:#f0f0f5;font-family:'I
 </div>
 
 <!-- ==========================================
+     SCREEN: COLLABORATION ASSETS (Phase 8.2)
+========================================== -->
+<div class="screen" id="screen-collaborationassets">
+  <div class="screen-top">
+    <div class="bk" onclick="openCollaboration(currentCollaborationId)"><div class="bk-icon">&lsaquo;</div> Workspace</div>
+    <div style="text-align:center;flex:1;min-width:0;">
+      <div class="screen-top-title" id="caScreenTitle">Assets</div>
+    </div>
+    <div style="width:60px;"></div>
+  </div>
+  <div class="sa" style="padding:14px;">
+    <div class="section-title" style="margin-bottom:8px;">Upload Asset</div>
+    <input type="file" id="caFileInput" style="display:none;" onchange="handleCollaborationAssetFileSelected()">
+    <div id="caUploadStatus" style="font-size:9px;color:rgba(255,255,255,.4);margin-bottom:10px;"></div>
+    <button class="form-submit" id="caUploadBtn" onclick="document.getElementById('caFileInput').click();">Choose File to Upload</button>
+    <div class="section-title" style="margin-bottom:8px;margin-top:20px;">Files</div>
+    <div id="caList"></div>
+  </div>
+</div>
+
+<!-- ==========================================
      SCREEN: BOARD (Notifications, Phase 5)
 ========================================== -->
 <div class="screen" id="screen-board">
@@ -2595,7 +2616,7 @@ async function openCollaboration(collaborationId){
   ];
   modules.forEach(function(m){
     var card = document.createElement('div');
-    card.style.cssText = 'display:flex;align-items:center;gap:10px;background:#111118;border-radius:10px;padding:14px;margin-bottom:8px;'+((m.key==='messages'||m.key==='tasks') ? 'cursor:pointer;' : '');
+    card.style.cssText = 'display:flex;align-items:center;gap:10px;background:#111118;border-radius:10px;padding:14px;margin-bottom:8px;'+((m.key==='messages'||m.key==='tasks'||m.key==='assets') ? 'cursor:pointer;' : '');
     card.innerHTML =
       '<div style="font-size:16px;flex-shrink:0;">'+m.icon+'</div>'+
       '<div>'+
@@ -2607,6 +2628,9 @@ async function openCollaboration(collaborationId){
     }
     if(m.key === 'tasks'){
       card.onclick = function(){ openCollaborationTasks(currentCollaborationId, currentCollaborationTitle); };
+    }
+    if(m.key === 'assets'){
+      card.onclick = function(){ openCollaborationAssets(currentCollaborationId, currentCollaborationTitle); };
     }
     contentEl.appendChild(card);
   });
@@ -2860,6 +2884,202 @@ async function completeCollaborationTask(taskId){
     var realMsg = result && result.error && (result.error.message || result.error.hint || result.error.details || JSON.stringify(result.error));
     showToast(realMsg || 'Could not complete task.');
   }
+}
+
+// --- COLLABORATION ASSETS (Phase 8.2) ---
+// Minimum scope only: one-file-at-a-time upload, read-only list,
+// authenticated download. No previews, no multi-upload/drag-drop,
+// no update/delete UI. asset_type drives all business/UI logic;
+// mime_type is stored only as opaque metadata, never branched on.
+
+function classifyCollaborationAssetType(mimeType){
+  if(!mimeType) return 'other';
+  if(mimeType.indexOf('image/') === 0) return 'image';
+  if(mimeType.indexOf('audio/') === 0) return 'audio';
+  if(mimeType.indexOf('video/') === 0) return 'video';
+  var documentTypes = [
+    'application/pdf',
+    'application/msword',
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    'application/vnd.ms-excel',
+    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    'application/vnd.ms-powerpoint',
+    'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+    'text/plain',
+    'text/csv',
+    'text/markdown'
+  ];
+  if(documentTypes.indexOf(mimeType) !== -1) return 'document';
+  return 'other';
+}
+
+function sanitizeCollaborationAssetFileName(fileName){
+  return fileName.replace(/[^a-zA-Z0-9._-]/g, '_');
+}
+
+function formatCollaborationAssetSize(bytes){
+  if(bytes === null || bytes === undefined) return '';
+  if(bytes < 1024) return bytes + ' B';
+  if(bytes < 1024*1024) return (bytes/1024).toFixed(1) + ' KB';
+  return (bytes/(1024*1024)).toFixed(1) + ' MB';
+}
+
+async function openCollaborationAssets(collaborationId, collaborationTitle){
+  currentCollaborationId = collaborationId;
+  currentCollaborationTitle = collaborationTitle || '';
+  var titleEl = document.getElementById('caScreenTitle');
+  if(titleEl) titleEl.textContent = collaborationTitle || 'Assets';
+  var statusEl = document.getElementById('caUploadStatus');
+  if(statusEl) statusEl.textContent = '';
+  goTo('collaborationassets');
+  await loadCollaborationAssets(collaborationId);
+}
+
+async function loadCollaborationAssets(collaborationId){
+  var listEl = document.getElementById('caList');
+  if(listEl) listEl.innerHTML = '<div style="font-size:9px;color:rgba(255,255,255,.3);text-align:center;padding:20px 0;">Loading...</div>';
+
+  var assets = await supaSelect(
+    'collaboration_assets',
+    'collaboration_id=eq.'+collaborationId+'&order=created_at.desc',
+    'id,uploaded_by,storage_path,file_name,mime_type,file_size,asset_type,created_at'
+  );
+  if(!listEl) return;
+
+  if(!assets || !assets.length){
+    listEl.innerHTML = '<div style="font-size:9px;color:rgba(255,255,255,.25);text-align:center;padding:20px 0;">No assets yet.</div>';
+    return;
+  }
+
+  var assetTypeIcons = { image: '\ud83d\uddbc\ufe0f', audio: '\ud83c\udfb5', video: '\ud83c\udfac', document: '\ud83d\udcc4', other: '\ud83d\udcce' };
+
+  listEl.innerHTML = '';
+  assets.forEach(function(a){
+    var uploaderPub = currentCollaborationPublicById[a.uploaded_by] || {};
+    var uploaderName = uploaderPub.display_name || 'STAGERZ Artist';
+    var sizeLabel = formatCollaborationAssetSize(a.file_size);
+    var dateLabel = a.created_at ? new Date(a.created_at).toLocaleDateString() : '';
+    var icon = assetTypeIcons[a.asset_type] || assetTypeIcons.other;
+
+    var row = document.createElement('div');
+    row.style.cssText = 'display:flex;align-items:center;gap:10px;background:#111118;border-radius:10px;padding:12px;margin-bottom:8px;';
+    row.innerHTML =
+      '<div style="font-size:18px;flex-shrink:0;">'+icon+'</div>'+
+      '<div style="flex:1;min-width:0;">'+
+        '<div style="font-weight:600;font-size:11px;color:#fff;word-break:break-word;">'+a.file_name+'</div>'+
+        '<div style="font-size:9px;color:rgba(255,255,255,.4);margin-top:2px;">'+a.asset_type+' &middot; '+sizeLabel+' &middot; '+uploaderName+' &middot; '+dateLabel+'</div>'+
+      '</div>';
+
+    var downloadBtn = document.createElement('div');
+    downloadBtn.className = 'p-btn-secondary';
+    downloadBtn.style.cssText = 'width:auto;padding:6px 12px;flex-shrink:0;cursor:pointer;';
+    downloadBtn.textContent = 'Download';
+    downloadBtn.onclick = (function(path, name){ return function(){ downloadCollaborationAsset(path, name); }; })(a.storage_path, a.file_name);
+    row.appendChild(downloadBtn);
+
+    listEl.appendChild(row);
+  });
+}
+
+async function handleCollaborationAssetFileSelected(){
+  var fileInput = document.getElementById('caFileInput');
+  var file = fileInput && fileInput.files && fileInput.files[0];
+  if(!file) return;
+  await uploadCollaborationAsset(file);
+  fileInput.value = '';
+}
+
+async function uploadCollaborationAsset(file){
+  var statusEl = document.getElementById('caUploadStatus');
+  var uploadBtn = document.getElementById('caUploadBtn');
+  if(uploadBtn){ uploadBtn.disabled = true; uploadBtn.style.opacity = '.6'; }
+  if(statusEl) statusEl.textContent = 'Uploading...';
+
+  var myId = await getMyDomainId();
+  if(!myId){
+    if(statusEl) statusEl.textContent = 'Please sign in again.';
+    if(uploadBtn){ uploadBtn.disabled = false; uploadBtn.style.opacity = '1'; }
+    return;
+  }
+
+  var sanitizedName = sanitizeCollaborationAssetFileName(file.name);
+  var uniquePrefix = Date.now() + '-' + Math.random().toString(36).slice(2, 8);
+  var storagePath = currentCollaborationId + '/' + uniquePrefix + '-' + sanitizedName;
+  var mimeType = file.type || 'application/octet-stream';
+
+  var uploadRes = await supabaseClient.storage.from('collaboration-assets').upload(storagePath, file, { contentType: mimeType, upsert: false });
+  console.log('uploadCollaborationAsset: Storage upload result', uploadRes);
+  if(uploadRes.error){
+    if(statusEl) statusEl.textContent = 'Upload failed: '+uploadRes.error.message;
+    console.error('uploadCollaborationAsset: Storage upload FAILED -- no metadata insert attempted', uploadRes.error);
+    if(uploadBtn){ uploadBtn.disabled = false; uploadBtn.style.opacity = '1'; }
+    return;
+  }
+
+  var assetType = classifyCollaborationAssetType(mimeType);
+  var metaResult = await supaInsert('collaboration_assets', {
+    collaboration_id: currentCollaborationId,
+    uploaded_by: myId,
+    storage_path: storagePath,
+    file_name: file.name,
+    mime_type: mimeType,
+    file_size: file.size,
+    asset_type: assetType,
+    title: null,
+    description: null
+  });
+  console.log('uploadCollaborationAsset: metadata insert result', metaResult);
+
+  if(metaResult && metaResult.ok){
+    if(statusEl) statusEl.textContent = 'Upload complete: '+file.name;
+    showToast('File uploaded.');
+    haptic('success');
+    await loadCollaborationAssets(currentCollaborationId);
+  } else {
+    // Metadata insert failed after a successful Storage upload.
+    // Best-effort cleanup only -- no trigger, no RPC. Storage has no
+    // DELETE policy (Phase 8.1, unchanged), so this attempt is
+    // expected to itself fail; both outcomes are reported explicitly,
+    // and the upload is never displayed as successful either way.
+    console.error('uploadCollaborationAsset: metadata insert FAILED', metaResult && metaResult.error);
+    var metaErrMsg = metaResult && metaResult.error && (metaResult.error.message || metaResult.error.hint || metaResult.error.details || JSON.stringify(metaResult.error));
+
+    var cleanupRes = await supabaseClient.storage.from('collaboration-assets').remove([storagePath]);
+    console.log('uploadCollaborationAsset: best-effort cleanup result', cleanupRes);
+    var cleanupSucceeded = !cleanupRes.error && cleanupRes.data && cleanupRes.data.length > 0;
+
+    if(cleanupSucceeded){
+      if(statusEl) statusEl.textContent = 'Upload NOT saved (' + (metaErrMsg || 'metadata error') + '). The uploaded file was removed.';
+    } else {
+      var cleanupErrMsg = cleanupRes.error ? cleanupRes.error.message : 'no rows removed';
+      if(statusEl) statusEl.textContent = 'Upload NOT saved (' + (metaErrMsg || 'metadata error') + '). Cleanup ALSO failed (' + cleanupErrMsg + ') -- an orphaned file may remain in Storage at: ' + storagePath;
+      console.error('uploadCollaborationAsset: best-effort cleanup ALSO failed', cleanupRes.error || cleanupErrMsg);
+    }
+    showToast('Upload could not be saved.');
+  }
+
+  if(uploadBtn){ uploadBtn.disabled = false; uploadBtn.style.opacity = '1'; }
+}
+
+async function downloadCollaborationAsset(storagePath, fileName){
+  showToast('Downloading...');
+  var result = await supabaseClient.storage.from('collaboration-assets').download(storagePath);
+  console.log('downloadCollaborationAsset result for', storagePath, ':', result.error ? result.error : 'ok');
+  if(result.error){
+    showToast('Could not download file: '+result.error.message);
+    return;
+  }
+  // Local blob URL only, derived from already-downloaded bytes --
+  // never a Supabase signed URL, never logged or shown in the UI.
+  var blobUrl = URL.createObjectURL(result.data);
+  var a = document.createElement('a');
+  a.href = blobUrl;
+  a.download = fileName;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(blobUrl);
+  showToast('Download started.');
 }
 
 function tickNACKL(){
