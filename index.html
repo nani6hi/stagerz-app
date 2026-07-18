@@ -2688,20 +2688,30 @@ async function openCollaboration(collaborationId){
 
     // Collaboration Health -- informational only. Never changes
     // status automatically; no action is taken here beyond display.
+    // When not active, the detailed lines (which describe ongoing
+    // work) are replaced by a single status notice -- showing "3
+    // open tasks remaining" on a collaboration that can no longer be
+    // modified at all would read as an active concern that isn't one.
     '<div class="section-title" style="margin-bottom:8px;">Collaboration Health</div>'+
     '<div style="background:#111118;border-radius:10px;padding:12px;margin-bottom:16px;">'+
-      '<div style="font-size:9px;color:'+(taskOpen === null ? 'rgba(255,255,255,.3)' : taskOpen > 0 ? 'rgba(255,180,60,.8)' : 'rgba(100,230,140,.8)')+';margin-bottom:4px;">'+
-        (taskOpen === null ? '\u2014 Open tasks unavailable' : taskOpen+' open task'+(taskOpen===1?'':'s')+' remaining')+
-      '</div>'+
-      '<div style="font-size:9px;color:'+(missingCreditsCount === null ? 'rgba(255,255,255,.3)' : missingCreditsCount > 0 ? 'rgba(255,180,60,.8)' : 'rgba(100,230,140,.8)')+';margin-bottom:4px;">'+
-        (missingCreditsCount === null ? '\u2014 Missing credits unavailable' : missingCreditsCount+' participant'+(missingCreditsCount===1?'':'s')+' missing credit'+(missingCreditsCount===1?'':'s')+' (informational only)')+
-      '</div>'+
-      '<div style="font-size:9px;color:'+(noRecentActivity === null ? 'rgba(255,255,255,.3)' : noRecentActivity ? 'rgba(255,180,60,.8)' : 'rgba(100,230,140,.8)')+';margin-bottom:4px;">'+
-        (noRecentActivity === null ? '\u2014 Recent activity unavailable' : noRecentActivity ? 'No recent activity (14+ days)' : 'Recently active')+
-      '</div>'+
-      '<div style="font-size:9px;color:'+(readyToComplete ? 'rgba(100,230,140,.8)' : 'rgba(255,255,255,.3)')+';">'+
-        (readyToComplete ? '\u2713 Ready to complete -- no open tasks remain' : 'Not yet marked ready to complete')+
-      '</div>'+
+      (collab.status === 'completed' ?
+        '<div style="font-size:9px;color:#e8b830;">Collaboration completed</div>'
+      : collab.status === 'archived' ?
+        '<div style="font-size:9px;color:rgba(255,100,100,.8);">Collaboration archived</div>'
+      :
+        '<div style="font-size:9px;color:'+(taskOpen === null ? 'rgba(255,255,255,.3)' : taskOpen > 0 ? 'rgba(255,180,60,.8)' : 'rgba(100,230,140,.8)')+';margin-bottom:4px;">'+
+          (taskOpen === null ? '\u2014 Open tasks unavailable' : taskOpen+' open task'+(taskOpen===1?'':'s')+' remaining')+
+        '</div>'+
+        '<div style="font-size:9px;color:'+(missingCreditsCount === null ? 'rgba(255,255,255,.3)' : missingCreditsCount > 0 ? 'rgba(255,180,60,.8)' : 'rgba(100,230,140,.8)')+';margin-bottom:4px;">'+
+          (missingCreditsCount === null ? '\u2014 Missing credits unavailable' : missingCreditsCount+' participant'+(missingCreditsCount===1?'':'s')+' missing credit'+(missingCreditsCount===1?'':'s')+' (informational only)')+
+        '</div>'+
+        '<div style="font-size:9px;color:'+(noRecentActivity === null ? 'rgba(255,255,255,.3)' : noRecentActivity ? 'rgba(255,180,60,.8)' : 'rgba(100,230,140,.8)')+';margin-bottom:4px;">'+
+          (noRecentActivity === null ? '\u2014 Recent activity unavailable' : noRecentActivity ? 'No recent activity (14+ days)' : 'Recently active')+
+        '</div>'+
+        '<div style="font-size:9px;color:'+(readyToComplete ? 'rgba(100,230,140,.8)' : 'rgba(255,255,255,.3)')+';">'+
+          (readyToComplete ? '\u2713 Ready to complete -- no open tasks remain' : 'Not yet marked ready to complete')+
+        '</div>'
+      )+
     '</div>'+
 
     '<div class="section-title" style="margin-bottom:8px;">Members</div>'+
@@ -2833,10 +2843,14 @@ async function openCollaboration(collaborationId){
   contentEl.appendChild(modulesTitle);
 
   var modules = [
-    { key: 'messages', icon: '💬', label: 'Messages', empty: 'No messages yet.' },
-    { key: 'assets', icon: '📁', label: 'Assets', empty: 'No assets yet.' },
-    { key: 'tasks', icon: '✅', label: 'Tasks', empty: 'No tasks yet.' },
-    { key: 'credits', icon: '🏆', label: 'Credits', empty: 'No credits assigned yet.' }
+    { key: 'messages', icon: '💬', label: 'Messages',
+      subtitle: (messageCount === null) ? 'No messages yet.' : (messageCount === 0) ? 'No messages yet.' : (messageCount+' message'+(messageCount===1?'':'s')) },
+    { key: 'assets', icon: '📁', label: 'Assets',
+      subtitle: (assetTotal === null) ? 'No assets yet.' : (assetTotal === 0) ? 'No assets yet.' : (assetTotal+' file'+(assetTotal===1?'':'s')) },
+    { key: 'tasks', icon: '✅', label: 'Tasks',
+      subtitle: (taskTotal === null) ? 'No tasks yet.' : (taskTotal === 0) ? 'No tasks yet.' : (taskCompleted+' / '+taskTotal+' completed') },
+    { key: 'credits', icon: '🏆', label: 'Credits',
+      subtitle: (creditTotal === null) ? 'No credits assigned yet.' : (creditTotal === 0) ? 'No credits assigned yet.' : (creditTotal+' credit'+(creditTotal===1?'':'s')+' assigned') }
   ];
   modules.forEach(function(m){
     var card = document.createElement('div');
@@ -2845,7 +2859,7 @@ async function openCollaboration(collaborationId){
       '<div style="font-size:16px;flex-shrink:0;">'+m.icon+'</div>'+
       '<div>'+
         '<div style="font-weight:600;font-size:11px;color:#fff;">'+m.label+'</div>'+
-        '<div style="font-size:9px;color:rgba(255,255,255,.25);margin-top:2px;">'+m.empty+'</div>'+
+        '<div style="font-size:9px;color:rgba(255,255,255,.25);margin-top:2px;">'+m.subtitle+'</div>'+
       '</div>';
     if(m.key === 'messages'){
       card.onclick = function(){ openCollaborationMessages(currentCollaborationId, currentCollaborationTitle); };
@@ -3093,7 +3107,7 @@ async function loadCollaborationTasks(collaborationId){
       '</div>'+
       '<div style="font-size:9px;color:rgba(255,255,255,.35);margin-top:4px;margin-left:21px;">'+metaLine+'</div>';
 
-    if(t.status === 'todo'){
+    if(t.status === 'todo' && currentCollaborationStatus === 'active'){
       var completeBtn = document.createElement('div');
       completeBtn.className = 'p-btn-primary';
       completeBtn.style.cssText = 'margin-top:10px;margin-left:21px;display:inline-block;';
