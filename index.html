@@ -737,7 +737,8 @@ html,body{width:100%;height:100%;background:#08080f;color:#f0f0f5;font-family:'I
     <div style="width:60px;"></div>
   </div>
   <div class="sa" style="padding:14px;" id="cmList"></div>
-  <div style="display:flex;gap:8px;padding:10px 14px;background:#08080f;border-top:1px solid rgba(255,255,255,.06);flex-shrink:0;">
+  <div id="cmReadOnlyNotice" style="display:none;padding:8px 14px;background:#1a1010;font-size:9px;color:rgba(255,100,100,.7);border-top:1px solid rgba(255,255,255,.06);flex-shrink:0;"></div>
+  <div id="cmComposerRow" style="display:flex;gap:8px;padding:10px 14px;background:#08080f;border-top:1px solid rgba(255,255,255,.06);flex-shrink:0;">
     <input class="form-input" id="cmInput" type="text" placeholder="Message..." style="margin-bottom:0;flex:1;" maxlength="5000" onkeydown="if(event.key==='Enter')sendCollaborationMessage();">
     <button id="cmSendBtn" style="padding:0 16px;background:linear-gradient(135deg,#8a6018,#e8b830);border:none;border-radius:10px;font-family:'Playfair Display',serif;font-size:12px;font-weight:700;color:#08080f;cursor:pointer;flex-shrink:0;" onclick="sendCollaborationMessage()">Send</button>
   </div>
@@ -755,11 +756,14 @@ html,body{width:100%;height:100%;background:#08080f;color:#f0f0f5;font-family:'I
     <div style="width:60px;"></div>
   </div>
   <div class="sa" style="padding:14px;">
-    <div class="section-title" style="margin-bottom:8px;">New Task</div>
-    <input class="form-input" id="ctTitleInput" type="text" placeholder="Task title..." maxlength="300">
-    <div class="form-label">Assignee (optional)</div>
-    <div id="ctAssigneeChips" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px;"></div>
-    <button class="form-submit" id="ctCreateBtn" onclick="createCollaborationTask()">Create Task</button>
+    <div id="ctComposerRow">
+      <div class="section-title" style="margin-bottom:8px;">New Task</div>
+      <input class="form-input" id="ctTitleInput" type="text" placeholder="Task title..." maxlength="300">
+      <div class="form-label">Assignee (optional)</div>
+      <div id="ctAssigneeChips" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px;"></div>
+      <button class="form-submit" id="ctCreateBtn" onclick="createCollaborationTask()">Create Task</button>
+    </div>
+    <div id="ctReadOnlyNotice" style="display:none;font-size:9px;color:rgba(255,100,100,.7);background:#1a1010;padding:10px;border-radius:8px;margin-bottom:14px;"></div>
     <div class="section-title" style="margin-bottom:8px;margin-top:20px;">Task List</div>
     <div id="ctList"></div>
   </div>
@@ -777,10 +781,13 @@ html,body{width:100%;height:100%;background:#08080f;color:#f0f0f5;font-family:'I
     <div style="width:60px;"></div>
   </div>
   <div class="sa" style="padding:14px;">
-    <div class="section-title" style="margin-bottom:8px;">Upload Asset</div>
-    <input type="file" id="caFileInput" style="display:none;" onchange="handleCollaborationAssetFileSelected()">
-    <div id="caUploadStatus" style="font-size:9px;color:rgba(255,255,255,.4);margin-bottom:10px;"></div>
-    <button class="form-submit" id="caUploadBtn" onclick="document.getElementById('caFileInput').click();">Choose File to Upload</button>
+    <div id="caComposerRow">
+      <div class="section-title" style="margin-bottom:8px;">Upload Asset</div>
+      <input type="file" id="caFileInput" style="display:none;" onchange="handleCollaborationAssetFileSelected()">
+      <div id="caUploadStatus" style="font-size:9px;color:rgba(255,255,255,.4);margin-bottom:10px;"></div>
+      <button class="form-submit" id="caUploadBtn" onclick="document.getElementById('caFileInput').click();">Choose File to Upload</button>
+    </div>
+    <div id="caReadOnlyNotice" style="display:none;font-size:9px;color:rgba(255,100,100,.7);background:#1a1010;padding:10px;border-radius:8px;margin-bottom:14px;"></div>
     <div class="section-title" style="margin-bottom:8px;margin-top:20px;">Files</div>
     <div id="caList"></div>
   </div>
@@ -798,12 +805,15 @@ html,body{width:100%;height:100%;background:#08080f;color:#f0f0f5;font-family:'I
     <div style="width:60px;"></div>
   </div>
   <div class="sa" style="padding:14px;">
-    <div class="section-title" style="margin-bottom:8px;">Add Credit</div>
-    <div class="form-label">Participant</div>
-    <div id="ccParticipantChips" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px;"></div>
-    <div class="form-label">Role</div>
-    <input class="form-input" id="ccRoleInput" type="text" placeholder="e.g. Producer, Vocalist, Mixer..." maxlength="100">
-    <button class="form-submit" id="ccSaveBtn" onclick="createCollaborationCredit()">Save Credit</button>
+    <div id="ccComposerRow">
+      <div class="section-title" style="margin-bottom:8px;">Add Credit</div>
+      <div class="form-label">Participant</div>
+      <div id="ccParticipantChips" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px;"></div>
+      <div class="form-label">Role</div>
+      <input class="form-input" id="ccRoleInput" type="text" placeholder="e.g. Producer, Vocalist, Mixer..." maxlength="100">
+      <button class="form-submit" id="ccSaveBtn" onclick="createCollaborationCredit()">Save Credit</button>
+    </div>
+    <div id="ccReadOnlyNotice" style="display:none;font-size:9px;color:rgba(255,100,100,.7);background:#1a1010;padding:10px;border-radius:8px;margin-bottom:14px;"></div>
     <div class="section-title" style="margin-bottom:8px;margin-top:20px;">Credits</div>
     <div id="ccList"></div>
   </div>
@@ -1778,6 +1788,8 @@ var currentCollaborationId = null;
 var currentCollaborationTitle = '';
 var currentCollaborationParticipants = [];
 var collaborationAssetObjectUrls = {};
+var currentCollaborationStatus = 'active';
+var currentCollaborationIsOwner = false;
 var collaborationAssetPreviewVisible = {};
 var currentCollaborationPublicById = {};
 
@@ -2488,6 +2500,11 @@ async function openCollaboration(collaborationId){
 
   currentCollaborationParticipants = participants || [];
   currentCollaborationPublicById = publicById;
+  currentCollaborationStatus = collab.status;
+
+  var myId = await getMyDomainId();
+  var myParticipantRow = (participants || []).find(function(p){ return p.user_id === myId; });
+  currentCollaborationIsOwner = !!(myParticipantRow && myParticipantRow.participant_type === 'owner');
 
   var wantedTitle = '';
   if(collab.wanted_post_id){
@@ -2499,6 +2516,25 @@ async function openCollaboration(collaborationId){
   var statusLabel = collab.status.charAt(0).toUpperCase() + collab.status.slice(1);
   var statusColor = collab.status === 'active' ? 'rgba(100,230,140,.9)' : collab.status === 'completed' ? '#e8b830' : 'rgba(255,100,100,.8)';
   var memberCount = (participants || []).length;
+
+  // Owner-only status controls -- server-side transition rules are
+  // enforced entirely by change_collaboration_status(); this is
+  // presentation only, never the source of truth.
+  var statusControlsHtml = '';
+  if(currentCollaborationIsOwner){
+    if(collab.status === 'active'){
+      statusControlsHtml = '<button class="p-btn-secondary" style="width:auto;padding:6px 12px;margin-top:8px;cursor:pointer;" onclick="requestMarkCollaborationCompleted()">Mark as Completed</button>';
+    } else if(collab.status === 'completed'){
+      statusControlsHtml =
+        '<button class="p-btn-secondary" style="width:auto;padding:6px 12px;margin-top:8px;margin-right:8px;cursor:pointer;" onclick="changeCollaborationStatus(\'active\')">Reopen Collaboration</button>'+
+        '<button class="p-btn-secondary" style="width:auto;padding:6px 12px;margin-top:8px;cursor:pointer;" onclick="changeCollaborationStatus(\'archived\')">Archive Collaboration</button>';
+    } else if(collab.status === 'archived'){
+      statusControlsHtml = '<button class="p-btn-secondary" style="width:auto;padding:6px 12px;margin-top:8px;cursor:pointer;" onclick="changeCollaborationStatus(\'completed\')">Restore to Completed</button>';
+    }
+  }
+  var readOnlyNoticeHtml = collab.status !== 'active'
+    ? '<div style="font-size:8px;color:rgba(255,100,100,.6);margin-top:8px;">This collaboration is '+collab.status+' -- new messages, tasks, assets and credits cannot be added. Existing content remains fully readable, and downloads/previews continue to work.</div>'
+    : '';
 
   var html =
     // Header -- existing .card-av reused as a small neutral workspace
@@ -2513,6 +2549,8 @@ async function openCollaboration(collaborationId){
         '</div>'+
       '</div>'+
       (wantedTitle ? '<div style="font-size:9px;color:rgba(232,184,48,.6);margin-top:8px;">From: '+wantedTitle+'</div>' : '')+
+      statusControlsHtml+
+      readOnlyNoticeHtml+
     '</div>'+
 
     // Description -- now before Overview, per the corrected final order.
@@ -2664,6 +2702,50 @@ async function openCollaboration(collaborationId){
   });
 }
 
+// --- COLLABORATION LIFECYCLE STATUS (Phase 10.1) ---
+// Owner-only. All actual transition validation happens server-side
+// inside change_collaboration_status() -- this is presentation and
+// a UX confirmation only, never the source of truth.
+
+async function requestMarkCollaborationCompleted(){
+  var openTasks = await supaSelect('collaboration_tasks', 'collaboration_id=eq.'+currentCollaborationId+'&status=eq.todo', 'id');
+  if(openTasks && openTasks.length){
+    var confirmed = window.confirm('This collaboration still has open tasks. Mark it as completed anyway?');
+    if(!confirmed) return;
+  }
+  await changeCollaborationStatus('completed');
+}
+
+async function changeCollaborationStatus(newStatus){
+  var result = await supaRpc('change_collaboration_status', { p_collaboration_id: currentCollaborationId, p_new_status: newStatus });
+  console.log('changeCollaborationStatus result:', result);
+  if(result && result.ok){
+    showToast('Collaboration status updated.');
+    haptic('success');
+    await openCollaboration(currentCollaborationId);
+  } else {
+    console.error('changeCollaborationStatus FAILED -- real Supabase error:', result && result.error);
+    var realMsg = result && result.error && (result.error.message || result.error.hint || result.error.details || JSON.stringify(result.error));
+    showToast(realMsg || 'Could not update collaboration status.');
+  }
+}
+
+// Shared guard used by Messages/Tasks/Assets/Credits: hides/disables
+// the creation control and shows a notice whenever the cached
+// collaboration status isn't 'active'. Presentation only -- the
+// real enforcement is the server-side RLS/RPC checks already in
+// place; this never substitutes for them.
+function applyCollaborationReadOnlyGuard(composerElId, noticeElId, noticeVerb){
+  var composerEl = document.getElementById(composerElId);
+  var noticeEl = document.getElementById(noticeElId);
+  var isActive = currentCollaborationStatus === 'active';
+  if(composerEl) composerEl.style.display = isActive ? '' : 'none';
+  if(noticeEl){
+    noticeEl.style.display = isActive ? 'none' : 'block';
+    if(!isActive) noticeEl.textContent = 'This collaboration is '+currentCollaborationStatus+' -- '+(noticeVerb||'new items')+' cannot be added. Existing content remains readable.';
+  }
+}
+
 // --- COLLABORATION MESSAGES (Phase 6.4) ---
 // Minimum scope only: chronological load, send, empty state. No
 // realtime, read receipts, editing, deletion, attachments,
@@ -2674,6 +2756,7 @@ async function openCollaborationMessages(collaborationId, collaborationTitle){
   currentCollaborationTitle = collaborationTitle || '';
   var titleEl = document.getElementById('cmScreenTitle');
   if(titleEl) titleEl.textContent = collaborationTitle || 'Messages';
+  applyCollaborationReadOnlyGuard('cmComposerRow', 'cmReadOnlyNotice', 'new messages');
   goTo('collaborationmessages');
   await loadCollaborationMessages(collaborationId);
 }
@@ -2818,6 +2901,7 @@ async function openCollaborationTasks(collaborationId, collaborationTitle){
   }
 
   goTo('collaborationtasks');
+  applyCollaborationReadOnlyGuard('ctComposerRow', 'ctReadOnlyNotice', 'new tasks');
   await loadCollaborationTasks(collaborationId);
 }
 
@@ -2989,6 +3073,7 @@ async function openCollaborationAssets(collaborationId, collaborationTitle){
   var statusEl = document.getElementById('caUploadStatus');
   if(statusEl) statusEl.textContent = '';
   goTo('collaborationassets');
+  applyCollaborationReadOnlyGuard('caComposerRow', 'caReadOnlyNotice', 'new uploads');
   await loadCollaborationAssets(collaborationId);
 }
 
@@ -3298,6 +3383,7 @@ async function openCollaborationCredits(collaborationId, collaborationTitle){
   }
 
   goTo('collaborationcredits');
+  applyCollaborationReadOnlyGuard('ccComposerRow', 'ccReadOnlyNotice', 'new credits');
   await loadCollaborationCredits(collaborationId);
 }
 
