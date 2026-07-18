@@ -2624,30 +2624,59 @@ async function openCollaboration(collaborationId){
     membersOnly.forEach(renderParticipantRow);
   }
 
-  // Activity -- synthesized entirely from data already fetched above
-  // (collab.created_at, participants[].created_at/participant_type,
-  // publicById) -- zero new query, no collaboration_activity table
-  // yet. The owner's join is presented as the creation event, never
-  // as a separate "joined" line, per instruction.
+  // Activity -- Phase 10.2: reads exclusively from
+  // collaboration_activity, the single source of truth. The prior
+  // client-side synthesis (from participant timestamps) has been
+  // fully removed; historical "created"/"joined" entries now exist
+  // as real backfilled rows in that table instead.
   var activityTitle = document.createElement('div');
   activityTitle.className = 'section-title';
   activityTitle.style.cssText = 'margin-bottom:8px;margin-top:16px;';
   activityTitle.textContent = 'Activity';
   contentEl.appendChild(activityTitle);
 
-  var activityItems = (participants || []).map(function(p){
-    var isOwner = p.participant_type === 'owner';
-    return {
-      user_id: p.user_id,
-      created_at: p.created_at,
-      sentence: isOwner ? 'created the collaboration' : 'joined the collaboration'
-    };
-  }).sort(function(a, b){
-    return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
-  });
+  var activityRows = await supaSelect(
+    'collaboration_activity',
+    'collaboration_id=eq.'+collaborationId+'&order=created_at.desc&limit=50',
+    'id,actor_user_id,activity_type,reference_id,metadata,created_at'
+  );
 
-  activityItems.forEach(function(item){
-    var pub = publicById[item.user_id] || {};
+  (activityRows || []).forEach(function(item){
+    var pub = publicById[item.actor_user_id] || {};
+    var actorName = escapeCollaborationAssetHtml(pub.display_name || 'STAGERZ Artist');
+    var meta = item.metadata || {};
+
+    var sentence;
+    if(item.activity_type === 'collaboration_created'){
+      sentence = 'created the collaboration';
+    } else if(item.activity_type === 'participant_joined'){
+      sentence = 'joined the collaboration';
+    } else if(item.activity_type === 'message_posted'){
+      sentence = 'posted a message';
+    } else if(item.activity_type === 'task_created'){
+      sentence = 'created task "'+escapeCollaborationAssetHtml(meta.title)+'"';
+    } else if(item.activity_type === 'task_completed'){
+      sentence = 'completed task "'+escapeCollaborationAssetHtml(meta.title)+'"';
+    } else if(item.activity_type === 'asset_uploaded'){
+      sentence = 'uploaded "'+escapeCollaborationAssetHtml(meta.file_name)+'"';
+    } else if(item.activity_type === 'credit_added'){
+      var creditedPub = publicById[meta.credited_user_id] || {};
+      var creditedName = escapeCollaborationAssetHtml(creditedPub.display_name || 'STAGERZ Artist');
+      sentence = 'added '+escapeCollaborationAssetHtml(meta.credit_role)+' credit for '+creditedName;
+    } else if(item.activity_type === 'collaboration_completed'){
+      sentence = 'marked the collaboration as completed';
+    } else if(item.activity_type === 'collaboration_reopened'){
+      sentence = 'reopened the collaboration';
+    } else if(item.activity_type === 'collaboration_archived'){
+      sentence = 'archived the collaboration';
+    } else if(item.activity_type === 'collaboration_restored'){
+      sentence = 'restored the collaboration to completed';
+    } else {
+      // Unknown activity type -- degrade safely rather than break
+      // rendering; never throws, never shows raw/unescaped data.
+      sentence = 'performed an action';
+    }
+
     var avatarStyle = pub.photo_url
       ? "background-image:url('"+pub.photo_url+"');background-size:cover;background-position:center;"
       : 'background:#1a1228;';
@@ -2657,7 +2686,7 @@ async function openCollaboration(collaborationId){
     row.innerHTML =
       '<div class="artist-av" style="width:32px;height:32px;font-size:15px;'+avatarStyle+'">'+avatarContent+'</div>'+
       '<div style="min-width:0;">'+
-        '<div style="font-size:11px;color:#fff;"><span style="font-weight:600;">'+(pub.display_name || 'STAGERZ Artist')+'</span> '+item.sentence+'</div>'+
+        '<div style="font-size:11px;color:#fff;"><span style="font-weight:600;">'+actorName+'</span> '+sentence+'</div>'+
         '<div style="font-size:8px;color:rgba(255,255,255,.25);margin-top:2px;">'+boardTimeAgo(item.created_at)+'</div>'+
       '</div>';
     contentEl.appendChild(row);
