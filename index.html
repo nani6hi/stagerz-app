@@ -2791,7 +2791,7 @@ async function openCollaboration(collaborationId){
     '<div class="section-title" style="margin-bottom:8px;">Members</div>'+
     '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;margin-top:-6px;">'+
       '<div style="font-size:9px;color:rgba(255,255,255,.4);">'+memberCount+' Member'+(memberCount===1?'':'s')+'</div>'+
-      (currentCollaborationIsOwner && collab.status === 'active' ? '<div class="p-btn-secondary" id="ccInviteBtn" style="flex:none;width:auto;padding:5px 10px;font-size:8px;cursor:pointer;" onclick="promptInviteParticipant()">+ Invite</div>' : '')+
+      (currentCollaborationIsOwner && collab.status === 'active' ? '<div class="p-btn-secondary" id="ccInviteBtn" style="flex:none;width:auto;padding:5px 10px;font-size:8px;cursor:pointer;" onclick="openInviteUserPicker()">+ Invite</div>' : '')+
     '</div>';
 
   contentEl.innerHTML = html;
@@ -3079,26 +3079,116 @@ function applyCollaborationReadOnlyGuard(composerElId, noticeElId, noticeVerb){
 // public_profiles lookup. This is not a real user search/
 // autocomplete UI -- explicitly a placeholder, intended to be
 // replaced by a proper search/autocomplete flow in a later phase.
-async function promptInviteParticipant(){
-  var rawUsername = window.prompt('Enter the username of the person to invite:');
-  if(!rawUsername) return;
-  var username = rawUsername.trim().replace(/^@/, '').toLowerCase();
-  if(!username) return;
+var inviteSearchTimeout = null;
 
-  var matches = await supaSelect('public_profiles', 'username=eq.'+encodeURIComponent(username), 'id,display_name');
-  if(!matches || !matches.length){
-    showToast('No user found with that username.');
+// Phase 14.1: replaces the temporary window.prompt() username entry
+// with an in-app live search overlay. The actual invitation call
+// (performCollaborationInvite) is untouched from Phase 12.1 --only
+// what triggers it has changed.
+function openInviteUserPicker(){
+  if(document.getElementById('inviteUserPickerOverlay')) return;
+  var overlay = document.createElement('div');
+  overlay.id = 'inviteUserPickerOverlay';
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.94);z-index:9999;display:flex;flex-direction:column;padding:20px;';
+  overlay.innerHTML =
+    '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">'+
+      '<div style="font-size:14px;font-weight:600;color:#fff;font-family:\'Playfair Display\',serif;">Invite Participant</div>'+
+      '<div style="font-size:22px;color:rgba(255,255,255,.5);cursor:pointer;line-height:1;" id="inviteUserPickerClose">&times;</div>'+
+    '</div>'+
+    '<input class="form-input" id="inviteSearchInput" type="text" placeholder="Search by username..." autocomplete="off" autocapitalize="off" style="margin-bottom:0;">'+
+    '<div id="inviteSearchResults" style="flex:1;overflow-y:auto;margin-top:10px;"></div>';
+  document.body.appendChild(overlay);
+
+  document.getElementById('inviteUserPickerClose').onclick = closeInviteUserPicker;
+
+  var input = document.getElementById('inviteSearchInput');
+  input.addEventListener('input', function(){
+    clearTimeout(inviteSearchTimeout);
+    var query = input.value.trim();
+    var resultsEl = document.getElementById('inviteSearchResults');
+    if(query.length < 2){
+      if(resultsEl) resultsEl.innerHTML = '';
+      return;
+    }
+    inviteSearchTimeout = setTimeout(function(){ runInviteUserSearch(query); }, 350);
+  });
+  input.focus();
+}
+
+function closeInviteUserPicker(){
+  clearTimeout(inviteSearchTimeout);
+  var overlay = document.getElementById('inviteUserPickerOverlay');
+  if(overlay && overlay.parentNode) document.body.removeChild(overlay);
+}
+
+async function runInviteUserSearch(query){
+  var resultsEl = document.getElementById('inviteSearchResults');
+  if(!resultsEl) return;
+  resultsEl.innerHTML = '<div style="font-size:9px;color:rgba(255,255,255,.4);text-align:center;padding:20px 0;">Searching...</div>';
+
+  // Case-insensitive "contains" search, limited to 10 results.
+  var results = await supaSelect(
+    'public_profiles',
+    'username=ilike.*'+encodeURIComponent(query)+'*&limit=10',
+    'id,display_name,username,photo_url,is_system,is_deleted'
+  );
+  if(!resultsEl.isConnected) return; // overlay was closed mid-search
+
+  if(results === null){
+    resultsEl.innerHTML = '<div style="font-size:9px;color:rgba(255,100,100,.8);text-align:center;padding:20px 0;">Search failed. Please try again.</div>';
     return;
   }
-  var target = matches[0];
 
+  var myId = await getMyDomainId();
+  var existingParticipantIds = currentCollaborationParticipants.map(function(p){ return p.user_id; });
+
+  // Filter out system/deleted accounts, the caller themselves, and
+  // anyone already a participant -- all of these would be rejected
+  // by the RPC anyway, but hiding them from the results is clearer
+  // than letting someone pick a candidate guaranteed to fail.
+  var filtered = results.filter(function(u){
+    return !u.is_system && !u.is_deleted && u.id !== myId && existingParticipantIds.indexOf(u.id) === -1;
+  });
+
+  if(!filtered.length){
+    resultsEl.innerHTML = '<div style="font-size:9px;color:rgba(255,255,255,.25);text-align:center;padding:20px 0;">No matching users found.</div>';
+    return;
+  }
+
+  resultsEl.innerHTML = '';
+  filtered.forEach(function(u){
+    var avatarStyle = u.photo_url
+      ? "background-image:url('"+u.photo_url+"');background-size:cover;background-position:center;"
+      : 'background:#1a1228;';
+    var avatarContent = u.photo_url ? '' : '&#128100;';
+    var row = document.createElement('div');
+    row.style.cssText = 'display:flex;align-items:center;gap:10px;padding:10px;border-radius:10px;cursor:pointer;margin-bottom:6px;background:#111118;';
+    row.innerHTML =
+      '<div class="artist-av" style="'+avatarStyle+'">'+avatarContent+'</div>'+
+      '<div style="min-width:0;">'+
+        '<div style="font-weight:600;font-size:11px;color:#fff;">'+escapeCollaborationAssetHtml(u.display_name || 'STAGERZ Artist')+'</div>'+
+        '<div style="font-size:9px;color:rgba(255,255,255,.4);margin-top:2px;">@'+escapeCollaborationAssetHtml(u.username || '')+'</div>'+
+      '</div>';
+    row.onclick = (function(user){ return function(){
+      closeInviteUserPicker();
+      performCollaborationInvite(user.id, user.display_name);
+    }; })(u);
+    resultsEl.appendChild(row);
+  });
+}
+
+// Unchanged from Phase 12.1 -- extracted as its own function so the
+// actual invitation call, its success/error handling, and its
+// Workspace refresh are byte-identical to before. Only what
+// triggers this (the picker, not a prompt) has changed.
+async function performCollaborationInvite(userId, displayName){
   var btn = document.getElementById('ccInviteBtn');
   if(btn){ btn.style.opacity = '.6'; }
 
-  var result = await supaRpc('invite_collaboration_participant', { p_collaboration_id: currentCollaborationId, p_user_id: target.id });
+  var result = await supaRpc('invite_collaboration_participant', { p_collaboration_id: currentCollaborationId, p_user_id: userId });
   console.log('invite_collaboration_participant result:', result);
   if(result && result.ok){
-    showToast((target.display_name || 'User') + ' was added to the collaboration.');
+    showToast((displayName || 'User') + ' was added to the collaboration.');
     haptic('success');
     await openCollaboration(currentCollaborationId);
   } else {
