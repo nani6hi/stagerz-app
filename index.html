@@ -3693,7 +3693,7 @@ async function loadCollaborationAssets(collaborationId){
   var assets = await supaSelect(
     'collaboration_assets',
     'collaboration_id=eq.'+collaborationId+'&order=created_at.desc',
-    'id,uploaded_by,storage_path,file_name,mime_type,file_size,asset_type,created_at'
+    'id,uploaded_by,storage_path,file_name,mime_type,file_size,asset_type,title,description,created_at'
   );
   if(!listEl) return;
 
@@ -3701,6 +3701,9 @@ async function loadCollaborationAssets(collaborationId){
     listEl.innerHTML = '<div style="font-size:9px;color:rgba(255,255,255,.25);text-align:center;padding:20px 0;">No assets yet.</div>';
     return;
   }
+
+  var myId = await getMyDomainId();
+  if(!listEl.isConnected) return;
 
   var assetTypeIcons = { image: '\ud83d\uddbc\ufe0f', audio: '\ud83c\udfb5', video: '\ud83c\udfac', document: '\ud83d\udcc4', other: '\ud83d\udcce' };
   var previewableTypes = { image: true, audio: true, video: true };
@@ -3723,31 +3726,48 @@ async function loadCollaborationAssets(collaborationId){
           '<div style="font-weight:600;font-size:11px;color:#fff;word-break:break-word;">'+safeFileName+'</div>'+
           '<div style="font-size:9px;color:rgba(255,255,255,.4);margin-top:2px;">'+a.asset_type+' &middot; '+sizeLabel+' &middot; '+uploaderName+' &middot; '+dateLabel+'</div>'+
         '</div>'+
-      '</div>';
+      '</div>'+
+      (a.title ? '<div style="font-size:10px;color:rgba(232,184,48,.8);margin-top:6px;font-weight:600;" id="caTitleText-'+a.id+'">'+escapeCollaborationAssetHtml(a.title)+'</div>' : '<div id="caTitleText-'+a.id+'" style="display:none;"></div>')+
+      (a.description ? '<div style="font-size:9px;color:rgba(255,255,255,.35);margin-top:2px;" id="caDescText-'+a.id+'">'+escapeCollaborationAssetHtml(a.description)+'</div>' : '<div id="caDescText-'+a.id+'" style="display:none;"></div>');
 
     var actionsRow = document.createElement('div');
-    actionsRow.style.cssText = 'display:flex;gap:8px;margin-top:8px;';
+    actionsRow.style.cssText = 'display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;';
 
     var downloadBtn = document.createElement('div');
     downloadBtn.className = 'p-btn-secondary';
-    downloadBtn.style.cssText = 'width:auto;padding:6px 12px;cursor:pointer;';
+    downloadBtn.style.cssText = 'flex:none;width:auto;padding:6px 12px;cursor:pointer;';
     downloadBtn.textContent = 'Download';
     downloadBtn.onclick = (function(path, name){ return function(){ downloadCollaborationAsset(path, name); }; })(a.storage_path, a.file_name);
     actionsRow.appendChild(downloadBtn);
 
     var previewContainerId = null;
-    // Preview is opt-in only (requirement 4) -- document/other assets
-    // never get a preview control at all, matching requirement 2.
     if(previewableTypes[a.asset_type]){
       previewContainerId = 'assetPreview-' + a.id;
       var previewBtn = document.createElement('div');
       previewBtn.className = 'p-btn-primary';
-      previewBtn.style.cssText = 'width:auto;padding:6px 12px;cursor:pointer;';
+      previewBtn.style.cssText = 'flex:none;width:auto;padding:6px 12px;cursor:pointer;';
       previewBtn.textContent = 'Load Preview';
       previewBtn.onclick = (function(assetId, path, type, containerId, btnEl){ return function(){
         toggleCollaborationAssetPreview(assetId, path, type, containerId, btnEl);
       }; })(a.id, a.storage_path, a.asset_type, previewContainerId, previewBtn);
       actionsRow.appendChild(previewBtn);
+    }
+
+    if(currentCollaborationStatus === 'active'){
+      var editBtn = document.createElement('div');
+      editBtn.className = 'p-btn-secondary';
+      editBtn.style.cssText = 'flex:none;width:auto;padding:6px 12px;font-size:9px;cursor:pointer;';
+      editBtn.textContent = 'Edit';
+      editBtn.onclick = (function(assetId, title, description){ return function(){ beginEditCollaborationAsset(assetId, title, description); }; })(a.id, a.title || '', a.description || '');
+      actionsRow.appendChild(editBtn);
+
+      if(a.uploaded_by === myId || currentCollaborationIsOwner){
+        var deleteBtn = document.createElement('div');
+        deleteBtn.style.cssText = 'flex:none;width:auto;padding:6px 12px;font-size:9px;cursor:pointer;border-radius:8px;background:rgba(255,60,60,.08);border:1px solid rgba(255,60,60,.2);color:rgba(255,100,100,.8);';
+        deleteBtn.textContent = 'Delete';
+        deleteBtn.onclick = (function(assetId, name){ return function(){ deleteCollaborationAssetPrompt(assetId, name); }; })(a.id, a.file_name);
+        actionsRow.appendChild(deleteBtn);
+      }
     }
 
     row.appendChild(actionsRow);
@@ -3760,6 +3780,79 @@ async function loadCollaborationAssets(collaborationId){
 
     listEl.appendChild(row);
   });
+}
+
+// --- Asset title/description editing (Phase 14.3) ---
+// Inline editing, same pattern as Task title editing: the static
+// title/description are swapped for inputs + Save/Cancel in place.
+
+function beginEditCollaborationAsset(assetId, currentTitle, currentDescription){
+  var titleEl = document.getElementById('caTitleText-'+assetId);
+  var descEl = document.getElementById('caDescText-'+assetId);
+  if(!titleEl || !descEl) return;
+
+  var editBlock = document.createElement('div');
+  editBlock.style.cssText = 'margin-top:6px;';
+  editBlock.innerHTML =
+    '<input class="form-input" id="caEditTitle-'+assetId+'" type="text" placeholder="Title (optional)" maxlength="200" style="margin-bottom:6px;padding:6px 10px;font-size:10px;">'+
+    '<input class="form-input" id="caEditDesc-'+assetId+'" type="text" placeholder="Description (optional)" maxlength="500" style="margin-bottom:6px;padding:6px 10px;font-size:10px;">'+
+    '<div style="display:flex;gap:6px;">'+
+      '<div class="p-btn-primary" style="flex:none;width:auto;padding:6px 10px;font-size:9px;cursor:pointer;" id="caSaveBtn-'+assetId+'">Save</div>'+
+      '<div class="p-btn-secondary" style="flex:none;width:auto;padding:6px 10px;font-size:9px;cursor:pointer;" id="caCancelBtn-'+assetId+'">Cancel</div>'+
+    '</div>';
+
+  titleEl.replaceWith(editBlock);
+  descEl.remove();
+
+  document.getElementById('caEditTitle-'+assetId).value = currentTitle;
+  document.getElementById('caEditDesc-'+assetId).value = currentDescription;
+  document.getElementById('caEditTitle-'+assetId).focus();
+
+  document.getElementById('caSaveBtn-'+assetId).onclick = function(){ saveCollaborationAssetEdit(assetId); };
+  document.getElementById('caCancelBtn-'+assetId).onclick = function(){ loadCollaborationAssets(currentCollaborationId); };
+}
+
+async function saveCollaborationAssetEdit(assetId){
+  var titleInput = document.getElementById('caEditTitle-'+assetId);
+  var descInput = document.getElementById('caEditDesc-'+assetId);
+  if(!titleInput || !descInput) return;
+
+  var saveBtn = document.getElementById('caSaveBtn-'+assetId);
+  if(saveBtn){ saveBtn.style.opacity = '.6'; }
+
+  var result = await supaRpc('edit_collaboration_asset', {
+    p_asset_id: assetId,
+    p_title: titleInput.value.trim() || null,
+    p_description: descInput.value.trim() || null
+  });
+  console.log('edit_collaboration_asset result:', result);
+  if(result && result.ok){
+    showToast('Asset updated.');
+    haptic('success');
+    await loadCollaborationAssets(currentCollaborationId);
+  } else {
+    console.error('edit_collaboration_asset FAILED:', result && result.error);
+    var realMsg = result && result.error && (result.error.message || result.error.hint || result.error.details || JSON.stringify(result.error));
+    showToast(realMsg || 'Could not update asset.');
+    if(saveBtn){ saveBtn.style.opacity = '1'; }
+  }
+}
+
+async function deleteCollaborationAssetPrompt(assetId, fileName){
+  var confirmed = window.confirm('Delete "'+fileName+'"? This cannot be undone.');
+  if(!confirmed) return;
+
+  var result = await supaRpc('delete_collaboration_asset', { p_asset_id: assetId });
+  console.log('delete_collaboration_asset result:', result);
+  if(result && result.ok){
+    showToast('Asset deleted.');
+    haptic('success');
+    await loadCollaborationAssets(currentCollaborationId);
+  } else {
+    console.error('delete_collaboration_asset FAILED:', result && result.error);
+    var realMsg = result && result.error && (result.error.message || result.error.hint || result.error.details || JSON.stringify(result.error));
+    showToast(realMsg || 'Could not delete asset.');
+  }
 }
 
 // Toggleable preview: Load Preview -> Hide Preview -> Show Preview.
