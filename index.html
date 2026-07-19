@@ -2842,8 +2842,30 @@ async function openCollaboration(collaborationId){
   activityTitle.textContent = 'Activity';
   contentEl.appendChild(activityTitle);
 
+  // Phase 12.2: for participant management events, either the actor
+  // or the referenced person (or both) may no longer be a current
+  // participant by the time this renders -- publicById (built only
+  // from the CURRENT participant list) won't contain them. Resolve
+  // every actor/reference id these four event types use, whichever
+  // is missing, via one additional public_profiles lookup, only if
+  // genuinely needed -- reusing an already-public, already-existing
+  // table; no new SQL object of any kind.
+  var extendedPublicById = {};
+  var idsNeedingLookup = [];
+  var participantMgmtTypes = ['participant_invited','participant_removed','participant_left','ownership_transferred'];
   (activityRows || []).forEach(function(item){
-    var pub = publicById[item.actor_user_id] || {};
+    if(participantMgmtTypes.indexOf(item.activity_type) === -1) return;
+    if(item.actor_user_id && !publicById[item.actor_user_id]) idsNeedingLookup.push(item.actor_user_id);
+    if(item.reference_id && !publicById[item.reference_id]) idsNeedingLookup.push(item.reference_id);
+  });
+  idsNeedingLookup = idsNeedingLookup.filter(function(id, i, arr){ return arr.indexOf(id) === i; });
+  if(idsNeedingLookup.length){
+    var extendedProfiles = await supaSelect('public_profiles', 'id=in.('+idsNeedingLookup.join(',')+')', 'id,display_name,username,photo_url');
+    (extendedProfiles || []).forEach(function(pp){ extendedPublicById[pp.id] = pp; });
+  }
+
+  (activityRows || []).forEach(function(item){
+    var pub = publicById[item.actor_user_id] || extendedPublicById[item.actor_user_id] || {};
     var actorName = escapeCollaborationAssetHtml(pub.display_name || 'STAGERZ Artist');
     var meta = item.metadata || {};
 
@@ -2872,6 +2894,21 @@ async function openCollaboration(collaborationId){
       sentence = 'archived the collaboration';
     } else if(item.activity_type === 'collaboration_restored'){
       sentence = 'restored the collaboration to completed';
+    } else if(item.activity_type === 'participant_invited'){
+      var invitedPub = publicById[item.reference_id] || extendedPublicById[item.reference_id] || {};
+      sentence = 'invited '+escapeCollaborationAssetHtml(invitedPub.display_name || 'STAGERZ Artist')+'.';
+    } else if(item.activity_type === 'participant_removed'){
+      var removedPub = publicById[item.reference_id] || extendedPublicById[item.reference_id] || {};
+      sentence = 'removed '+escapeCollaborationAssetHtml(removedPub.display_name || 'STAGERZ Artist')+'.';
+    } else if(item.activity_type === 'participant_left'){
+      // actorName above already resolves correctly via the extended
+      // lookup (the leaver is no longer a current participant) --
+      // the existing "<b>{actorName}</b> {sentence}" template
+      // naturally produces "<Participant> left the collaboration."
+      sentence = 'left the collaboration.';
+    } else if(item.activity_type === 'ownership_transferred'){
+      var newOwnerPub = publicById[item.reference_id] || extendedPublicById[item.reference_id] || {};
+      sentence = 'transferred ownership to '+escapeCollaborationAssetHtml(newOwnerPub.display_name || 'STAGERZ Artist')+'.';
     } else {
       // Unknown activity type -- degrade safely rather than break
       // rendering; never throws, never shows raw/unescaped data.
