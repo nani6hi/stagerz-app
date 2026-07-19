@@ -3424,6 +3424,9 @@ async function loadCollaborationTasks(collaborationId){
     return;
   }
 
+  var myId = await getMyDomainId();
+  if(!listEl.isConnected) return; // screen was left mid-load
+
   listEl.innerHTML = '';
   tasks.forEach(function(t){
     var assigneePub = t.assignee_id ? (currentCollaborationPublicById[t.assignee_id] || {}) : null;
@@ -3434,24 +3437,127 @@ async function loadCollaborationTasks(collaborationId){
 
     var row = document.createElement('div');
     row.style.cssText = 'background:#111118;border-radius:10px;padding:12px;margin-bottom:8px;';
-    row.innerHTML =
-      '<div style="display:flex;align-items:center;gap:8px;">'+
-        '<div style="font-size:13px;color:'+(t.status==='done' ? 'rgba(100,230,140,.9)' : 'rgba(255,255,255,.4)')+';">'+checkGlyph+'</div>'+
-        '<div style="font-weight:600;font-size:11px;color:#fff;'+(t.status==='done' ? 'text-decoration:line-through;opacity:.6;' : '')+'">'+t.title+'</div>'+
-      '</div>'+
-      '<div style="font-size:9px;color:rgba(255,255,255,.35);margin-top:4px;margin-left:21px;">'+metaLine+'</div>';
 
-    if(t.status === 'todo' && currentCollaborationStatus === 'active'){
+    var titleRow = document.createElement('div');
+    titleRow.style.cssText = 'display:flex;align-items:center;gap:8px;';
+    titleRow.innerHTML =
+      '<div style="font-size:13px;color:'+(t.status==='done' ? 'rgba(100,230,140,.9)' : 'rgba(255,255,255,.4)')+';">'+checkGlyph+'</div>'+
+      '<div style="font-weight:600;font-size:11px;color:#fff;'+(t.status==='done' ? 'text-decoration:line-through;opacity:.6;' : '')+'" id="ctTitleText-'+t.id+'">'+escapeCollaborationAssetHtml(t.title)+'</div>';
+    row.appendChild(titleRow);
+
+    var metaEl = document.createElement('div');
+    metaEl.style.cssText = 'font-size:9px;color:rgba(255,255,255,.35);margin-top:4px;margin-left:21px;';
+    metaEl.textContent = metaLine;
+    row.appendChild(metaEl);
+
+    var actionsRow = document.createElement('div');
+    actionsRow.style.cssText = 'display:flex;gap:8px;margin-top:10px;margin-left:21px;';
+    var isActive = currentCollaborationStatus === 'active';
+    var canDelete = isActive && (t.creator_id === myId || currentCollaborationIsOwner);
+
+    if(t.status === 'todo' && isActive){
       var completeBtn = document.createElement('div');
       completeBtn.className = 'p-btn-primary';
-      completeBtn.style.cssText = 'margin-top:10px;margin-left:21px;display:inline-block;';
+      completeBtn.style.cssText = 'flex:none;width:auto;display:inline-block;cursor:pointer;';
       completeBtn.textContent = 'Complete';
       completeBtn.onclick = (function(taskId){ return function(){ completeCollaborationTask(taskId); }; })(t.id);
-      row.appendChild(completeBtn);
+      actionsRow.appendChild(completeBtn);
+    }
+
+    if(isActive){
+      var editBtn = document.createElement('div');
+      editBtn.className = 'p-btn-secondary';
+      editBtn.style.cssText = 'flex:none;width:auto;padding:6px 12px;font-size:9px;cursor:pointer;';
+      editBtn.textContent = 'Edit';
+      editBtn.onclick = (function(taskId, currentTitle){ return function(){ beginEditCollaborationTaskTitle(taskId, currentTitle); }; })(t.id, t.title);
+      actionsRow.appendChild(editBtn);
+    }
+
+    if(canDelete){
+      var deleteBtn = document.createElement('div');
+      deleteBtn.style.cssText = 'flex:none;width:auto;padding:6px 12px;font-size:9px;cursor:pointer;border-radius:8px;background:rgba(255,60,60,.08);border:1px solid rgba(255,60,60,.2);color:rgba(255,100,100,.8);';
+      deleteBtn.textContent = 'Delete';
+      deleteBtn.onclick = (function(taskId, title){ return function(){ deleteCollaborationTaskPrompt(taskId, title); }; })(t.id, t.title);
+      actionsRow.appendChild(deleteBtn);
+    }
+
+    if(actionsRow.children.length){
+      row.appendChild(actionsRow);
     }
 
     listEl.appendChild(row);
   });
+}
+
+// --- Task title editing (Phase 14.2) ---
+// Inline editing: the static title text is swapped for an input +
+// Save/Cancel, in place, without navigating away from the list.
+
+function beginEditCollaborationTaskTitle(taskId, currentTitle){
+  var titleEl = document.getElementById('ctTitleText-'+taskId);
+  if(!titleEl) return;
+  var editRow = document.createElement('div');
+  editRow.style.cssText = 'display:flex;gap:6px;flex:1;align-items:center;';
+  editRow.innerHTML =
+    '<input class="form-input" id="ctEditInput-'+taskId+'" type="text" maxlength="300" style="margin-bottom:0;flex:1;padding:6px 10px;font-size:11px;">'+
+    '<div class="p-btn-primary" style="flex:none;width:auto;padding:6px 10px;font-size:9px;cursor:pointer;" id="ctSaveBtn-'+taskId+'">Save</div>'+
+    '<div class="p-btn-secondary" style="flex:none;width:auto;padding:6px 10px;font-size:9px;cursor:pointer;" id="ctCancelBtn-'+taskId+'">Cancel</div>';
+  titleEl.replaceWith(editRow);
+
+  var input = document.getElementById('ctEditInput-'+taskId);
+  input.value = currentTitle;
+  input.focus();
+  input.select();
+
+  document.getElementById('ctSaveBtn-'+taskId).onclick = function(){ saveCollaborationTaskTitle(taskId); };
+  document.getElementById('ctCancelBtn-'+taskId).onclick = function(){ loadCollaborationTasks(currentCollaborationId); };
+  input.onkeydown = function(e){
+    if(e.key === 'Enter') saveCollaborationTaskTitle(taskId);
+    if(e.key === 'Escape') loadCollaborationTasks(currentCollaborationId);
+  };
+}
+
+async function saveCollaborationTaskTitle(taskId){
+  var input = document.getElementById('ctEditInput-'+taskId);
+  if(!input) return;
+  var newTitle = input.value.trim();
+  if(!newTitle){
+    showToast('Task title cannot be empty.');
+    return;
+  }
+
+  var saveBtn = document.getElementById('ctSaveBtn-'+taskId);
+  if(saveBtn){ saveBtn.style.opacity = '.6'; }
+
+  var result = await supaRpc('edit_collaboration_task', { p_task_id: taskId, p_new_title: newTitle });
+  console.log('edit_collaboration_task result:', result);
+  if(result && result.ok){
+    showToast('Task updated.');
+    haptic('success');
+    await loadCollaborationTasks(currentCollaborationId);
+  } else {
+    console.error('edit_collaboration_task FAILED:', result && result.error);
+    var realMsg = result && result.error && (result.error.message || result.error.hint || result.error.details || JSON.stringify(result.error));
+    showToast(realMsg || 'Could not update task.');
+    if(saveBtn){ saveBtn.style.opacity = '1'; }
+  }
+}
+
+async function deleteCollaborationTaskPrompt(taskId, title){
+  var confirmed = window.confirm('Delete task "'+title+'"? This cannot be undone.');
+  if(!confirmed) return;
+
+  var result = await supaRpc('delete_collaboration_task', { p_task_id: taskId });
+  console.log('delete_collaboration_task result:', result);
+  if(result && result.ok){
+    showToast('Task deleted.');
+    haptic('success');
+    await loadCollaborationTasks(currentCollaborationId);
+  } else {
+    console.error('delete_collaboration_task FAILED:', result && result.error);
+    var realMsg = result && result.error && (result.error.message || result.error.hint || result.error.details || JSON.stringify(result.error));
+    showToast(realMsg || 'Could not delete task.');
+  }
 }
 
 async function createCollaborationTask(){
