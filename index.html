@@ -2342,6 +2342,18 @@ async function respondToApplication(applicationId, newStatus){
 
 // --- BOARD (Notifications, Phase 5) ---
 
+// Phase 13.2: canonical target_type values. No database CHECK
+// constraint exists for notifications.target_type (by design, per
+// approval) -- these constants are the single source of truth for
+// the allowed vocabulary on the frontend/router side. The SQL
+// writers (12 functions/triggers across Wanted and Collaboration)
+// use the exact same literal strings, documented in a comment at
+// the top of the Phase 13.2 migration.
+var NOTIFICATION_TARGET_TYPES = {
+  WANTED_POST: 'wanted_post',
+  COLLABORATION: 'collaboration'
+};
+
 var notificationTypeIcons = {
   'wanted.application.created': '👤',
   'wanted.application.accepted': '🎉',
@@ -2380,7 +2392,7 @@ async function loadBoard(){
   var notifications = await supaSelect(
     'notifications',
     'user_id=eq.'+myId+'&order=created_at.desc&limit=50',
-    'id,type,title,message,read,created_at,wanted_post_id,wanted_application_id'
+    'id,type,title,message,read,created_at,wanted_post_id,wanted_application_id,target_type,target_id'
   );
   if(!listEl) return;
 
@@ -2410,36 +2422,75 @@ async function loadBoard(){
   updateUnreadBadge();
 }
 
+// Phase 13.2: destination handlers, each receiving a real target_id
+// from the notification row. Most Collaboration types share one
+// handler; Wanted's accepted/rejected notifications deliberately do
+// NOT use the generic target-based handler despite sharing the same
+// target_type as 'created' -- they're applicant-facing, not
+// owner-facing, and have no reason to open that Wanted's Applicants
+// list (see handleNotificationTap for the explicit exception).
+
+async function navigateToWantedPostApplicants(targetId){
+  var title = 'Applicants';
+  var posts = await supaSelect('wanted_posts', 'id=eq.'+targetId, 'title');
+  if(posts && posts[0] && posts[0].title) title = posts[0].title;
+  openApplicants(targetId, title);
+}
+
+async function navigateToCollaboration(targetId){
+  await openCollaboration(targetId);
+}
+
+// Keyed by notification TYPE, not target_type alone -- the same
+// target_type can have different correct destinations depending on
+// the notification's role (see the exception noted above). Most
+// entries simply point at the same shared handler; adding a new
+// Collaboration-related notification type later is exactly one line
+// here, not new navigation logic.
+var notificationTypeHandlers = {
+  'wanted.application.created': navigateToWantedPostApplicants,
+  'collaboration_message_posted': navigateToCollaboration,
+  'collaboration_task_created': navigateToCollaboration,
+  'collaboration_task_completed': navigateToCollaboration,
+  'collaboration_asset_uploaded': navigateToCollaboration,
+  'collaboration_credit_added': navigateToCollaboration,
+  'collaboration_completed': navigateToCollaboration,
+  'collaboration_reopened': navigateToCollaboration,
+  'collaboration_archived': navigateToCollaboration,
+  'collaboration_participant_invited': navigateToCollaboration,
+  'collaboration_participant_removed': navigateToCollaboration,
+  'collaboration_participant_left': navigateToCollaboration,
+  'collaboration_ownership_transferred': navigateToCollaboration
+};
+
 async function handleNotificationTap(n){
   if(!n.read){
     await markNotificationRead(n.id);
   }
 
-  if(n.type === 'wanted.application.created'){
-    var title = 'Applicants';
-    if(n.wanted_post_id){
-      var posts = await supaSelect('wanted_posts', 'id=eq.'+n.wanted_post_id, 'title');
-      if(posts && posts[0] && posts[0].title) title = posts[0].title;
-      openApplicants(n.wanted_post_id, title);
-    } else {
-      goTo('board');
-    }
-  } else if(n.type === 'wanted.application.accepted' || n.type === 'wanted.application.rejected'){
-    goTo('wanted');
-  } else if(
-    n.type === 'collaboration_message_posted' || n.type === 'collaboration_task_created' ||
-    n.type === 'collaboration_task_completed' || n.type === 'collaboration_asset_uploaded' ||
-    n.type === 'collaboration_credit_added' || n.type === 'collaboration_completed' ||
-    n.type === 'collaboration_reopened' || n.type === 'collaboration_archived'
-  ){
-    // Phase 11.1: the notifications table has no collaboration
-    // reference column (deliberately deferred to a future generic
-    // navigation/reference design, not added here). Board is the
-    // correct minimum target for these types today.
-    goTo('board');
-  } else {
-    goTo('board');
+  // Fall back to the pre-existing wanted_post_id column when
+  // target_id isn't populated -- true for every historical
+  // wanted.application.created row created before this migration.
+  // Without this fallback, existing notifications would silently
+  // stop navigating correctly; this preserves them exactly.
+  var resolvedTargetId = n.target_id || n.wanted_post_id;
+
+  var handler = notificationTypeHandlers[n.type];
+  if(handler && resolvedTargetId){
+    await handler(resolvedTargetId);
+    return;
   }
+
+  // Explicit exception: same target_type as 'created', deliberately
+  // different destination -- not a gap, a genuine semantic difference.
+  if(n.type === 'wanted.application.accepted' || n.type === 'wanted.application.rejected'){
+    goTo('wanted');
+    return;
+  }
+
+  // Unknown type, or a type whose target could not be resolved at
+  // all -- safe generic fallback.
+  goTo('board');
 }
 
 async function markNotificationRead(notificationId){
