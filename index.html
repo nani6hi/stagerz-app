@@ -2734,7 +2734,10 @@ async function openCollaboration(collaborationId){
     '</div>'+
 
     '<div class="section-title" style="margin-bottom:8px;">Members</div>'+
-    '<div style="font-size:9px;color:rgba(255,255,255,.4);margin-bottom:10px;margin-top:-6px;">'+memberCount+' Member'+(memberCount===1?'':'s')+'</div>';
+    '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;margin-top:-6px;">'+
+      '<div style="font-size:9px;color:rgba(255,255,255,.4);">'+memberCount+' Member'+(memberCount===1?'':'s')+'</div>'+
+      (currentCollaborationIsOwner && collab.status === 'active' ? '<div class="p-btn-secondary" id="ccInviteBtn" style="flex:none;width:auto;padding:5px 10px;font-size:8px;cursor:pointer;" onclick="promptInviteParticipant()">+ Invite</div>' : '')+
+    '</div>';
 
   contentEl.innerHTML = html;
 
@@ -2750,7 +2753,7 @@ async function openCollaboration(collaborationId){
     if(prof.location) metaParts.push(prof.location);
     var typeLabel = p.participant_type === 'owner' ? 'Owner' : 'Member';
     var row = document.createElement('div');
-    row.style.cssText = 'display:flex;align-items:center;gap:10px;justify-content:space-between;background:#111118;border-radius:10px;padding:12px;margin-bottom:8px;cursor:pointer;';
+    row.style.cssText = 'display:flex;flex-direction:column;gap:8px;background:#111118;border-radius:10px;padding:12px;margin-bottom:8px;cursor:pointer;';
     // .artist-av reused; real photo only when genuinely present,
     // otherwise a neutral placeholder glyph on a neutral background --
     // no data invented either way. created_at is already fetched but
@@ -2761,15 +2764,41 @@ async function openCollaboration(collaborationId){
       : 'background:#1a1228;';
     var avatarContent = pub.photo_url ? '' : '&#128100;';
     row.innerHTML =
-      '<div style="display:flex;align-items:center;gap:10px;min-width:0;">'+
-        '<div class="artist-av" style="'+avatarStyle+'">'+avatarContent+'</div>'+
-        '<div style="min-width:0;">'+
-          '<div style="font-weight:600;font-size:11px;color:#fff;">'+(pub.display_name || 'STAGERZ Artist')+'</div>'+
-          '<div style="font-size:9px;color:rgba(255,255,255,.4);margin-top:2px;">'+metaParts.join(' &middot; ')+'</div>'+
+      '<div style="display:flex;align-items:center;justify-content:space-between;">'+
+        '<div style="display:flex;align-items:center;gap:10px;min-width:0;">'+
+          '<div class="artist-av" style="'+avatarStyle+'">'+avatarContent+'</div>'+
+          '<div style="min-width:0;">'+
+            '<div style="font-weight:600;font-size:11px;color:#fff;">'+(pub.display_name || 'STAGERZ Artist')+'</div>'+
+            '<div style="font-size:9px;color:rgba(255,255,255,.4);margin-top:2px;">'+metaParts.join(' &middot; ')+'</div>'+
+          '</div>'+
         '</div>'+
-      '</div>'+
-      '<div style="font-size:9px;color:rgba(232,184,48,.7);flex-shrink:0;">'+typeLabel+'</div>';
+        '<div style="font-size:9px;color:rgba(232,184,48,.7);flex-shrink:0;">'+typeLabel+'</div>'+
+      '</div>';
     row.onclick = (function(userId){ return function(){ openArtistProfile(userId, 'collaborationdetail'); }; })(p.user_id);
+
+    // Owner-only management actions -- member rows only, never the
+    // owner's own row. stopPropagation so these never also trigger
+    // the row's own tap-to-open-profile behavior.
+    if(currentCollaborationIsOwner && p.participant_type !== 'owner' && collab.status === 'active'){
+      var actionsRow = document.createElement('div');
+      actionsRow.style.cssText = 'display:flex;gap:8px;';
+
+      var makeOwnerBtn = document.createElement('div');
+      makeOwnerBtn.className = 'p-btn-secondary';
+      makeOwnerBtn.style.cssText = 'flex:none;width:auto;padding:5px 10px;font-size:8px;cursor:pointer;';
+      makeOwnerBtn.textContent = 'Make Owner';
+      makeOwnerBtn.onclick = (function(userId, name){ return function(e){ e.stopPropagation(); transferOwnership(userId, name); }; })(p.user_id, pub.display_name || 'this participant');
+      actionsRow.appendChild(makeOwnerBtn);
+
+      var removeBtn = document.createElement('div');
+      removeBtn.style.cssText = 'flex:none;width:auto;padding:5px 10px;font-size:8px;cursor:pointer;border-radius:8px;background:rgba(255,60,60,.08);border:1px solid rgba(255,60,60,.2);color:rgba(255,100,100,.8);';
+      removeBtn.textContent = 'Remove';
+      removeBtn.onclick = (function(userId, name){ return function(e){ e.stopPropagation(); removeParticipant(userId, name); }; })(p.user_id, pub.display_name || 'this participant');
+      actionsRow.appendChild(removeBtn);
+
+      row.appendChild(actionsRow);
+    }
+
     contentEl.appendChild(row);
   }
 
@@ -2789,6 +2818,17 @@ async function openCollaboration(collaborationId){
     membersLabel.textContent = 'Members';
     contentEl.appendChild(membersLabel);
     membersOnly.forEach(renderParticipantRow);
+  }
+
+  // Leave -- every current participant except the owner (who must
+  // transfer ownership first, enforced server-side regardless of
+  // this UI check).
+  if(myParticipantRow && !currentCollaborationIsOwner){
+    var leaveRow = document.createElement('div');
+    leaveRow.style.cssText = 'margin-top:8px;margin-bottom:16px;';
+    leaveRow.innerHTML = '<div style="width:auto;display:inline-block;padding:8px 14px;font-size:9px;color:rgba(255,100,100,.8);background:rgba(255,60,60,.08);border:1px solid rgba(255,60,60,.2);border-radius:10px;cursor:pointer;" id="ccLeaveBtn">Leave Collaboration</div>';
+    leaveRow.querySelector('#ccLeaveBtn').onclick = function(){ promptLeaveCollaboration(); };
+    contentEl.appendChild(leaveRow);
   }
 
   // Activity -- Phase 10.2: reads exclusively from
@@ -2937,6 +2977,99 @@ function applyCollaborationReadOnlyGuard(composerElId, noticeElId, noticeVerb){
   if(noticeEl){
     noticeEl.style.display = isActive ? 'none' : 'block';
     if(!isActive) noticeEl.textContent = 'This collaboration is '+currentCollaborationStatus+' -- '+(noticeVerb||'new items')+' cannot be added. Existing content remains readable.';
+  }
+}
+
+// --- COLLABORATION PARTICIPANT MANAGEMENT (Phase 12.1) ---
+
+// TEMPORARY, MINIMAL implementation for Phase 12.1: a plain
+// window.prompt() asking for a username, resolved via a
+// public_profiles lookup. This is not a real user search/
+// autocomplete UI -- explicitly a placeholder, intended to be
+// replaced by a proper search/autocomplete flow in a later phase.
+async function promptInviteParticipant(){
+  var rawUsername = window.prompt('Enter the username of the person to invite:');
+  if(!rawUsername) return;
+  var username = rawUsername.trim().replace(/^@/, '').toLowerCase();
+  if(!username) return;
+
+  var matches = await supaSelect('public_profiles', 'username=eq.'+encodeURIComponent(username), 'id,display_name');
+  if(!matches || !matches.length){
+    showToast('No user found with that username.');
+    return;
+  }
+  var target = matches[0];
+
+  var btn = document.getElementById('ccInviteBtn');
+  if(btn){ btn.style.opacity = '.6'; }
+
+  var result = await supaRpc('invite_collaboration_participant', { p_collaboration_id: currentCollaborationId, p_user_id: target.id });
+  console.log('invite_collaboration_participant result:', result);
+  if(result && result.ok){
+    showToast((target.display_name || 'User') + ' was added to the collaboration.');
+    haptic('success');
+    await openCollaboration(currentCollaborationId);
+  } else {
+    console.error('invite_collaboration_participant FAILED:', result && result.error);
+    var realMsg = result && result.error && (result.error.message || result.error.hint || result.error.details || JSON.stringify(result.error));
+    showToast(realMsg || 'Could not invite this user.');
+    if(btn){ btn.style.opacity = '1'; }
+  }
+}
+
+async function removeParticipant(userId, name){
+  var confirmed = window.confirm('Remove '+name+' from this collaboration?');
+  if(!confirmed) return;
+
+  var result = await supaRpc('remove_collaboration_participant', { p_collaboration_id: currentCollaborationId, p_user_id: userId });
+  console.log('remove_collaboration_participant result:', result);
+  if(result && result.ok){
+    showToast(name+' was removed.');
+    haptic('success');
+    await openCollaboration(currentCollaborationId);
+  } else {
+    console.error('remove_collaboration_participant FAILED:', result && result.error);
+    var realMsg = result && result.error && (result.error.message || result.error.hint || result.error.details || JSON.stringify(result.error));
+    showToast(realMsg || 'Could not remove this participant.');
+  }
+}
+
+async function transferOwnership(userId, name){
+  var confirmed = window.confirm('Make '+name+' the owner of this collaboration? You will become a regular member.');
+  if(!confirmed) return;
+
+  var result = await supaRpc('transfer_collaboration_ownership', { p_collaboration_id: currentCollaborationId, p_new_owner_id: userId });
+  console.log('transfer_collaboration_ownership result:', result);
+  if(result && result.ok){
+    showToast('Ownership transferred to '+name+'.');
+    haptic('success');
+    await openCollaboration(currentCollaborationId);
+  } else {
+    console.error('transfer_collaboration_ownership FAILED:', result && result.error);
+    var realMsg = result && result.error && (result.error.message || result.error.hint || result.error.details || JSON.stringify(result.error));
+    showToast(realMsg || 'Could not transfer ownership.');
+  }
+}
+
+async function promptLeaveCollaboration(){
+  var confirmed = window.confirm('Leave this collaboration? You will lose access immediately.');
+  if(!confirmed) return;
+
+  var result = await supaRpc('leave_collaboration', { p_collaboration_id: currentCollaborationId });
+  console.log('leave_collaboration result:', result);
+  if(result && result.ok){
+    showToast('You left the collaboration.');
+    haptic('success');
+    // Unlike other actions, do NOT reload this same Workspace --
+    // the caller is no longer a participant, so it would only show
+    // "Collaboration not found." Returning to the list is the
+    // correct destination for a voluntary leave specifically.
+    goTo('mycollaborations');
+    loadMyCollaborations();
+  } else {
+    console.error('leave_collaboration FAILED:', result && result.error);
+    var realMsg = result && result.error && (result.error.message || result.error.hint || result.error.details || JSON.stringify(result.error));
+    showToast(realMsg || 'Could not leave this collaboration.');
   }
 }
 
