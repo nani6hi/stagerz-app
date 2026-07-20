@@ -2935,8 +2935,16 @@ async function openCollaboration(collaborationId){
       sentence = 'created task "'+escapeCollaborationAssetHtml(meta.title)+'"';
     } else if(item.activity_type === 'task_completed'){
       sentence = 'completed task "'+escapeCollaborationAssetHtml(meta.title)+'"';
+    } else if(item.activity_type === 'task_edited'){
+      sentence = 'renamed task to "'+escapeCollaborationAssetHtml(meta.new_title)+'"';
+    } else if(item.activity_type === 'task_deleted'){
+      sentence = 'deleted task "'+escapeCollaborationAssetHtml(meta.title)+'"';
     } else if(item.activity_type === 'asset_uploaded'){
       sentence = 'uploaded "'+escapeCollaborationAssetHtml(meta.file_name)+'"';
+    } else if(item.activity_type === 'asset_edited'){
+      sentence = 'edited "'+escapeCollaborationAssetHtml(meta.file_name || 'an asset')+'"';
+    } else if(item.activity_type === 'asset_deleted'){
+      sentence = 'deleted "'+escapeCollaborationAssetHtml(meta.file_name || 'an asset')+'"';
     } else if(item.activity_type === 'credit_added'){
       var creditedPub = publicById[meta.credited_user_id] || {};
       var creditedName = escapeCollaborationAssetHtml(creditedPub.display_name || 'STAGERZ Artist');
