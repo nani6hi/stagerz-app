@@ -4153,7 +4153,7 @@ async function loadCollaborationCredits(collaborationId){
       var deleteBtn = document.createElement('div');
       deleteBtn.style.cssText = 'flex:none;width:auto;padding:6px 12px;font-size:9px;cursor:pointer;border-radius:8px;background:rgba(255,60,60,.08);border:1px solid rgba(255,60,60,.2);color:rgba(255,100,100,.8);';
       deleteBtn.textContent = 'Delete';
-      deleteBtn.onclick = (function(creditId, roleLabel){ return function(){ deleteCollaborationCreditPrompt(creditId, roleLabel); }; })(c.id, c.credit_role);
+      deleteBtn.onclick = (function(creditId, roleLabel, btnEl){ return function(){ deleteCollaborationCreditPrompt(creditId, roleLabel, btnEl); }; })(c.id, c.credit_role, deleteBtn);
       actionsRow.appendChild(deleteBtn);
 
       row.appendChild(actionsRow);
@@ -4202,7 +4202,12 @@ async function saveCollaborationCreditEdit(creditId){
   }
 
   var saveBtn = document.getElementById('ccEditSaveBtn-'+creditId);
-  if(saveBtn){ saveBtn.style.opacity = '.6'; }
+  if(saveBtn){
+    if(saveBtn.dataset.busy === 'true') return;
+    saveBtn.dataset.busy = 'true';
+    saveBtn.style.opacity = '.6';
+    saveBtn.style.pointerEvents = 'none';
+  }
 
   var result = await supaRpc('edit_collaboration_credit', { p_credit_id: creditId, p_role: newRole });
   console.log('edit_collaboration_credit result:', result);
@@ -4214,13 +4219,16 @@ async function saveCollaborationCreditEdit(creditId){
     console.error('edit_collaboration_credit FAILED:', result && result.error);
     var realMsg = result && result.error && (result.error.message || result.error.hint || result.error.details || JSON.stringify(result.error));
     showToast(realMsg || 'Could not update credit.');
-    if(saveBtn){ saveBtn.style.opacity = '1'; }
+    if(saveBtn){ saveBtn.dataset.busy = 'false'; saveBtn.style.opacity = '1'; saveBtn.style.pointerEvents = 'auto'; }
   }
 }
 
-async function deleteCollaborationCreditPrompt(creditId, roleLabel){
+async function deleteCollaborationCreditPrompt(creditId, roleLabel, btnEl){
+  if(btnEl && btnEl.dataset.busy === 'true') return;
   var confirmed = window.confirm('Delete credit "'+roleLabel+'"? This cannot be undone.');
   if(!confirmed) return;
+
+  if(btnEl){ btnEl.dataset.busy = 'true'; btnEl.style.opacity = '.6'; btnEl.style.pointerEvents = 'none'; }
 
   var result = await supaRpc('delete_collaboration_credit', { p_credit_id: creditId });
   console.log('delete_collaboration_credit result:', result);
@@ -4232,6 +4240,7 @@ async function deleteCollaborationCreditPrompt(creditId, roleLabel){
     console.error('delete_collaboration_credit FAILED:', result && result.error);
     var realMsg = result && result.error && (result.error.message || result.error.hint || result.error.details || JSON.stringify(result.error));
     showToast(realMsg || 'Could not delete credit.');
+    if(btnEl){ btnEl.dataset.busy = 'false'; btnEl.style.opacity = '1'; btnEl.style.pointerEvents = 'auto'; }
   }
 }
 
@@ -4243,20 +4252,12 @@ async function createCollaborationCredit(){
   if(!selectedCreditParticipantId){ showToast('Please select a participant.'); return; }
   if(!trimmedRole){ showToast('Please enter a role.'); return; }
 
-  var myId = await getMyDomainId();
-  if(!myId){ showToast('Please sign in again.'); goTo('authemail'); return; }
+  if(saveBtn){ if(saveBtn.dataset.busy === 'true') return; saveBtn.dataset.busy = 'true'; saveBtn.disabled = true; saveBtn.style.opacity = '.6'; }
 
-  if(saveBtn){ saveBtn.disabled = true; saveBtn.style.opacity = '.6'; }
-
-  var existing = await supaSelect('collaboration_credits', 'collaboration_id=eq.'+currentCollaborationId+'&order=credit_order.desc&limit=1', 'credit_order');
-  var nextOrder = (existing && existing.length) ? (existing[0].credit_order + 1) : 0;
-
-  var result = await supaInsert('collaboration_credits', {
-    collaboration_id: currentCollaborationId,
-    user_id: selectedCreditParticipantId,
-    credit_role: trimmedRole,
-    credit_order: nextOrder,
-    created_by: myId
+  var result = await supaRpc('create_collaboration_credit', {
+    p_collaboration_id: currentCollaborationId,
+    p_user_id: selectedCreditParticipantId,
+    p_role: trimmedRole
   });
   console.log('createCollaborationCredit result:', result);
 
@@ -4270,11 +4271,13 @@ async function createCollaborationCredit(){
     await loadCollaborationCredits(currentCollaborationId);
   } else {
     console.error('createCollaborationCredit FAILED -- real Supabase error:', result && result.error);
-    var realMsg = result && result.error && (result.error.message || result.error.hint || result.error.details || JSON.stringify(result.error));
+    var errCode = result && result.error && result.error.code;
+    var friendlyMsg = errCode === 'P0053' ? 'This participant already has a credit for this collaboration.' : null;
+    var realMsg = friendlyMsg || (result && result.error && (result.error.message || result.error.hint || result.error.details || JSON.stringify(result.error)));
     showToast(realMsg || 'Could not add credit.');
   }
 
-  if(saveBtn){ saveBtn.disabled = false; saveBtn.style.opacity = '1'; }
+  if(saveBtn){ saveBtn.dataset.busy = 'false'; saveBtn.disabled = false; saveBtn.style.opacity = '1'; }
 }
 
 function tickNACKL(){
