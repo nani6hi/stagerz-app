@@ -2411,8 +2411,8 @@ async function loadBoard(){
     card.innerHTML =
       '<div style="font-size:18px;flex-shrink:0;">'+icon+'</div>'+
       '<div style="flex:1;min-width:0;">'+
-        '<div style="font-weight:600;font-size:11px;color:#fff;">'+escapeCollaborationAssetHtml(n.title)+unreadDot+'</div>'+
-        '<div style="font-size:9px;color:rgba(255,255,255,.4);margin-top:2px;">'+escapeCollaborationAssetHtml(n.message||'')+'</div>'+
+        '<div style="font-weight:600;font-size:11px;color:#fff;">'+escapeCollaborationHtml(n.title)+unreadDot+'</div>'+
+        '<div style="font-size:9px;color:rgba(255,255,255,.4);margin-top:2px;">'+escapeCollaborationHtml(n.message||'')+'</div>'+
         '<div style="font-size:8px;color:rgba(255,255,255,.2);margin-top:4px;">'+boardTimeAgo(n.created_at)+'</div>'+
       '</div>';
     card.onclick = (function(notif){ return function(){ handleNotificationTap(notif); }; })(n);
@@ -2742,7 +2742,7 @@ async function openCollaboration(collaborationId){
     '<div style="background:#111118;border-radius:10px;padding:12px;margin-bottom:8px;">'+
       '<div style="font-weight:600;font-size:10px;color:#fff;">Assets</div>'+
       '<div style="font-size:9px;color:rgba(255,255,255,.4);margin-top:2px;">'+
-        (assetTotal !== null ? assetTotal+' file'+(assetTotal===1?'':'s')+' &middot; '+formatCollaborationAssetSize(assetTotalSize) : 'Unavailable')+
+        (assetTotal !== null ? assetTotal+' file'+(assetTotal===1?'':'s')+' &middot; '+formatCollaborationFileSize(assetTotalSize) : 'Unavailable')+
         (assetLatestUpload ? ' &middot; Latest ' + boardTimeAgo(assetLatestUpload) : '')+
       '</div>'+
     '</div>'+
@@ -2756,7 +2756,7 @@ async function openCollaboration(collaborationId){
       '<div style="font-weight:600;font-size:10px;color:#fff;">Latest Activity</div>'+
       '<div style="font-size:9px;color:rgba(255,255,255,.4);margin-top:2px;">'+
         (activityRows === null ? 'Unavailable' : (activityRows.length === 0 ? 'No activity yet' :
-          escapeCollaborationAssetHtml((publicById[activityRows[0].actor_user_id] || {}).display_name || 'STAGERZ Artist') + ' &middot; ' + boardTimeAgo(activityRows[0].created_at)))+
+          escapeCollaborationHtml((publicById[activityRows[0].actor_user_id] || {}).display_name || 'STAGERZ Artist') + ' &middot; ' + boardTimeAgo(activityRows[0].created_at)))+
       '</div>'+
     '</div>'+
 
@@ -2921,7 +2921,7 @@ async function openCollaboration(collaborationId){
 
   (activityRows || []).forEach(function(item){
     var pub = publicById[item.actor_user_id] || extendedPublicById[item.actor_user_id] || {};
-    var actorName = escapeCollaborationAssetHtml(pub.display_name || 'STAGERZ Artist');
+    var actorName = escapeCollaborationHtml(pub.display_name || 'STAGERZ Artist');
     var meta = item.metadata || {};
 
     var sentence;
@@ -2932,23 +2932,29 @@ async function openCollaboration(collaborationId){
     } else if(item.activity_type === 'message_posted'){
       sentence = 'posted a message';
     } else if(item.activity_type === 'task_created'){
-      sentence = 'created task "'+escapeCollaborationAssetHtml(meta.title)+'"';
+      sentence = 'created task "'+escapeCollaborationHtml(meta.title)+'"';
     } else if(item.activity_type === 'task_completed'){
-      sentence = 'completed task "'+escapeCollaborationAssetHtml(meta.title)+'"';
+      sentence = 'completed task "'+escapeCollaborationHtml(meta.title)+'"';
     } else if(item.activity_type === 'task_edited'){
-      sentence = 'renamed task to "'+escapeCollaborationAssetHtml(meta.new_title)+'"';
+      sentence = 'renamed task to "'+escapeCollaborationHtml(meta.new_title)+'"';
     } else if(item.activity_type === 'task_deleted'){
-      sentence = 'deleted task "'+escapeCollaborationAssetHtml(meta.title)+'"';
+      sentence = 'deleted task "'+escapeCollaborationHtml(meta.title)+'"';
     } else if(item.activity_type === 'asset_uploaded'){
-      sentence = 'uploaded "'+escapeCollaborationAssetHtml(meta.file_name)+'"';
+      sentence = 'uploaded "'+escapeCollaborationHtml(meta.file_name)+'"';
     } else if(item.activity_type === 'asset_edited'){
-      sentence = 'edited "'+escapeCollaborationAssetHtml(meta.file_name || 'an asset')+'"';
+      var editedAssetLabel = meta.file_name || 'an asset';
+      // meta.new_title is only present on rows written after this
+      // metadata was enriched -- historical rows (file_name only)
+      // correctly fall through to the simple sentence unchanged.
+      sentence = meta.new_title
+        ? 'edited "'+escapeCollaborationHtml(editedAssetLabel)+'" (title: "'+escapeCollaborationHtml(meta.new_title)+'")'
+        : 'edited "'+escapeCollaborationHtml(editedAssetLabel)+'"';
     } else if(item.activity_type === 'asset_deleted'){
-      sentence = 'deleted "'+escapeCollaborationAssetHtml(meta.file_name || 'an asset')+'"';
+      sentence = 'deleted "'+escapeCollaborationHtml(meta.file_name || 'an asset')+'"';
     } else if(item.activity_type === 'credit_added'){
       var creditedPub = publicById[meta.credited_user_id] || {};
-      var creditedName = escapeCollaborationAssetHtml(creditedPub.display_name || 'STAGERZ Artist');
-      sentence = 'added '+escapeCollaborationAssetHtml(meta.credit_role)+' credit for '+creditedName;
+      var creditedName = escapeCollaborationHtml(creditedPub.display_name || 'STAGERZ Artist');
+      sentence = 'added '+escapeCollaborationHtml(meta.credit_role)+' credit for '+creditedName;
     } else if(item.activity_type === 'collaboration_completed'){
       sentence = 'marked the collaboration as completed';
     } else if(item.activity_type === 'collaboration_reopened'){
@@ -2959,10 +2965,10 @@ async function openCollaboration(collaborationId){
       sentence = 'restored the collaboration to completed';
     } else if(item.activity_type === 'participant_invited'){
       var invitedPub = publicById[item.reference_id] || extendedPublicById[item.reference_id] || {};
-      sentence = 'invited '+escapeCollaborationAssetHtml(invitedPub.display_name || 'STAGERZ Artist')+'.';
+      sentence = 'invited '+escapeCollaborationHtml(invitedPub.display_name || 'STAGERZ Artist')+'.';
     } else if(item.activity_type === 'participant_removed'){
       var removedPub = publicById[item.reference_id] || extendedPublicById[item.reference_id] || {};
-      sentence = 'removed '+escapeCollaborationAssetHtml(removedPub.display_name || 'STAGERZ Artist')+'.';
+      sentence = 'removed '+escapeCollaborationHtml(removedPub.display_name || 'STAGERZ Artist')+'.';
     } else if(item.activity_type === 'participant_left'){
       // actorName above already resolves correctly via the extended
       // lookup (the leaver is no longer a current participant) --
@@ -2971,7 +2977,7 @@ async function openCollaboration(collaborationId){
       sentence = 'left the collaboration.';
     } else if(item.activity_type === 'ownership_transferred'){
       var newOwnerPub = publicById[item.reference_id] || extendedPublicById[item.reference_id] || {};
-      sentence = 'transferred ownership to '+escapeCollaborationAssetHtml(newOwnerPub.display_name || 'STAGERZ Artist')+'.';
+      sentence = 'transferred ownership to '+escapeCollaborationHtml(newOwnerPub.display_name || 'STAGERZ Artist')+'.';
     } else {
       // Unknown activity type -- degrade safely rather than break
       // rendering; never throws, never shows raw/unescaped data.
@@ -3174,8 +3180,8 @@ async function runInviteUserSearch(query){
     row.innerHTML =
       '<div class="artist-av" style="'+avatarStyle+'">'+avatarContent+'</div>'+
       '<div style="min-width:0;">'+
-        '<div style="font-weight:600;font-size:11px;color:#fff;">'+escapeCollaborationAssetHtml(u.display_name || 'STAGERZ Artist')+'</div>'+
-        '<div style="font-size:9px;color:rgba(255,255,255,.4);margin-top:2px;">@'+escapeCollaborationAssetHtml(u.username || '')+'</div>'+
+        '<div style="font-weight:600;font-size:11px;color:#fff;">'+escapeCollaborationHtml(u.display_name || 'STAGERZ Artist')+'</div>'+
+        '<div style="font-size:9px;color:rgba(255,255,255,.4);margin-top:2px;">@'+escapeCollaborationHtml(u.username || '')+'</div>'+
       '</div>';
     row.onclick = (function(user){ return function(){
       closeInviteUserPicker();
@@ -3450,7 +3456,7 @@ async function loadCollaborationTasks(collaborationId){
     titleRow.style.cssText = 'display:flex;align-items:center;gap:8px;';
     titleRow.innerHTML =
       '<div style="font-size:13px;color:'+(t.status==='done' ? 'rgba(100,230,140,.9)' : 'rgba(255,255,255,.4)')+';">'+checkGlyph+'</div>'+
-      '<div style="font-weight:600;font-size:11px;color:#fff;'+(t.status==='done' ? 'text-decoration:line-through;opacity:.6;' : '')+'" id="ctTitleText-'+t.id+'">'+escapeCollaborationAssetHtml(t.title)+'</div>';
+      '<div style="font-weight:600;font-size:11px;color:#fff;'+(t.status==='done' ? 'text-decoration:line-through;opacity:.6;' : '')+'" id="ctTitleText-'+t.id+'">'+escapeCollaborationHtml(t.title)+'</div>';
     row.appendChild(titleRow);
 
     var metaEl = document.createElement('div');
@@ -3647,14 +3653,14 @@ function sanitizeCollaborationAssetFileName(fileName){
   return fileName.replace(/[^a-zA-Z0-9._-]/g, '_');
 }
 
-function formatCollaborationAssetSize(bytes){
+function formatCollaborationFileSize(bytes){
   if(bytes === null || bytes === undefined) return '';
   if(bytes < 1024) return bytes + ' B';
   if(bytes < 1024*1024) return (bytes/1024).toFixed(1) + ' KB';
   return (bytes/(1024*1024)).toFixed(1) + ' MB';
 }
 
-function escapeCollaborationAssetHtml(str){
+function escapeCollaborationHtml(str){
   if(str === null || str === undefined) return '';
   return String(str)
     .replace(/&/g, '&amp;')
@@ -3719,9 +3725,9 @@ async function loadCollaborationAssets(collaborationId){
   listEl.innerHTML = '';
   assets.forEach(function(a){
     var uploaderPub = currentCollaborationPublicById[a.uploaded_by] || {};
-    var uploaderName = escapeCollaborationAssetHtml(uploaderPub.display_name || 'STAGERZ Artist');
-    var safeFileName = escapeCollaborationAssetHtml(a.file_name);
-    var sizeLabel = formatCollaborationAssetSize(a.file_size);
+    var uploaderName = escapeCollaborationHtml(uploaderPub.display_name || 'STAGERZ Artist');
+    var safeFileName = escapeCollaborationHtml(a.file_name);
+    var sizeLabel = formatCollaborationFileSize(a.file_size);
     var dateLabel = a.created_at ? new Date(a.created_at).toLocaleDateString() : '';
     var icon = assetTypeIcons[a.asset_type] || assetTypeIcons.other;
 
@@ -3735,8 +3741,8 @@ async function loadCollaborationAssets(collaborationId){
           '<div style="font-size:9px;color:rgba(255,255,255,.4);margin-top:2px;">'+a.asset_type+' &middot; '+sizeLabel+' &middot; '+uploaderName+' &middot; '+dateLabel+'</div>'+
         '</div>'+
       '</div>'+
-      (a.title ? '<div style="font-size:10px;color:rgba(232,184,48,.8);margin-top:6px;font-weight:600;" id="caTitleText-'+a.id+'">'+escapeCollaborationAssetHtml(a.title)+'</div>' : '<div id="caTitleText-'+a.id+'" style="display:none;"></div>')+
-      (a.description ? '<div style="font-size:9px;color:rgba(255,255,255,.35);margin-top:2px;" id="caDescText-'+a.id+'">'+escapeCollaborationAssetHtml(a.description)+'</div>' : '<div id="caDescText-'+a.id+'" style="display:none;"></div>');
+      (a.title ? '<div style="font-size:10px;color:rgba(232,184,48,.8);margin-top:6px;font-weight:600;" id="caTitleText-'+a.id+'">'+escapeCollaborationHtml(a.title)+'</div>' : '<div id="caTitleText-'+a.id+'" style="display:none;"></div>')+
+      (a.description ? '<div style="font-size:9px;color:rgba(255,255,255,.35);margin-top:2px;" id="caDescText-'+a.id+'">'+escapeCollaborationHtml(a.description)+'</div>' : '<div id="caDescText-'+a.id+'" style="display:none;"></div>');
 
     var actionsRow = document.createElement('div');
     actionsRow.style.cssText = 'display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;';
@@ -3902,7 +3908,7 @@ async function toggleCollaborationAssetPreview(assetId, storagePath, assetType, 
   if(!container.isConnected) return; // screen was left mid-download
 
   if(result.error){
-    container.innerHTML = '<div style="font-size:9px;color:rgba(255,100,100,.8);margin-top:8px;">Preview unavailable: '+escapeCollaborationAssetHtml(result.error.message)+'</div>';
+    container.innerHTML = '<div style="font-size:9px;color:rgba(255,100,100,.8);margin-top:8px;">Preview unavailable: '+escapeCollaborationHtml(result.error.message)+'</div>';
     collaborationAssetPreviewVisible[assetId] = false;
     btnEl.textContent = 'Load Preview'; // retryable -- not a dead end
     return;
@@ -4116,8 +4122,8 @@ async function loadCollaborationCredits(collaborationId){
   listEl.innerHTML = '';
   credits.forEach(function(c){
     var pub = currentCollaborationPublicById[c.user_id] || {};
-    var name = escapeCollaborationAssetHtml(pub.display_name || 'STAGERZ Artist');
-    var role = escapeCollaborationAssetHtml(c.credit_role);
+    var name = escapeCollaborationHtml(pub.display_name || 'STAGERZ Artist');
+    var role = escapeCollaborationHtml(c.credit_role);
     var row = document.createElement('div');
     row.style.cssText = 'display:flex;align-items:center;gap:10px;background:#111118;border-radius:10px;padding:12px;margin-bottom:8px;';
     row.innerHTML =
