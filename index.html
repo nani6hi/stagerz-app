@@ -739,8 +739,9 @@ html,body{width:100%;height:100%;background:#08080f;color:#f0f0f5;font-family:'I
   </div>
   <div class="sa" style="padding:14px;" id="cmList"></div>
   <div id="cmReadOnlyNotice" style="display:none;padding:8px 14px;background:#1a1010;font-size:9px;color:rgba(255,100,100,.7);border-top:1px solid rgba(255,255,255,.06);flex-shrink:0;"></div>
+  <div id="cmTypingIndicator" style="display:none;padding:4px 14px;font-size:8px;color:rgba(255,255,255,.35);font-style:italic;"></div>
   <div id="cmComposerRow" style="display:flex;gap:8px;padding:10px 14px;background:#08080f;border-top:1px solid rgba(255,255,255,.06);flex-shrink:0;">
-    <input class="form-input" id="cmInput" type="text" placeholder="Message..." style="margin-bottom:0;flex:1;" maxlength="5000" onkeydown="if(event.key==='Enter')sendCollaborationMessage();">
+    <input class="form-input" id="cmInput" type="text" placeholder="Message..." style="margin-bottom:0;flex:1;" maxlength="5000" onkeydown="if(event.key==='Enter')sendCollaborationMessage();" oninput="handleCollaborationMessageInputChanged()">
     <button id="cmSendBtn" style="padding:0 16px;background:linear-gradient(135deg,#8a6018,#e8b830);border:none;border-radius:10px;font-family:'Playfair Display',serif;font-size:12px;font-weight:700;color:#08080f;cursor:pointer;flex-shrink:0;" onclick="sendCollaborationMessage()">Send</button>
   </div>
 </div>
@@ -1844,6 +1845,11 @@ var collaborationRealtimeDebounceTimers = {};
 // Supabase assigns, so multiple browser tabs for the same person
 // never render as two separate online users.
 var collaborationPresenceByUserId = {};
+// Phase 19.3: cached so typing-state updates can re-track the full
+// presence payload (.track() always replaces, never merges).
+var collaborationOwnPresenceMeta = null;
+var collaborationIsCurrentlyTyping = false;
+var collaborationTypingIdleTimer = null;
 var currentCollaborationIsOwner = false;
 var collaborationAssetPreviewVisible = {};
 var currentCollaborationPublicById = {};
@@ -3514,6 +3520,7 @@ async function sendCollaborationMessage(){
     // Clear only on confirmed success -- a failure leaves the
     // typed text intact for the user to retry.
     if(inputEl) inputEl.value = '';
+    stopCollaborationTypingNow();
     await loadCollaborationMessages(currentCollaborationId);
   } else {
     console.error('sendCollaborationMessage FAILED -- real Supabase error:', result && result.error);
@@ -3892,7 +3899,11 @@ function unsubscribeFromCollaborationRealtime(){
   activeCollaborationChannel = null;
   activeCollaborationChannelId = null;
   collaborationPresenceByUserId = {};
+  collaborationOwnPresenceMeta = null;
+  clearCollaborationTypingIdleTimer();
+  collaborationIsCurrentlyTyping = false;
   renderCollaborationOnlineIndicator();
+  renderCollaborationTypingIndicator();
   Object.keys(collaborationRealtimeDebounceTimers).forEach(function(area){
     if(collaborationRealtimeDebounceTimers[area]){
       clearTimeout(collaborationRealtimeDebounceTimers[area]);
@@ -3981,12 +3992,18 @@ function subscribeToCollaborationRealtime(collaborationId, myId){
 // introduced beyond that already-existing data dependency.
 function announceCollaborationPresence(collaborationId, myId, displayName, photoUrl){
   if(activeCollaborationChannelId !== collaborationId || !activeCollaborationChannel || !myId) return;
+  collaborationOwnPresenceMeta = {
+    user_id: myId,
+    display_name: displayName || 'STAGERZ Artist',
+    photo_url: photoUrl || null
+  };
   try{
     activeCollaborationChannel.track({
       user_id: myId,
-      display_name: displayName || 'STAGERZ Artist',
-      photo_url: photoUrl || null,
-      joined_at: new Date().toISOString()
+      display_name: collaborationOwnPresenceMeta.display_name,
+      photo_url: collaborationOwnPresenceMeta.photo_url,
+      joined_at: new Date().toISOString(),
+      typing: false
     });
   }catch(e){
     // Presence failure must never affect CRUD or postgres_changes --
@@ -4019,6 +4036,7 @@ function renderCollaborationPresenceFromChannel(collaborationId){
     return;
   }
   renderCollaborationOnlineIndicator();
+  renderCollaborationTypingIndicator();
 }
 
 function renderCollaborationOnlineIndicator(){
@@ -4032,6 +4050,102 @@ function renderCollaborationOnlineIndicator(){
   }
   el.style.display = 'inline-block';
   el.textContent = '\u25cf ' + count + ' online';
+}
+
+// --- Typing indicator (Phase 19.3) ---
+// Reuses the existing Presence mechanism from Phase 19.2 -- typing
+// is one more field in the same tracked payload, not a second
+// channel or a new event type. Only transitions (false->true,
+// true->false) ever call .track(); individual keystrokes never do.
+
+function renderCollaborationTypingIndicator(){
+  var el = document.getElementById('cmTypingIndicator');
+  if(!el) return; // only present on the Messages screen
+  var myId = collaborationOwnPresenceMeta ? collaborationOwnPresenceMeta.user_id : null;
+  var typingNames = [];
+  Object.keys(collaborationPresenceByUserId).forEach(function(userId){
+    if(userId === myId) return; // never show the current user their own typing state
+    var entry = collaborationPresenceByUserId[userId];
+    if(entry && entry.typing){
+      typingNames.push(entry.display_name || 'Someone');
+    }
+  });
+
+  if(typingNames.length === 0){
+    el.style.display = 'none';
+    el.textContent = '';
+    return;
+  }
+
+  var sentence;
+  if(typingNames.length === 1){
+    sentence = typingNames[0] + ' is typing...';
+  } else if(typingNames.length === 2){
+    sentence = typingNames[0] + ' and ' + typingNames[1] + ' are typing...';
+  } else {
+    sentence = typingNames.length + ' people are typing...';
+  }
+  el.style.display = 'block';
+  el.textContent = sentence; // textContent -- never interprets HTML, no escaping needed
+}
+
+function setCollaborationTypingState(collaborationId, isTyping){
+  if(activeCollaborationChannelId !== collaborationId || !activeCollaborationChannel || !collaborationOwnPresenceMeta) return;
+  try{
+    activeCollaborationChannel.track({
+      user_id: collaborationOwnPresenceMeta.user_id,
+      display_name: collaborationOwnPresenceMeta.display_name,
+      photo_url: collaborationOwnPresenceMeta.photo_url,
+      joined_at: new Date().toISOString(),
+      typing: isTyping
+    });
+  }catch(e){
+    // Typing failure must never affect messaging, other realtime
+    // updates, or presence itself -- swallow and log only.
+    console.error('setCollaborationTypingState FAILED', e);
+  }
+}
+
+function clearCollaborationTypingIdleTimer(){
+  if(collaborationTypingIdleTimer){
+    clearTimeout(collaborationTypingIdleTimer);
+    collaborationTypingIdleTimer = null;
+  }
+}
+
+// Called on every keystroke, but only ever calls .track() on an
+// actual started/stopped TRANSITION -- never floods realtime with
+// per-keystroke updates.
+function handleCollaborationMessageInputChanged(){
+  var input = document.getElementById('cmInput');
+  var hasText = !!(input && input.value.trim().length > 0);
+
+  clearCollaborationTypingIdleTimer();
+
+  if(hasText){
+    if(!collaborationIsCurrentlyTyping){
+      collaborationIsCurrentlyTyping = true;
+      setCollaborationTypingState(currentCollaborationId, true);
+    }
+    collaborationTypingIdleTimer = setTimeout(function(){
+      collaborationTypingIdleTimer = null;
+      collaborationIsCurrentlyTyping = false;
+      setCollaborationTypingState(currentCollaborationId, false);
+    }, 2500);
+  } else if(collaborationIsCurrentlyTyping){
+    collaborationIsCurrentlyTyping = false;
+    setCollaborationTypingState(currentCollaborationId, false);
+  }
+}
+
+// Called once a message actually sends -- forces typing off
+// immediately rather than waiting for the idle timeout.
+function stopCollaborationTypingNow(){
+  clearCollaborationTypingIdleTimer();
+  if(collaborationIsCurrentlyTyping){
+    collaborationIsCurrentlyTyping = false;
+    setCollaborationTypingState(currentCollaborationId, false);
+  }
 }
 
 function escapeCollaborationHtml(str){
