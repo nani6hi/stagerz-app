@@ -2931,6 +2931,10 @@ async function openCollaboration(collaborationId){
       sentence = 'joined the collaboration';
     } else if(item.activity_type === 'message_posted'){
       sentence = 'posted a message';
+    } else if(item.activity_type === 'message_edited'){
+      sentence = 'edited a message';
+    } else if(item.activity_type === 'message_deleted'){
+      sentence = 'deleted a message';
     } else if(item.activity_type === 'task_created'){
       sentence = 'created task "'+escapeCollaborationHtml(meta.title)+'"';
     } else if(item.activity_type === 'task_completed'){
@@ -3328,8 +3332,10 @@ async function loadCollaborationMessages(collaborationId){
   messages.forEach(function(m){
     var pub = publicById[m.sender_id] || {};
     var isOwn = !!(myId && m.sender_id === myId);
+    var canDelete = isOwn || currentCollaborationIsOwner;
     var timeStr = m.created_at ? new Date(m.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
-    var senderLine = (pub.display_name || 'STAGERZ Artist') + (pub.username ? ' &middot; @' + pub.username : '');
+    var senderLine = escapeCollaborationHtml((pub.display_name || 'STAGERZ Artist') + (pub.username ? ' \u00b7 @' + pub.username : ''));
+    var safeBody = escapeCollaborationHtml(m.body);
     var avatarStyle = pub.photo_url
       ? "background-image:url('" + pub.photo_url + "');background-size:cover;background-position:center;"
       : 'background:#1a1228;';
@@ -3341,13 +3347,113 @@ async function loadCollaborationMessages(collaborationId){
       '<div class="card-av" style="width:26px;height:26px;font-size:12px;' + avatarStyle + '">' + avatarContent + '</div>' +
       '<div style="max-width:75%;">' +
         (isOwn ? '' : '<div style="font-size:8px;color:rgba(255,255,255,.35);margin-bottom:2px;">' + senderLine + '</div>') +
-        '<div style="background:' + (isOwn ? 'rgba(232,184,48,.12)' : '#111118') + ';border-radius:10px;padding:8px 12px;font-size:11px;color:#fff;word-break:break-word;">' + m.body + '</div>' +
+        '<div style="background:' + (isOwn ? 'rgba(232,184,48,.12)' : '#111118') + ';border-radius:10px;padding:8px 12px;font-size:11px;color:#fff;word-break:break-word;" id="cmBodyText-' + m.id + '">' + safeBody + '</div>' +
         '<div style="font-size:7px;color:rgba(255,255,255,.2);margin-top:2px;' + (isOwn ? 'text-align:right;' : '') + '">' + timeStr + '</div>' +
       '</div>';
+
+    if((isOwn || canDelete) && currentCollaborationStatus === 'active'){
+      var actionsRow = document.createElement('div');
+      actionsRow.style.cssText = 'display:flex;gap:8px;margin-top:2px;' + (isOwn ? 'justify-content:flex-end;' : '');
+
+      if(isOwn){
+        var editLink = document.createElement('div');
+        editLink.style.cssText = 'font-size:7px;color:rgba(255,255,255,.3);cursor:pointer;';
+        editLink.textContent = 'Edit';
+        editLink.onclick = (function(messageId, currentBody){ return function(){ beginEditMessage(messageId, currentBody); }; })(m.id, m.body);
+        actionsRow.appendChild(editLink);
+      }
+
+      if(canDelete){
+        var deleteLink = document.createElement('div');
+        deleteLink.style.cssText = 'font-size:7px;color:rgba(255,100,100,.5);cursor:pointer;';
+        deleteLink.textContent = 'Delete';
+        deleteLink.onclick = (function(messageId, btnEl){ return function(){ deleteMessagePrompt(messageId, btnEl); }; })(m.id, deleteLink);
+        actionsRow.appendChild(deleteLink);
+      }
+
+      row.querySelector('div[style*="max-width:75%"]').appendChild(actionsRow);
+    }
+
     listEl.appendChild(row);
   });
 
   listEl.scrollTop = listEl.scrollHeight;
+}
+
+// --- Message editing/deletion (Phase 18.1) ---
+// Author-only edit; author-or-owner delete; hard delete (no
+// soft-delete precedent for this table). Inline editing mirrors the
+// Task/Asset/Credit pattern exactly, reusing the same busy helpers.
+
+function beginEditMessage(messageId, currentBody){
+  var bodyEl = document.getElementById('cmBodyText-'+messageId);
+  if(!bodyEl) return;
+  var editBlock = document.createElement('div');
+  editBlock.style.cssText = 'display:flex;flex-direction:column;gap:6px;';
+  editBlock.innerHTML =
+    '<textarea class="form-input" id="cmEditInput-'+messageId+'" maxlength="5000" style="margin-bottom:0;padding:8px 10px;font-size:11px;min-height:60px;resize:vertical;"></textarea>'+
+    '<div style="display:flex;gap:6px;">'+
+      '<div class="p-btn-primary" style="flex:none;width:auto;padding:5px 10px;font-size:8px;cursor:pointer;" id="cmEditSaveBtn-'+messageId+'">Save</div>'+
+      '<div class="p-btn-secondary" style="flex:none;width:auto;padding:5px 10px;font-size:8px;cursor:pointer;" id="cmEditCancelBtn-'+messageId+'">Cancel</div>'+
+    '</div>';
+  bodyEl.replaceWith(editBlock);
+
+  var input = document.getElementById('cmEditInput-'+messageId);
+  input.value = currentBody;
+  input.focus();
+
+  document.getElementById('cmEditSaveBtn-'+messageId).onclick = function(){ saveMessageEdit(messageId); };
+  document.getElementById('cmEditCancelBtn-'+messageId).onclick = function(){ cancelMessageEdit(); };
+}
+
+function cancelMessageEdit(){
+  loadCollaborationMessages(currentCollaborationId);
+}
+
+async function saveMessageEdit(messageId){
+  var input = document.getElementById('cmEditInput-'+messageId);
+  if(!input) return;
+  var newBody = input.value.trim();
+  if(!newBody){
+    showToast('Message cannot be empty.');
+    return;
+  }
+
+  var saveBtn = document.getElementById('cmEditSaveBtn-'+messageId);
+  if(!tryBeginCollaborationBusy(saveBtn)) return;
+
+  var result = await supaRpc('edit_collaboration_message', { p_message_id: messageId, p_new_body: newBody });
+  console.log('edit_collaboration_message result:', result);
+  if(result && result.ok){
+    showToast('Message updated.');
+    haptic('success');
+    await loadCollaborationMessages(currentCollaborationId);
+  } else {
+    console.error('edit_collaboration_message FAILED:', result && result.error);
+    var realMsg = result && result.error && (result.error.message || result.error.hint || result.error.details || JSON.stringify(result.error));
+    showToast(realMsg || 'Could not update message.');
+    endCollaborationBusy(saveBtn);
+  }
+}
+
+async function deleteMessagePrompt(messageId, btnEl){
+  if(btnEl && btnEl.dataset.busy === 'true') return;
+  var confirmed = window.confirm('Delete this message? This cannot be undone.');
+  if(!confirmed) return;
+  if(!tryBeginCollaborationBusy(btnEl)) return;
+
+  var result = await supaRpc('delete_collaboration_message', { p_message_id: messageId });
+  console.log('delete_collaboration_message result:', result);
+  if(result && result.ok){
+    showToast('Message deleted.');
+    haptic('success');
+    await loadCollaborationMessages(currentCollaborationId);
+  } else {
+    console.error('delete_collaboration_message FAILED:', result && result.error);
+    var realMsg = result && result.error && (result.error.message || result.error.hint || result.error.details || JSON.stringify(result.error));
+    showToast(realMsg || 'Could not delete message.');
+    endCollaborationBusy(btnEl);
+  }
 }
 
 async function sendCollaborationMessage(){
