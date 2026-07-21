@@ -2842,13 +2842,13 @@ async function openCollaboration(collaborationId){
       makeOwnerBtn.className = 'p-btn-secondary';
       makeOwnerBtn.style.cssText = 'flex:none;width:auto;padding:5px 10px;font-size:8px;cursor:pointer;';
       makeOwnerBtn.textContent = 'Make Owner';
-      makeOwnerBtn.onclick = (function(userId, name){ return function(e){ e.stopPropagation(); transferOwnership(userId, name); }; })(p.user_id, pub.display_name || 'this participant');
+      makeOwnerBtn.onclick = (function(userId, name, btnEl){ return function(e){ e.stopPropagation(); transferOwnership(userId, name, btnEl); }; })(p.user_id, pub.display_name || 'this participant', makeOwnerBtn);
       actionsRow.appendChild(makeOwnerBtn);
 
       var removeBtn = document.createElement('div');
       removeBtn.style.cssText = 'flex:none;width:auto;padding:5px 10px;font-size:8px;cursor:pointer;border-radius:8px;background:rgba(255,60,60,.08);border:1px solid rgba(255,60,60,.2);color:rgba(255,100,100,.8);';
       removeBtn.textContent = 'Remove';
-      removeBtn.onclick = (function(userId, name){ return function(e){ e.stopPropagation(); removeParticipant(userId, name); }; })(p.user_id, pub.display_name || 'this participant');
+      removeBtn.onclick = (function(userId, name, btnEl){ return function(e){ e.stopPropagation(); removeParticipant(userId, name, btnEl); }; })(p.user_id, pub.display_name || 'this participant', removeBtn);
       actionsRow.appendChild(removeBtn);
 
       row.appendChild(actionsRow);
@@ -3092,11 +3092,6 @@ function applyCollaborationReadOnlyGuard(composerElId, noticeElId, noticeVerb){
 
 // --- COLLABORATION PARTICIPANT MANAGEMENT (Phase 12.1) ---
 
-// TEMPORARY, MINIMAL implementation for Phase 12.1: a plain
-// window.prompt() asking for a username, resolved via a
-// public_profiles lookup. This is not a real user search/
-// autocomplete UI -- explicitly a placeholder, intended to be
-// replaced by a proper search/autocomplete flow in a later phase.
 var inviteSearchTimeout = null;
 
 // Phase 14.1: replaces the temporary window.prompt() username entry
@@ -3201,7 +3196,7 @@ async function runInviteUserSearch(query){
 // triggers this (the picker, not a prompt) has changed.
 async function performCollaborationInvite(userId, displayName){
   var btn = document.getElementById('ccInviteBtn');
-  if(btn){ btn.style.opacity = '.6'; }
+  if(!tryBeginCollaborationBusy(btn)) return;
 
   var result = await supaRpc('invite_collaboration_participant', { p_collaboration_id: currentCollaborationId, p_user_id: userId });
   console.log('invite_collaboration_participant result:', result);
@@ -3213,13 +3208,15 @@ async function performCollaborationInvite(userId, displayName){
     console.error('invite_collaboration_participant FAILED:', result && result.error);
     var realMsg = result && result.error && (result.error.message || result.error.hint || result.error.details || JSON.stringify(result.error));
     showToast(realMsg || 'Could not invite this user.');
-    if(btn){ btn.style.opacity = '1'; }
+    endCollaborationBusy(btn);
   }
 }
 
-async function removeParticipant(userId, name){
+async function removeParticipant(userId, name, btnEl){
+  if(btnEl && btnEl.dataset.busy === 'true') return;
   var confirmed = window.confirm('Remove '+name+' from this collaboration?');
   if(!confirmed) return;
+  if(!tryBeginCollaborationBusy(btnEl)) return;
 
   var result = await supaRpc('remove_collaboration_participant', { p_collaboration_id: currentCollaborationId, p_user_id: userId });
   console.log('remove_collaboration_participant result:', result);
@@ -3231,12 +3228,15 @@ async function removeParticipant(userId, name){
     console.error('remove_collaboration_participant FAILED:', result && result.error);
     var realMsg = result && result.error && (result.error.message || result.error.hint || result.error.details || JSON.stringify(result.error));
     showToast(realMsg || 'Could not remove this participant.');
+    endCollaborationBusy(btnEl);
   }
 }
 
-async function transferOwnership(userId, name){
+async function transferOwnership(userId, name, btnEl){
+  if(btnEl && btnEl.dataset.busy === 'true') return;
   var confirmed = window.confirm('Make '+name+' the owner of this collaboration? You will become a regular member.');
   if(!confirmed) return;
+  if(!tryBeginCollaborationBusy(btnEl)) return;
 
   var result = await supaRpc('transfer_collaboration_ownership', { p_collaboration_id: currentCollaborationId, p_new_owner_id: userId });
   console.log('transfer_collaboration_ownership result:', result);
@@ -3248,12 +3248,16 @@ async function transferOwnership(userId, name){
     console.error('transfer_collaboration_ownership FAILED:', result && result.error);
     var realMsg = result && result.error && (result.error.message || result.error.hint || result.error.details || JSON.stringify(result.error));
     showToast(realMsg || 'Could not transfer ownership.');
+    endCollaborationBusy(btnEl);
   }
 }
 
 async function promptLeaveCollaboration(){
+  var btnEl = document.getElementById('ccLeaveBtn');
+  if(btnEl && btnEl.dataset.busy === 'true') return;
   var confirmed = window.confirm('Leave this collaboration? You will lose access immediately.');
   if(!confirmed) return;
+  if(!tryBeginCollaborationBusy(btnEl)) return;
 
   var result = await supaRpc('leave_collaboration', { p_collaboration_id: currentCollaborationId });
   console.log('leave_collaboration result:', result);
@@ -3270,6 +3274,7 @@ async function promptLeaveCollaboration(){
     console.error('leave_collaboration FAILED:', result && result.error);
     var realMsg = result && result.error && (result.error.message || result.error.hint || result.error.details || JSON.stringify(result.error));
     showToast(realMsg || 'Could not leave this collaboration.');
+    endCollaborationBusy(btnEl);
   }
 }
 
