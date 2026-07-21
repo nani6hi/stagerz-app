@@ -721,6 +721,7 @@ html,body{width:100%;height:100%;background:#08080f;color:#f0f0f5;font-family:'I
     <div style="width:60px;"></div>
   </div>
   <div class="sa" style="padding:14px;">
+    <div id="cdOnlineIndicator" style="display:none;font-size:8px;color:rgba(100,230,140,.8);margin-bottom:8px;"></div>
     <div id="cdContent"></div>
   </div>
 </div>
@@ -1838,6 +1839,11 @@ var currentCollaborationStatus = 'active';
 var activeCollaborationChannel = null;
 var activeCollaborationChannelId = null;
 var collaborationRealtimeDebounceTimers = {};
+// Phase 19.2: presence, keyed by user_id after client-side merge --
+// deliberately not keyed by the raw per-connection presence key
+// Supabase assigns, so multiple browser tabs for the same person
+// never render as two separate online users.
+var collaborationPresenceByUserId = {};
 var currentCollaborationIsOwner = false;
 var collaborationAssetPreviewVisible = {};
 var currentCollaborationPublicById = {};
@@ -2607,7 +2613,8 @@ async function openCollaboration(collaborationId){
   var collab = collabRows[0];
   currentCollaborationId = collaborationId;
   currentCollaborationTitle = collab.title;
-  subscribeToCollaborationRealtime(collaborationId);
+  var myIdForPresence = await getMyDomainId();
+  subscribeToCollaborationRealtime(collaborationId, myIdForPresence);
   var titleEl = document.getElementById('cdScreenTitle');
   if(titleEl) titleEl.textContent = collab.title;
 
@@ -2629,6 +2636,11 @@ async function openCollaboration(collaborationId){
   var myId = await getMyDomainId();
   var myParticipantRow = (participants || []).find(function(p){ return p.user_id === myId; });
   currentCollaborationIsOwner = !!(myParticipantRow && myParticipantRow.participant_type === 'owner');
+
+  if(myId){
+    var myOwnPub = publicById[myId] || {};
+    announceCollaborationPresence(collaborationId, myId, myOwnPub.display_name, myOwnPub.photo_url);
+  }
 
   // Phase 10.3 -- Dashboard metrics, fetched concurrently. None of
   // these helpers ever throw (supaSelect/supaSelectCount both catch
@@ -3879,6 +3891,8 @@ function unsubscribeFromCollaborationRealtime(){
   }
   activeCollaborationChannel = null;
   activeCollaborationChannelId = null;
+  collaborationPresenceByUserId = {};
+  renderCollaborationOnlineIndicator();
   Object.keys(collaborationRealtimeDebounceTimers).forEach(function(area){
     if(collaborationRealtimeDebounceTimers[area]){
       clearTimeout(collaborationRealtimeDebounceTimers[area]);
@@ -3887,7 +3901,7 @@ function unsubscribeFromCollaborationRealtime(){
   });
 }
 
-function subscribeToCollaborationRealtime(collaborationId){
+function subscribeToCollaborationRealtime(collaborationId, myId){
   // Tolerate repeated calls for the SAME collaboration (e.g.
   // navigating between its own sub-screens) without creating a
   // duplicate channel.
@@ -3900,8 +3914,17 @@ function subscribeToCollaborationRealtime(collaborationId){
   var filter = 'collaboration_id=eq.' + collaborationId;
 
   try{
+    // Phase 19.2: presence.key, when supported, groups multiple
+    // connections (browser tabs) for the SAME user under one
+    // server-side presence entry. This is a best-effort optimization,
+    // not something I can confirm works exactly as intended without
+    // a browser -- the client-side merge in
+    // renderCollaborationPresenceFromChannel() below is the actual,
+    // verifiable correctness guarantee for "never show two tabs as
+    // two users," independent of whether this config takes effect.
+    var channelOptions = myId ? { config: { presence: { key: myId } } } : undefined;
     var channel = supabaseClient
-      .channel('collaboration-' + collaborationId)
+      .channel('collaboration-' + collaborationId, channelOptions)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'collaboration_messages', filter: filter }, function(){
         scheduleCollaborationRealtimeReload(collaborationId, 'messages', function(){ loadCollaborationMessages(collaborationId); });
       })
@@ -3929,6 +3952,9 @@ function subscribeToCollaborationRealtime(collaborationId){
           if(isCollaborationWorkspaceScreenActive()) openCollaboration(collaborationId);
         });
       })
+      .on('presence', { event: 'sync' }, function(){
+        renderCollaborationPresenceFromChannel(collaborationId);
+      })
       .subscribe(function(status, err){
         if(status === 'CHANNEL_ERROR' || status === 'TIMED_OUT'){
           console.error('Collaboration realtime channel issue:', status, err);
@@ -3944,6 +3970,68 @@ function subscribeToCollaborationRealtime(collaborationId){
     activeCollaborationChannel = null;
     activeCollaborationChannelId = null;
   }
+}
+
+// Announces THIS user's own presence -- called separately from
+// subscribeToCollaborationRealtime(), once real display data
+// (display_name/photo_url) is available later in openCollaboration()'s
+// own load sequence. Presence begins as soon as this is reachable,
+// which is immediately after the same subscription succeeds and
+// participant profile data has loaded -- no separate delay is
+// introduced beyond that already-existing data dependency.
+function announceCollaborationPresence(collaborationId, myId, displayName, photoUrl){
+  if(activeCollaborationChannelId !== collaborationId || !activeCollaborationChannel || !myId) return;
+  try{
+    activeCollaborationChannel.track({
+      user_id: myId,
+      display_name: displayName || 'STAGERZ Artist',
+      photo_url: photoUrl || null,
+      joined_at: new Date().toISOString()
+    });
+  }catch(e){
+    // Presence failure must never affect CRUD or postgres_changes --
+    // swallow and log only.
+    console.error('announceCollaborationPresence FAILED', e);
+  }
+}
+
+function renderCollaborationPresenceFromChannel(collaborationId){
+  if(activeCollaborationChannelId !== collaborationId || !activeCollaborationChannel) return;
+  try{
+    var state = activeCollaborationChannel.presenceState();
+    // Supabase groups entries by an internal presence key, which may
+    // be per-connection (per browser tab) rather than per-user
+    // depending on whether the key config above took effect. Merge
+    // by user_id explicitly here regardless -- this is the actual
+    // guarantee that two tabs for the same person never render as
+    // two separate online users.
+    var byUserId = {};
+    Object.keys(state || {}).forEach(function(presenceKey){
+      (state[presenceKey] || []).forEach(function(entry){
+        if(entry && entry.user_id){
+          byUserId[entry.user_id] = entry;
+        }
+      });
+    });
+    collaborationPresenceByUserId = byUserId;
+  }catch(e){
+    console.error('renderCollaborationPresenceFromChannel FAILED', e);
+    return;
+  }
+  renderCollaborationOnlineIndicator();
+}
+
+function renderCollaborationOnlineIndicator(){
+  var el = document.getElementById('cdOnlineIndicator');
+  if(!el) return;
+  var count = Object.keys(collaborationPresenceByUserId).length;
+  if(count === 0){
+    el.style.display = 'none';
+    el.textContent = '';
+    return;
+  }
+  el.style.display = 'inline-block';
+  el.textContent = '\u25cf ' + count + ' online';
 }
 
 function escapeCollaborationHtml(str){
