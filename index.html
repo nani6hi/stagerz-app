@@ -1270,6 +1270,7 @@ async function sendOtp(isResend){
 // Magic Link return + onAuthStateChange below, per requirement 6.
 
 async function logout(){
+  unsubscribeFromCollaborationRealtime();
   await supabaseClient.auth.signOut();
   authPendingEmail = '';
   myDomainId = null;
@@ -1328,6 +1329,7 @@ supabaseClient.auth.onAuthStateChange(async function(event, session){
     if(confirmedSession){ haptic('success'); enterApp(); }
   }
   if(event === 'SIGNED_OUT'){
+    unsubscribeFromCollaborationRealtime();
     var authScreenActive = document.getElementById('screen-authemail').classList.contains('active') ||
                             document.getElementById('screen-authwait').classList.contains('active');
     if(!authScreenActive){ goTo('authemail'); }
@@ -1350,6 +1352,15 @@ function goTo(id){
   if(id==='board') loadBoard();
   if(id==='mycollaborations') loadMyCollaborations();
   if(id==='editprofile') populateEditProfile();
+
+  // Realtime cleanup (Phase 19.1): the active Collaboration channel
+  // represents the whole workspace, valid across its own five
+  // sub-screens. Navigating to anything else means leaving the
+  // Collaboration area entirely.
+  var collaborationScreens = { collaborationdetail:true, collaborationmessages:true, collaborationtasks:true, collaborationassets:true, collaborationcredits:true };
+  if(!collaborationScreens[id]){
+    unsubscribeFromCollaborationRealtime();
+  }
 }
 
 // --- TOAST ---
@@ -1818,6 +1829,15 @@ var currentCollaborationTitle = '';
 var currentCollaborationParticipants = [];
 var collaborationAssetObjectUrls = {};
 var currentCollaborationStatus = 'active';
+
+// --- Collaboration realtime state (Phase 19.1) ---
+// One channel represents the ENTIRE active Collaboration workspace,
+// not just the currently visible sub-screen -- torn down only when a
+// different Collaboration opens, the user leaves the Collaboration
+// area entirely, or logs out.
+var activeCollaborationChannel = null;
+var activeCollaborationChannelId = null;
+var collaborationRealtimeDebounceTimers = {};
 var currentCollaborationIsOwner = false;
 var collaborationAssetPreviewVisible = {};
 var currentCollaborationPublicById = {};
@@ -2587,6 +2607,7 @@ async function openCollaboration(collaborationId){
   var collab = collabRows[0];
   currentCollaborationId = collaborationId;
   currentCollaborationTitle = collab.title;
+  subscribeToCollaborationRealtime(collaborationId);
   var titleEl = document.getElementById('cdScreenTitle');
   if(titleEl) titleEl.textContent = collab.title;
 
@@ -3812,6 +3833,117 @@ function endCollaborationBusy(control){
   if('disabled' in control) control.disabled = false;
   control.style.pointerEvents = 'auto';
   control.style.opacity = '1';
+}
+
+// --- Collaboration realtime (Phase 19.1) ---
+//
+// One channel per active Collaboration, scoped via collaboration_id
+// filters on every table. Local mutations keep their existing
+// immediate reload-on-success behavior completely unchanged; realtime
+// is purely additive, reacting to OTHER participants' changes (and,
+// harmlessly, to a brief redundant re-fetch of the acting user's own
+// change when its echo arrives -- never a duplicate DOM row, since
+// every loader here does a full replace, never an append).
+
+function isCollaborationWorkspaceScreenActive(){
+  var el = document.getElementById('screen-collaborationdetail');
+  return !!(el && el.classList.contains('active'));
+}
+
+// Debounced, per-area reload scheduling. The debounce (300ms) is
+// purely a performance/coalescing layer for bursts of events on the
+// same table -- correctness never depends on its timing, since the
+// underlying loaders always re-fetch fresh, correct data regardless
+// of when they run. The stale-collaboration guard below is the real
+// correctness mechanism: a scheduled reload only executes if its
+// collaboration is still both the actively subscribed one AND the
+// one currently open, preventing any DOM update for a Collaboration
+// that is no longer active (rapid switching, or having left the area
+// entirely, both correctly suppress a late-arriving reload).
+function scheduleCollaborationRealtimeReload(forCollaborationId, area, reloadFn){
+  if(collaborationRealtimeDebounceTimers[area]){
+    clearTimeout(collaborationRealtimeDebounceTimers[area]);
+  }
+  collaborationRealtimeDebounceTimers[area] = setTimeout(function(){
+    collaborationRealtimeDebounceTimers[area] = null;
+    if(forCollaborationId !== activeCollaborationChannelId) return;
+    if(forCollaborationId !== currentCollaborationId) return;
+    reloadFn();
+  }, 300);
+}
+
+function unsubscribeFromCollaborationRealtime(){
+  if(activeCollaborationChannel){
+    try{ supabaseClient.removeChannel(activeCollaborationChannel); }
+    catch(e){ console.error('unsubscribeFromCollaborationRealtime: removeChannel failed', e); }
+  }
+  activeCollaborationChannel = null;
+  activeCollaborationChannelId = null;
+  Object.keys(collaborationRealtimeDebounceTimers).forEach(function(area){
+    if(collaborationRealtimeDebounceTimers[area]){
+      clearTimeout(collaborationRealtimeDebounceTimers[area]);
+      collaborationRealtimeDebounceTimers[area] = null;
+    }
+  });
+}
+
+function subscribeToCollaborationRealtime(collaborationId){
+  // Tolerate repeated calls for the SAME collaboration (e.g.
+  // navigating between its own sub-screens) without creating a
+  // duplicate channel.
+  if(activeCollaborationChannelId === collaborationId && activeCollaborationChannel) return;
+
+  // Switching to a different Collaboration (or re-subscribing after
+  // a stale channel) -- always tear down first.
+  unsubscribeFromCollaborationRealtime();
+
+  var filter = 'collaboration_id=eq.' + collaborationId;
+
+  try{
+    var channel = supabaseClient
+      .channel('collaboration-' + collaborationId)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'collaboration_messages', filter: filter }, function(){
+        scheduleCollaborationRealtimeReload(collaborationId, 'messages', function(){ loadCollaborationMessages(collaborationId); });
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'collaboration_tasks', filter: filter }, function(){
+        scheduleCollaborationRealtimeReload(collaborationId, 'tasks', function(){ loadCollaborationTasks(collaborationId); });
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'collaboration_assets', filter: filter }, function(){
+        scheduleCollaborationRealtimeReload(collaborationId, 'assets', function(){ loadCollaborationAssets(collaborationId); });
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'collaboration_credits', filter: filter }, function(){
+        scheduleCollaborationRealtimeReload(collaborationId, 'credits', function(){ loadCollaborationCredits(collaborationId); });
+      })
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'collaboration_activity', filter: filter }, function(){
+        // No dedicated Activity-only loader exists -- Activity is
+        // rendered as part of the larger openCollaboration() call,
+        // which also navigates via goTo('collaborationdetail').
+        // Calling it while the user is on a DIFFERENT sub-screen
+        // would forcibly yank their navigation back to the Workspace
+        // overview. Deliberately conservative: only refresh when the
+        // Workspace screen is already the visible one (where
+        // re-entering it is a no-op from the user's perspective);
+        // otherwise the data is simply fresh again the next time
+        // they open or return to the Workspace normally.
+        scheduleCollaborationRealtimeReload(collaborationId, 'activity', function(){
+          if(isCollaborationWorkspaceScreenActive()) openCollaboration(collaborationId);
+        });
+      })
+      .subscribe(function(status, err){
+        if(status === 'CHANNEL_ERROR' || status === 'TIMED_OUT'){
+          console.error('Collaboration realtime channel issue:', status, err);
+          // No automatic retry loop -- manual loaders and mutations
+          // remain fully functional without realtime.
+        }
+      });
+
+    activeCollaborationChannel = channel;
+    activeCollaborationChannelId = collaborationId;
+  }catch(e){
+    console.error('subscribeToCollaborationRealtime FAILED to create channel', e);
+    activeCollaborationChannel = null;
+    activeCollaborationChannelId = null;
+  }
 }
 
 function escapeCollaborationHtml(str){
