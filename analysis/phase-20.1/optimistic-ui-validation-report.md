@@ -289,7 +289,9 @@ Observed in the console at `tickNACKL()`. A separate read-only investigation est
 
 ## 8. Deferred or unverified checks
 
-Twelve checks are NOT VERIFIED. None is reported as passed. None was silently omitted.
+Thirteen checks are NOT VERIFIED. None is reported as passed. None was silently omitted.
+
+**Validation matrix totals: 48 PASS · 0 FAIL · 13 NOT VERIFIED · 0 NOT APPLICABLE.**
 
 | # | Check | Why not verified |
 |---|---|---|
@@ -339,7 +341,7 @@ Phase 20.1 remained narrowly scoped. The one structural change beyond the send p
 
 ### Which checks remain NOT VERIFIED?
 
-Twelve, itemized in §8: checks 10 and 11 (the two approval gates), slow-network behavior, B10, B11, B12, B13, B14, B24, B25, B26, B27, and B35.
+Thirteen, itemized in §8: checks 10 and 11 (the two approval gates), slow-network behavior, B10, B11, B12, B13, B14, B24, B25, B26, B27, and B35.
 
 ### Do those unverified checks block the current phase?
 
@@ -347,13 +349,13 @@ Twelve, itemized in §8: checks 10 and 11 (the two approval gates), slow-network
 
 §7 requires all §3 checks to pass. Checks 1–9 pass. **Checks 10 (ChatGPT review) and 11 (explicit user approval) are outstanding and are blocking by definition** — they are procedural gates that no amount of testing can satisfy, and §6 states that silence is never approval.
 
-The remaining ten unverified items are **coverage gaps, not failures**. §4 requires browser items to be performed *where relevant* and explicitly recorded when not — which this report does. None indicates a defect; none produced contrary evidence. Whether B26 (empty-conversation placeholder) and B27 (read-only guard) must be closed before commit is a **reviewer judgment call**, not a mechanical determination. Both are real untested paths: B26 exercises code Phase 20.1 introduced (placeholder removal before provisional insert), and B27 exercises a guard Phase 20.1 must not have weakened. This report recommends they be weighed deliberately rather than waived by default.
+The remaining eleven unverified items are **coverage gaps, not failures**. §4 requires browser items to be performed *where relevant* and explicitly recorded when not — which this report does. None indicates a defect; none produced contrary evidence. Whether B26 (empty-conversation placeholder) and B27 (read-only guard) must be closed before commit is a **reviewer judgment call**, not a mechanical determination. Both are real untested paths: B26 exercises code Phase 20.1 introduced (placeholder removal before provisional insert), and B27 exercises a guard Phase 20.1 must not have weakened. This report recommends they be weighed deliberately rather than waived by default.
 
 ### Final recommendation
 
 ## READY FOR CHATGPT FINAL REVIEW
 
-No observed behavior failed. Static and repository validation pass in full. Scope compliance is confirmed on every point. The syntax question carried from implementation is resolved by the user's successful application load. The outstanding items are the two approval gates plus ten explicitly recorded coverage gaps, none of which produced contrary evidence.
+No observed behavior failed. Static and repository validation pass in full. Scope compliance is confirmed on every point. The syntax question carried from implementation is resolved by the user's successful application load. The outstanding items are the two approval gates plus eleven explicitly recorded coverage gaps, none of which produced contrary evidence.
 
 ChatGPT should decide whether B26 and B27 require closing before the commit gate opens.
 
