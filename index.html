@@ -3336,9 +3336,16 @@ async function openCollaborationMessages(collaborationId, collaborationTitle){
   await loadCollaborationMessages(collaborationId);
 }
 
-async function loadCollaborationMessages(collaborationId){
+// Phase 20.1: options.skipLoadingState keeps the whole-area
+// "Loading..." replace for the INITIAL screen load only. Every
+// reconciliation reload (post-send, post-edit, post-delete, realtime
+// echo) repaints in place instead, so the conversation never blanks
+// underneath the user and any provisional row stays visible until its
+// replacement rows are ready to paint.
+async function loadCollaborationMessages(collaborationId, options){
+  var opts = options || {};
   var listEl = document.getElementById('cmList');
-  if(listEl) listEl.innerHTML = '<div style="font-size:9px;color:rgba(255,255,255,.3);text-align:center;padding:20px 0;">Loading...</div>';
+  if(listEl && !opts.skipLoadingState) listEl.innerHTML = '<div data-cm-placeholder="1" style="font-size:9px;color:rgba(255,255,255,.3);text-align:center;padding:20px 0;">Loading...</div>';
 
   var messages = await supaSelect(
     'collaboration_messages',
@@ -3348,7 +3355,7 @@ async function loadCollaborationMessages(collaborationId){
   if(!listEl) return;
 
   if(!messages || !messages.length){
-    listEl.innerHTML = '<div style="font-size:9px;color:rgba(255,255,255,.25);text-align:center;padding:20px 0;">No messages yet.</div>';
+    listEl.innerHTML = '<div data-cm-placeholder="1" style="font-size:9px;color:rgba(255,255,255,.25);text-align:center;padding:20px 0;">No messages yet.</div>';
     return;
   }
 
@@ -3369,54 +3376,118 @@ async function loadCollaborationMessages(collaborationId){
 
   listEl.innerHTML = '';
   messages.forEach(function(m){
-    var pub = publicById[m.sender_id] || {};
-    var isOwn = !!(myId && m.sender_id === myId);
-    var canDelete = isOwn || currentCollaborationIsOwner;
-    var timeStr = m.created_at ? new Date(m.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
-    var senderLine = escapeCollaborationHtml((pub.display_name || 'STAGERZ Artist') + (pub.username ? ' \u00b7 @' + pub.username : ''));
-    var safeBody = escapeCollaborationHtml(m.body);
-    var avatarStyle = pub.photo_url
-      ? "background-image:url('" + pub.photo_url + "');background-size:cover;background-position:center;"
-      : 'background:#1a1228;';
-    var avatarContent = pub.photo_url ? '' : '&#128100;';
-
-    var row = document.createElement('div');
-    row.style.cssText = 'display:flex;gap:8px;margin-bottom:12px;align-items:flex-end;' + (isOwn ? 'flex-direction:row-reverse;' : '');
-    row.innerHTML =
-      '<div class="card-av" style="width:26px;height:26px;font-size:12px;' + avatarStyle + '">' + avatarContent + '</div>' +
-      '<div style="max-width:75%;">' +
-        (isOwn ? '' : '<div style="font-size:8px;color:rgba(255,255,255,.35);margin-bottom:2px;">' + senderLine + '</div>') +
-        '<div style="background:' + (isOwn ? 'rgba(232,184,48,.12)' : '#111118') + ';border-radius:10px;padding:8px 12px;font-size:11px;color:#fff;word-break:break-word;" id="cmBodyText-' + m.id + '">' + safeBody + '</div>' +
-        '<div style="font-size:7px;color:rgba(255,255,255,.2);margin-top:2px;' + (isOwn ? 'text-align:right;' : '') + '">' + timeStr + '</div>' +
-      '</div>';
-
-    if((isOwn || canDelete) && currentCollaborationStatus === 'active'){
-      var actionsRow = document.createElement('div');
-      actionsRow.style.cssText = 'display:flex;gap:8px;margin-top:2px;' + (isOwn ? 'justify-content:flex-end;' : '');
-
-      if(isOwn){
-        var editLink = document.createElement('div');
-        editLink.style.cssText = 'font-size:7px;color:rgba(255,255,255,.3);cursor:pointer;';
-        editLink.textContent = 'Edit';
-        editLink.onclick = (function(messageId, currentBody){ return function(){ beginEditMessage(messageId, currentBody); }; })(m.id, m.body);
-        actionsRow.appendChild(editLink);
-      }
-
-      if(canDelete){
-        var deleteLink = document.createElement('div');
-        deleteLink.style.cssText = 'font-size:7px;color:rgba(255,100,100,.5);cursor:pointer;';
-        deleteLink.textContent = 'Delete';
-        deleteLink.onclick = (function(messageId, btnEl){ return function(){ deleteMessagePrompt(messageId, btnEl); }; })(m.id, deleteLink);
-        actionsRow.appendChild(deleteLink);
-      }
-
-      row.querySelector('div[style*="max-width:75%"]').appendChild(actionsRow);
-    }
-
-    listEl.appendChild(row);
+    listEl.appendChild(buildCollaborationMessageRow(m, publicById[m.sender_id], myId, false));
   });
 
   listEl.scrollTop = listEl.scrollHeight;
+}
+
+// Phase 20.1: the single shared message-row renderer. Confirmed server
+// rows and provisional client rows both go through this one path, so
+// the two can never drift apart visually. Extracted verbatim from the
+// previous inline loop -- the markup is unchanged.
+//
+// A provisional row is a local placeholder for a message the server has
+// not confirmed yet: it has no database id, so it deliberately renders
+// no Edit/Delete actions (both RPCs require a persisted id).
+function buildCollaborationMessageRow(m, pubProfile, myId, isProvisional){
+  var pub = pubProfile || {};
+  var isOwn = isProvisional ? true : !!(myId && m.sender_id === myId);
+  var canDelete = isOwn || currentCollaborationIsOwner;
+  var timeStr = m.created_at ? new Date(m.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
+  var senderLine = escapeCollaborationHtml((pub.display_name || 'STAGERZ Artist') + (pub.username ? ' \u00b7 @' + pub.username : ''));
+  var safeBody = escapeCollaborationHtml(m.body);
+  var avatarStyle = pub.photo_url
+    ? "background-image:url('" + pub.photo_url + "');background-size:cover;background-position:center;"
+    : 'background:#1a1228;';
+  var avatarContent = pub.photo_url ? '' : '&#128100;';
+
+  var row = document.createElement('div');
+  row.style.cssText = 'display:flex;gap:8px;margin-bottom:12px;align-items:flex-end;' + (isOwn ? 'flex-direction:row-reverse;' : '') + (isProvisional ? 'opacity:.55;' : '');
+  if(isProvisional) row.setAttribute('data-provisional-id', m.id);
+  row.innerHTML =
+    '<div class="card-av" style="width:26px;height:26px;font-size:12px;' + avatarStyle + '">' + avatarContent + '</div>' +
+    '<div style="max-width:75%;">' +
+      (isOwn ? '' : '<div style="font-size:8px;color:rgba(255,255,255,.35);margin-bottom:2px;">' + senderLine + '</div>') +
+      '<div style="background:' + (isOwn ? 'rgba(232,184,48,.12)' : '#111118') + ';border-radius:10px;padding:8px 12px;font-size:11px;color:#fff;word-break:break-word;" id="cmBodyText-' + m.id + '">' + safeBody + '</div>' +
+      '<div style="font-size:7px;color:rgba(255,255,255,.2);margin-top:2px;' + (isOwn ? 'text-align:right;' : '') + '">' + timeStr + '</div>' +
+    '</div>';
+
+  if(!isProvisional && (isOwn || canDelete) && currentCollaborationStatus === 'active'){
+    var actionsRow = document.createElement('div');
+    actionsRow.style.cssText = 'display:flex;gap:8px;margin-top:2px;' + (isOwn ? 'justify-content:flex-end;' : '');
+
+    if(isOwn){
+      var editLink = document.createElement('div');
+      editLink.style.cssText = 'font-size:7px;color:rgba(255,255,255,.3);cursor:pointer;';
+      editLink.textContent = 'Edit';
+      editLink.onclick = (function(messageId, currentBody){ return function(){ beginEditMessage(messageId, currentBody); }; })(m.id, m.body);
+      actionsRow.appendChild(editLink);
+    }
+
+    if(canDelete){
+      var deleteLink = document.createElement('div');
+      deleteLink.style.cssText = 'font-size:7px;color:rgba(255,100,100,.5);cursor:pointer;';
+      deleteLink.textContent = 'Delete';
+      deleteLink.onclick = (function(messageId, btnEl){ return function(){ deleteMessagePrompt(messageId, btnEl); }; })(m.id, deleteLink);
+      actionsRow.appendChild(deleteLink);
+    }
+
+    row.querySelector('div[style*="max-width:75%"]').appendChild(actionsRow);
+  }
+
+  return row;
+}
+
+// Phase 20.1: provisional (client-side, unconfirmed) message rows.
+//
+// The id is deliberately namespaced and non-numeric so it can never
+// collide with a database id, and so a stray 'cmBodyText-prov-...'
+// lookup can never resolve to a real row. Nothing here reads
+// result.data -- the RPC's return value is not part of this design.
+
+var provisionalMessageCounter = 0;
+
+function allocateProvisionalId(){
+  provisionalMessageCounter += 1;
+  return 'prov-' + provisionalMessageCounter + '-' + new Date().getTime();
+}
+
+// Builds the same render model the loader derives, for a message the
+// server has not seen yet: always own, own cached public profile, and a
+// local timestamp purely for display (server created_at wins on reload).
+function buildProvisionalRenderModel(provisionalId, body){
+  return {
+    id: provisionalId,
+    sender_id: myDomainId,
+    body: body,
+    created_at: new Date().toISOString()
+  };
+}
+
+function insertProvisionalCollaborationMessage(body){
+  var listEl = document.getElementById('cmList');
+  if(!listEl) return null;
+
+  // The "Loading..." / "No messages yet." placeholders are not message
+  // rows -- drop them so the first message of a conversation does not
+  // render underneath "No messages yet."
+  var placeholders = listEl.querySelectorAll('[data-cm-placeholder]');
+  for(var i = 0; i < placeholders.length; i++){ placeholders[i].remove(); }
+
+  var provisionalId = allocateProvisionalId();
+  var pub = (myDomainId && currentCollaborationPublicById) ? (currentCollaborationPublicById[myDomainId] || {}) : {};
+  listEl.appendChild(buildCollaborationMessageRow(buildProvisionalRenderModel(provisionalId, body), pub, myDomainId, true));
+  listEl.scrollTop = listEl.scrollHeight;
+  return provisionalId;
+}
+
+function removeProvisionalCollaborationMessage(provisionalId){
+  if(!provisionalId) return;
+  var listEl = document.getElementById('cmList');
+  if(!listEl) return;
+  var row = listEl.querySelector('[data-provisional-id="' + provisionalId + '"]');
+  if(row) row.remove();
 }
 
 // --- Message editing/deletion (Phase 18.1) ---
@@ -3446,7 +3517,7 @@ function beginEditMessage(messageId, currentBody){
 }
 
 function cancelMessageEdit(){
-  loadCollaborationMessages(currentCollaborationId);
+  loadCollaborationMessages(currentCollaborationId, { skipLoadingState: true });
 }
 
 async function saveMessageEdit(messageId){
@@ -3466,7 +3537,7 @@ async function saveMessageEdit(messageId){
   if(result && result.ok){
     showToast('Message updated.');
     haptic('success');
-    await loadCollaborationMessages(currentCollaborationId);
+    await loadCollaborationMessages(currentCollaborationId, { skipLoadingState: true });
   } else {
     console.error('edit_collaboration_message FAILED:', result && result.error);
     var realMsg = result && result.error && (result.error.message || result.error.hint || result.error.details || JSON.stringify(result.error));
@@ -3486,7 +3557,7 @@ async function deleteMessagePrompt(messageId, btnEl){
   if(result && result.ok){
     showToast('Message deleted.');
     haptic('success');
-    await loadCollaborationMessages(currentCollaborationId);
+    await loadCollaborationMessages(currentCollaborationId, { skipLoadingState: true });
   } else {
     console.error('delete_collaboration_message FAILED:', result && result.error);
     var realMsg = result && result.error && (result.error.message || result.error.hint || result.error.details || JSON.stringify(result.error));
@@ -3508,6 +3579,14 @@ async function sendCollaborationMessage(){
 
   if(!tryBeginCollaborationBusy(sendBtn)) return;
 
+  // Phase 20.1: render the message immediately under a client-generated
+  // provisional id, then clear the composer. Nothing below depends on
+  // what the RPC returns -- reconciliation is the existing full-replace
+  // reload, and a failure removes the row and restores the typed text.
+  var provisionalId = insertProvisionalCollaborationMessage(trimmedBody);
+  if(inputEl) inputEl.value = '';
+  stopCollaborationTypingNow();
+
   // sender_id is never sent -- the RPC derives it server-side from
   // the authenticated caller's own resolved identity.
   var result = await supaRpc('create_collaboration_message', {
@@ -3517,15 +3596,20 @@ async function sendCollaborationMessage(){
   console.log('sendCollaborationMessage result:', result);
 
   if(result && result.ok){
-    // Clear only on confirmed success -- a failure leaves the
-    // typed text intact for the user to retry.
-    if(inputEl) inputEl.value = '';
-    stopCollaborationTypingNow();
-    await loadCollaborationMessages(currentCollaborationId);
+    // The reload rebuilds the whole list, which removes the provisional
+    // row and paints the confirmed one in the same operation.
+    await loadCollaborationMessages(currentCollaborationId, { skipLoadingState: true });
   } else {
     console.error('sendCollaborationMessage FAILED -- real Supabase error:', result && result.error);
+    // Roll back to the pre-send state: drop the provisional row and put
+    // the typed text back, preserving the original "a failure never
+    // loses what you typed" guarantee. Text the user has started typing
+    // since is never overwritten.
+    removeProvisionalCollaborationMessage(provisionalId);
+    if(inputEl && !inputEl.value) inputEl.value = rawBody;
     var realMsg = result && result.error && (result.error.message || result.error.hint || result.error.details || JSON.stringify(result.error));
     showToast(realMsg || 'Could not send message.');
+    if(inputEl) inputEl.focus();
   }
 
   endCollaborationBusy(sendBtn);
@@ -3937,7 +4021,7 @@ function subscribeToCollaborationRealtime(collaborationId, myId){
     var channel = supabaseClient
       .channel('collaboration-' + collaborationId, channelOptions)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'collaboration_messages', filter: filter }, function(){
-        scheduleCollaborationRealtimeReload(collaborationId, 'messages', function(){ loadCollaborationMessages(collaborationId); });
+        scheduleCollaborationRealtimeReload(collaborationId, 'messages', function(){ loadCollaborationMessages(collaborationId, { skipLoadingState: true }); });
       })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'collaboration_tasks', filter: filter }, function(){
         scheduleCollaborationRealtimeReload(collaborationId, 'tasks', function(){ loadCollaborationTasks(collaborationId); });
