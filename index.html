@@ -3577,6 +3577,15 @@ async function sendCollaborationMessage(){
     return;
   }
 
+  // Phase 20.2: defence in depth. applyCollaborationReadOnlyGuard() only
+  // hides the composer, so a send reaching this function on a non-active
+  // collaboration would still insert a provisional row and fire the RPC.
+  // Returning here -- before the busy gate -- leaves the input, the list
+  // and the Send button exactly as they were. The RPC and its RLS policy
+  // remain the real enforcement; this only avoids a pointless request and
+  // a phantom row.
+  if(currentCollaborationStatus !== 'active') return;
+
   if(!tryBeginCollaborationBusy(sendBtn)) return;
 
   // Phase 20.1: render the message immediately under a client-generated
@@ -3603,10 +3612,15 @@ async function sendCollaborationMessage(){
     console.error('sendCollaborationMessage FAILED -- real Supabase error:', result && result.error);
     // Roll back to the pre-send state: drop the provisional row and put
     // the typed text back, preserving the original "a failure never
-    // loses what you typed" guarantee. Text the user has started typing
-    // since is never overwritten.
+    // loses what you typed" guarantee.
+    //
+    // Phase 20.2: text typed while the request was in flight is never
+    // overwritten, and the failed body is never silently discarded. An
+    // empty composer takes the failed body back as-is; a composer the
+    // user has already typed into keeps that text, with the failed body
+    // restored above it and one blank line between the two.
     removeProvisionalCollaborationMessage(provisionalId);
-    if(inputEl && !inputEl.value) inputEl.value = rawBody;
+    if(inputEl) inputEl.value = inputEl.value ? (rawBody + '\n\n' + inputEl.value) : rawBody;
     var realMsg = result && result.error && (result.error.message || result.error.hint || result.error.details || JSON.stringify(result.error));
     showToast(realMsg || 'Could not send message.');
     if(inputEl) inputEl.focus();

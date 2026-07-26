@@ -62,6 +62,28 @@ Keep every section present even when brief.
 
 ---
 
+## Design and Scope Rules
+
+Two standing rules govern what gets built and how. They apply to analysis, planning, and implementation alike.
+
+### Pattern decision rule — Reuse → Extend → Create
+
+Before introducing a new pattern:
+
+1. **Reuse** an existing pattern if it already solves the problem.
+2. **Extend** an existing pattern if the requirement is closely related.
+3. **Create** a new pattern only when reuse or extension would produce incorrect or confusing behavior.
+
+State which of the three was chosen, and why, whenever a new pattern is introduced.
+
+### STAGERZ scope rule
+
+A feature belongs in the current roadmap only if it directly helps a team complete a project, or removes a concrete reliability problem from that workflow.
+
+Ideas that do not satisfy this rule must be documented for a later phase instead of being added to the current implementation scope. Recording an idea is not deferring it forever — it is keeping the current phase coherent.
+
+---
+
 ## Implementation Rules
 
 - **Source code changes require explicit user approval.** An approved analysis is not itself approval to edit.

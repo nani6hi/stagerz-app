@@ -11,6 +11,7 @@ Confirmed stable facts only. Anything not established is marked **unknown** rath
 | Project name | STAGERZ |
 | Process | APOS |
 | Role of this project | STAGERZ is the APOS reference implementation |
+| Current APOS phase of record | Phase 20.2 — Messaging Hardening |
 
 ---
 
@@ -85,7 +86,6 @@ Confirmed stable facts only. Anything not established is marked **unknown** rath
 The following are **not** established and must not be assumed:
 
 - APOS acronym expansion — unknown.
-- Current APOS phase of record for this project — unknown.
 - Release procedure beyond "deployed via GitHub Pages from `main`" — unknown.
 - Runtime dependencies, backend services, and third-party integrations — unknown from this document's scope.
 - Branching and merge policy (how development branches reach `main`) — unknown.
