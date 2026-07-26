@@ -11,7 +11,7 @@ Confirmed stable facts only. Anything not established is marked **unknown** rath
 | Project name | STAGERZ |
 | Process | APOS |
 | Role of this project | STAGERZ is the APOS reference implementation |
-| Current APOS phase of record | Phase 20.2 — Messaging Hardening |
+| Current APOS phase of record | Phase 20.3 — Message Load Failure Visibility |
 
 ---
 
@@ -70,6 +70,37 @@ Confirmed stable facts only. Anything not established is marked **unknown** rath
 |---|---|
 | `analysis/<phase>/` | Analysis results |
 | `.apos/` | Governance rules |
+
+---
+
+## Product Roadmap Decisions
+
+Permanent product decisions. These constrain scope regardless of what the code currently contains.
+
+### NACKL is excluded from the current full web app
+
+**Decision:** NACKL does not belong in the current full STAGERZ web application.
+
+NACKL was intended for a later, reduced **Light version**, after the real full app/web version is established. The NACKL implementation currently present in `index.html` is **premature** and creates unnecessary runtime errors, state, and maintenance burden inside the main app.
+
+Consequences:
+
+- Do **not** repair `nacklVal` as a standalone cosmetic fix.
+- Do **not** expand NACKL.
+- Do **not** integrate NACKL further into Profile or any other module.
+- Complete removal of NACKL from the current full web app is scheduled as **Phase 20.4**.
+- The NACKL product idea is **preserved as a deferred concept for a future Light version**.
+
+**Removal from the full app does not mean deletion of the product idea.** It means the idea returns in the Light version, on purpose, rather than persisting here by accident.
+
+### Planned phase sequence
+
+| Phase | Title | Status |
+|---|---|---|
+| 20.1 | Optimistic Message Sending | Merged to `main` (PR #1) |
+| 20.2 | Messaging Hardening | Merged to `main` (PR #2) |
+| 20.3 | Message Load Failure Visibility | Current phase of record |
+| 20.4 | Remove NACKL from the Full Web App | Planned |
 
 ---
 
