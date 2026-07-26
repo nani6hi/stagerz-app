@@ -307,6 +307,53 @@ Therefore `nacklVal` will **not** be repaired as a standalone cosmetic fix, NACK
 
 ---
 
+## Implementation status
+
+**Implemented. Statically validated. Runtime validation not yet performed.**
+
+### Implemented behavior
+
+- `supaSelect()` returning `null` (failed request) is now distinguished from `[]` (successful empty). The failure branch is evaluated **before** the empty-state branch, so a failed fetch can never render `No messages yet.`
+- **Initial failure** (no rows on screen): the container is cleared of its placeholder and a single notice reading `Messages could not be loaded.` is rendered. No message row is invented.
+- **Reload failure with rows visible**: the list is **not** cleared, replaced, or re-rendered. All confirmed and provisional rows remain exactly as they were, and one notice is appended below them.
+- **Duplicate suppression**: the notice carries the stable id `cmLoadError`; if it already exists the helper returns immediately, so repeated failures never stack.
+- **Recovery**: no special handling is required. A later successful populated load rebuilds the container (`listEl.innerHTML = ''`) and a successful empty load replaces it — either path removes the notice. No page reload, no stale placeholder, no duplicate notice.
+- **Identity isolation**: the notice carries no `cmBodyText-` id, no `data-provisional-id`, and no `data-cm-placeholder`, so provisional insertion, placeholder removal, edit/delete lookups, and reconciliation all ignore it. Its text is a fixed literal; no fetched or user-provided content is ever placed in it.
+
+### Exact changed code location
+
+| Change | Location |
+|---|---|
+| Failure branch split from the empty branch | `index.html:3357-3366` |
+| `showCollaborationMessagesLoadError(listEl)` helper | `index.html:3394-3421` |
+
+Total: 38 insertions, 1 deletion in `index.html`, in two hunks. No CSS rule was added — the notice reuses the file's existing inline-style placeholder convention.
+
+### Static validation result
+
+| Check | Result |
+|---|---|
+| Only `index.html` changed (plus this definition) | PASS |
+| No other loader changed | PASS |
+| No NACKL source changed | PASS |
+| `sendCollaborationMessage`, `saveMessageEdit`, `deleteMessagePrompt`, `beginEditMessage` byte-identical to `main` | PASS |
+| `insertProvisionalCollaborationMessage`, `removeProvisionalCollaborationMessage`, `buildCollaborationMessageRow`, `allocateProvisionalId`, `buildProvisionalRenderModel` byte-identical | PASS |
+| `supaSelect()` byte-identical | PASS |
+| Fetch query and `limit=200` unchanged | PASS |
+| `messages === null` distinguished from `messages.length === 0` | PASS |
+| Failure handled before empty-state rendering | PASS |
+| Helper defined exactly once; no duplicate function name in file | PASS |
+| Notice text is a fixed literal — no injection surface | PASS |
+| No new CSS rule; no change after `</style>` (line 294) | PASS |
+| No formatting churn — 2 hunks only | PASS |
+| JavaScript parses | **NOT VERIFIED** — no JS runtime available in the environment |
+
+### Runtime validation still required
+
+Level 3 authenticated runtime validation on a Netlify deploy preview has **not** been performed. All of acceptance criteria A–F remain unverified, including recovery (E) and the Phase 20.1/20.2 regression pass (F). **No runtime PASS is claimed for any Phase 20.3 behavior.**
+
+---
+
 ## Summary
 
 Phase 20.3 — Message Load Failure Visibility makes `loadCollaborationMessages()` stop reporting a failed fetch as an empty conversation. It defines five distinct loader states, preserves the genuine empty state and all existing render behavior, adds a minimal load-failure state for an initial failure, and preserves already-rendered rows when a reload fails. Scope is one function. Thirty non-goals are named explicitly, no backend or database surface is touched, and Level 3 authenticated runtime validation on a Netlify deploy preview is required before commit approval. Phase 20.4 — full-app NACKL removal — is recorded as the next phase, beginning with a complete read-only inventory.

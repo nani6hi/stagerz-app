@@ -3354,7 +3354,16 @@ async function loadCollaborationMessages(collaborationId, options){
   );
   if(!listEl) return;
 
-  if(!messages || !messages.length){
+  // Phase 20.3: supaSelect() returns null on a failed request and [] on a
+  // successful empty one. Those are different facts and must not share the
+  // "No messages yet." state -- rendering a failure as an empty
+  // conversation makes an existing thread look erased.
+  if(!messages){
+    showCollaborationMessagesLoadError(listEl);
+    return;
+  }
+
+  if(!messages.length){
     listEl.innerHTML = '<div data-cm-placeholder="1" style="font-size:9px;color:rgba(255,255,255,.25);text-align:center;padding:20px 0;">No messages yet.</div>';
     return;
   }
@@ -3380,6 +3389,34 @@ async function loadCollaborationMessages(collaborationId, options){
   });
 
   listEl.scrollTop = listEl.scrollHeight;
+}
+
+// Phase 20.3: the message-load failure state. Never destroys conversation
+// history -- if rows are already on screen the list is left exactly as it
+// is and a single notice is appended below them; only an initial failure
+// (nothing but a placeholder showing) replaces the container contents.
+//
+// The notice is not a message row: it carries no cmBodyText- id, no
+// data-provisional-id and no data-cm-placeholder, so provisional
+// insertion, placeholder removal, edit/delete lookups and reconciliation
+// all ignore it. Its text is a fixed literal -- no fetched or
+// user-provided content is ever placed in it.
+//
+// Recovery needs no special handling: every successful load rebuilds the
+// container (rows) or replaces it (empty state), which removes the notice.
+function showCollaborationMessagesLoadError(listEl){
+  if(!listEl) return;
+  if(document.getElementById('cmLoadError')) return;
+
+  // A rendered message -- confirmed or provisional -- always carries a
+  // cmBodyText- body element. Nothing else in this list does.
+  if(!listEl.querySelector('[id^="cmBodyText-"]')) listEl.innerHTML = '';
+
+  var notice = document.createElement('div');
+  notice.id = 'cmLoadError';
+  notice.style.cssText = 'font-size:9px;color:rgba(255,100,100,.7);text-align:center;padding:20px 0;';
+  notice.textContent = 'Messages could not be loaded.';
+  listEl.appendChild(notice);
 }
 
 // Phase 20.1: the single shared message-row renderer. Confirmed server
