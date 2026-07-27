@@ -269,9 +269,6 @@ html,body{width:100%;height:100%;background:#08080f;color:#f0f0f5;font-family:'I
 /* --- ALERT --- */
 .toast{position:fixed;bottom:70px;left:14px;right:14px;background:#1a1828;border:1px solid rgba(100,80,255,.3);border-radius:12px;padding:12px 16px;font-size:11px;color:#f0f0f5;z-index:9999;display:none;text-align:center;line-height:1.5;}
 
-/* --- NACKL CHIP --- */
-.nackl-chip{display:inline-flex;align-items:center;gap:5px;padding:4px 10px;background:rgba(232,184,48,.08);border:1px solid rgba(232,184,48,.15);border-radius:20px;font-size:9px;color:rgba(232,184,48,.7);}
-
 /* GRADIENTS for screen covers */
 .grad-purple{background:linear-gradient(160deg,#1a0840,#0a1040);}
 .grad-blue{background:linear-gradient(160deg,#0a1840,#0a1020);}
@@ -287,10 +284,6 @@ html,body{width:100%;height:100%;background:#08080f;color:#f0f0f5;font-family:'I
 .fm-dot.recording{animation:pulse-dot 1.2s ease-in-out infinite;}
 @keyframes wave{0%,100%{height:6px;}50%{height:18px;}}
 .wave-bar{width:3px;background:rgba(255,60,30,.7);border-radius:2px;animation:wave 1s ease-in-out infinite;}
-
-/* NACKL GLOW */
-@keyframes nackl-pulse{0%,100%{text-shadow:0 0 12px rgba(232,184,48,.4);}50%{text-shadow:0 0 20px rgba(232,184,48,.7);}}
-#nacklCount{animation:nackl-pulse 3s ease-in-out infinite;}
 </style>
 </head>
 <body>
@@ -552,7 +545,6 @@ html,body{width:100%;height:100%;background:#08080f;color:#f0f0f5;font-family:'I
         <div class="p-stat"><div class="p-stat-num">0</div><div class="p-stat-label">On Stage</div></div>
         <div class="p-stat"><div class="p-stat-num">0</div><div class="p-stat-label">Followers</div></div>
         <div class="p-stat"><div class="p-stat-num">0</div><div class="p-stat-label">Collabs</div></div>
-        <div class="p-stat"><div class="p-stat-num" id="nacklCount" style="color:#e8b830;text-shadow:0 0 12px rgba(232,184,48,.4);">0</div><div class="p-stat-label" style="color:rgba(232,184,48,.5);">NACKL</div></div>
       </div>
       <div class="p-actions">
         <div class="p-btn-primary" onclick="goTo('backstage')">⭐ BACKSTAGE</div>
@@ -954,7 +946,6 @@ html,body{width:100%;height:100%;background:#08080f;color:#f0f0f5;font-family:'I
       <div class="bs-feature"><div class="bs-feature-icon">🎯</div>Unlimited WANTED posts</div>
       <div class="bs-feature"><div class="bs-feature-icon">🔵</div>Verified artist badge</div>
       <div class="bs-feature"><div class="bs-feature-icon">👑</div>Full credit & rights system</div>
-      <div class="bs-feature"><div class="bs-feature-icon">💎</div>NACKL mining tracked</div>
       <div class="bs-feature"><div class="bs-feature-icon">📊</div>Analytics & insights</div>
       <div class="bs-feature"><div class="bs-feature-icon">🎬</div>Priority in Wanted search</div>
       <button class="bs-cta" onclick="showToast('Payment launches with full app. Price locked for early users!')">JOIN BACKSTAGE</button>
@@ -2177,7 +2168,6 @@ async function loadMyProfile(){
     document.getElementById('profileRole').textContent = myProfile.role+(myProfile.location?' · '+myProfile.location:'');
   }
   loadMyWanted();
-  tickNACKL();
 }
 
 // Restores the visual role-chip selection to match the actually
@@ -4919,12 +4909,6 @@ async function createCollaborationCredit(){
   }
 
   endCollaborationBusy(saveBtn);
-}
-
-function tickNACKL(){
-  nacklVal += Math.floor(Math.random()*3)+1;
-  var el = document.getElementById('nacklCount');
-  if(el) el.textContent = nacklVal;
 }
 
 // --- FAMEMAKER ---
