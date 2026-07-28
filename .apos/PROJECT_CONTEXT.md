@@ -11,8 +11,8 @@ Confirmed stable facts only. Anything not established is marked **unknown** rath
 | Project name | STAGERZ |
 | Process | APOS |
 | Role of this project | STAGERZ is the APOS reference implementation |
-| Current APOS phase of record | Phase 20.4 — Remove Premature NACKL Integration |
-| Current phase status | Documentation defined; implementation not started |
+| Current APOS phase of record | Phase 20.5 — Evaluate and Isolate Telegram Runtime |
+| Current phase status | Analysis and documentation defined; implementation not started |
 
 ---
 
@@ -100,15 +100,15 @@ Consequences:
 
 Like NACKL, it is preserved as a concept for a future STAGERZ Light / Mini App version. Removal from the full app does **not** mean deletion of the product idea.
 
-Telegram removal is deliberately **not** bundled with NACKL removal. NACKL is fully repository-provable and isolated; Telegram's true impact depends on whether an external Mini App entry point exists — configuration outside this repository — and `haptic()` has 29 call sites. The sequence below separates the two so a zero-risk cleanup is not blocked behind an unverifiable one.
+Telegram removal is deliberately **not** bundled with NACKL removal. NACKL is fully repository-provable and isolated; Telegram's true impact depends on whether an external Mini App entry point exists — configuration outside this repository — and `haptic()` has 28 call sites (`haptic(` occurs 29 times in `index.html`: 1 function definition plus 28 call sites). The sequence below separates the two so a zero-risk cleanup is not blocked behind an unverifiable one.
 
 ### Locked removal sequence
 
 | Phase | Title | Scope |
 |---|---|---|
-| **20.4** | **Remove Premature NACKL Integration** | Remove all NACKL UI, CSS, and JavaScript; remove misleading NACKL feature claims; eliminate the `nacklVal is not defined` ReferenceError |
-| **20.5** | **Evaluate and Isolate Telegram Runtime** | Confirm whether an external Telegram Mini App entry point exists; document external Telegram configuration not stored in the repository; isolate Telegram SDK initialization from normal browser runtime; preserve authentication, sessions, identity, navigation, and collaboration workflows. Do **not** perform complete removal unless the phase definition explicitly proves it is safe |
-| **20.6** | **Remove Telegram Runtime from Full Web App** | Remove the Telegram SDK script, `window.Telegram`, `tg`, `ready()`, `expand()`, `HapticFeedback`, every `haptic(...)` call, the `haptic()` function, and all Telegram-specific comments and runtime logic |
+| **20.4** | **Remove Premature NACKL Integration** | **Completed** — merged in Pull Request #4 (`31dc073af588d1664d0991b98e6b0995d5174660`). All NACKL UI, CSS, and JavaScript removed; misleading NACKL feature claim removed; `nacklVal is not defined` ReferenceError eliminated |
+| **20.5** | **Evaluate and Isolate Telegram Runtime** | Telegram runtime **evaluation and isolation**. Confirm whether an external Telegram Mini App entry point exists; document external Telegram configuration not stored in the repository; isolate Telegram-specific runtime behavior behind a clear compatibility boundary without changing visible product behavior. Preserve authentication, sessions, identity, navigation, and collaboration workflows. Do **not** remove Telegram, `haptic()`, or any `haptic(...)` call site in this phase |
+| **20.6** | **Remove Telegram Runtime from Full Web App** | **Complete Telegram runtime removal, including all `haptic(...)` call sites.** Remove the Telegram SDK script, `window.Telegram`, `tg`, `ready()`, `expand()`, `HapticFeedback`, every `haptic(...)` call, the `haptic()` function, and all Telegram-specific comments and runtime logic |
 
 ### Final intended full-app architecture
 
@@ -130,9 +130,9 @@ NACKL and Telegram are preserved **only as future Light-version concepts**. The 
 | 20.1 | Optimistic Message Sending | Merged to `main` (PR #1) |
 | 20.2 | Messaging Hardening | Merged to `main` (PR #2) |
 | 20.3 | Message Load Failure Visibility | Merged to `main` (PR #3) |
-| 20.4 | Remove Premature NACKL Integration | Current phase — documentation defined, implementation not started |
-| 20.5 | Evaluate and Isolate Telegram Runtime | Planned |
-| 20.6 | Remove Telegram Runtime from Full Web App | Planned |
+| 20.4 | Remove Premature NACKL Integration | Merged to `main` (PR #4) |
+| 20.5 | Evaluate and Isolate Telegram Runtime | Current phase — analysis and documentation defined, implementation not started |
+| 20.6 | Remove Telegram Runtime from Full Web App | Planned — includes removal of all `haptic(...)` call sites |
 
 ---
 

@@ -959,10 +959,46 @@ html,body{width:100%;height:100%;background:#08080f;color:#f0f0f5;font-family:'I
 <div class="toast" id="toast"></div>
 
 <script>
-// --- TELEGRAM ---
-var tg = window.Telegram && window.Telegram.WebApp;
-if(tg){ try{tg.ready();}catch(e){} try{tg.expand();}catch(e){} }
-function haptic(t){ try{ if(tg&&tg.HapticFeedback){ if(t==='success'||t==='error'||t==='warning') tg.HapticFeedback.notificationOccurred(t); else tg.HapticFeedback.impactOccurred(t||'light'); } }catch(e){} }
+// ===== BEGIN TELEGRAM COMPATIBILITY BLOCK (Phase 20.5) =====
+//
+// Every Telegram-specific runtime reference in this application lives
+// between these two markers. The only Telegram reference outside the
+// block is the SDK script tag in the document head.
+//
+// Public surface: haptic(t). Nothing else in this block may be called
+// from outside it -- telegramWebApp is deliberately not consumed
+// anywhere else, so the block stays independently deletable.
+//
+// Phase 20.6 deletes this block, the SDK script tag, the haptic()
+// function, and every haptic(...) call site.
+
+// Resolved once. Truthy only when the Telegram WebApp API is actually
+// present -- falsy in every normal desktop or mobile browser.
+var telegramWebApp = window.Telegram && window.Telegram.WebApp;
+
+// Telegram host initialization. Both calls are Telegram viewport hints
+// and have no effect on the web app. Each is guarded separately so a
+// failure in one cannot prevent the other from being attempted.
+if(telegramWebApp){
+  try{ telegramWebApp.ready(); }catch(e){}
+  try{ telegramWebApp.expand(); }catch(e){}
+}
+
+// Best-effort tactile feedback. Silently no-ops when Telegram or
+// HapticFeedback is unavailable.
+//
+// The contract is deliberately platform-agnostic: callers must never
+// depend on anything happening and must never read a return value.
+// That contract stays true after Phase 20.6 removes Telegram entirely.
+function haptic(t){
+  try{
+    if(telegramWebApp && telegramWebApp.HapticFeedback){
+      if(t==='success'||t==='error'||t==='warning') telegramWebApp.HapticFeedback.notificationOccurred(t);
+      else telegramWebApp.HapticFeedback.impactOccurred(t||'light');
+    }
+  }catch(e){}
+}
+// ===== END TELEGRAM COMPATIBILITY BLOCK =====
 
 // --- SUPABASE ---
 var SUPA_URL = 'https://kbnmkyvbwkuvcklywdhk.supabase.co';
