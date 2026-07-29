@@ -11,8 +11,8 @@ Confirmed stable facts only. Anything not established is marked **unknown** rath
 | Project name | STAGERZ |
 | Process | APOS |
 | Role of this project | STAGERZ is the APOS reference implementation |
-| Current APOS phase of record | Phase 20.6 — Remove Telegram Runtime from Full Web App |
-| Current phase status | Implementation complete; static verification passed; local pre-merge browser validation passed; committed and pushed to `phase-20.6-remove-telegram-runtime`; **not merged — authenticated production validation outstanding** (`analysis/phase-20.6/phase-definition.md` §15) |
+| Current APOS phase of record | Phase 20.7 — Codebase Assessment & Roadmap |
+| Current phase status | **Assessment complete.** Analysis-only phase — no application code changed, `index.html` untouched. Output: `analysis/phase-20.7/codebase-assessment.md`. Its recommendations are **proposals awaiting ChatGPT review**; no roadmap decision is recorded by this phase |
 
 ---
 
@@ -53,7 +53,7 @@ Confirmed stable facts only. Anything not established is marked **unknown** rath
 | Production domain | `stagerz.app` (`CNAME`) |
 | Pull-request previews | **None.** GitHub Pages provides no per-PR preview environment. Pre-merge Level 3 validation runs against a local server on `localhost`; authenticated flows that depend on the Supabase magic-link redirect to `https://stagerz.app` can only be validated after merge and deployment |
 | Production branch | `main` |
-| Current development branch | `phase-20.6-remove-telegram-runtime` |
+| Current development branch | `phase-20.7-codebase-assessment` |
 
 ---
 
@@ -118,7 +118,7 @@ Telegram removal is deliberately **not** bundled with NACKL removal. NACKL is fu
 |---|---|---|
 | **20.4** | **Remove Premature NACKL Integration** | **Completed** — merged in Pull Request #4 (`31dc073af588d1664d0991b98e6b0995d5174660`). All NACKL UI, CSS, and JavaScript removed; misleading NACKL feature claim removed; `nacklVal is not defined` ReferenceError eliminated |
 | **20.5** | **Evaluate and Isolate Telegram Runtime** | **Completed** — merged in Pull Request #5 (`155b029cdfcd752104849f1d52f84c0aa645ce61`). Every Telegram runtime reference collapsed into one contiguous, marker-delimited compatibility block (`index.html` 962–1001); `tg` renamed to `telegramWebApp`; single detection point; `haptic()` given a documented platform-agnostic contract. No behavior change, no call site changed |
-| **20.6** | **Remove Telegram Runtime from Full Web App** | **Complete Telegram runtime removal, including all 28 `haptic(...)` call sites.** Remove the Telegram SDK script tag (line 8), the compatibility block (962–1001) with `window.Telegram`, `telegramWebApp`, `ready()`, `expand()`, `HapticFeedback`, and the `haptic()` function, plus every `haptic(...)` call site and all Telegram-specific comments. Deletion only — no substitute (no `navigator.vibrate`, no sound, no animation). Preserve authentication, sessions, identity, navigation, messaging, and all collaboration workflows unchanged |
+| **20.6** | **Remove Telegram Runtime from Full Web App** | **Completed** — merged in Pull Request #6 (`275caf3944f1194434ca4924272731c03111bbd1`). Complete Telegram runtime removal, including all 28 `haptic(...)` call sites: the Telegram SDK script tag (line 8), the compatibility block (962–1001) with `window.Telegram`, `telegramWebApp`, `ready()`, `expand()`, `HapticFeedback`, and the `haptic()` function, plus every `haptic(...)` call site and all Telegram-specific comments. Deletion only — no substitute (no `navigator.vibrate`, no sound, no animation). Authentication, sessions, identity, navigation, messaging, and all collaboration workflows preserved unchanged |
 
 ### Final intended full-app architecture
 
@@ -133,7 +133,7 @@ On completion of Phase 20.6, the current full STAGERZ web application will have:
 
 NACKL and Telegram are preserved **only as future Light-version concepts**. The full web app must remain fully functional using normal browser and Supabase behavior alone.
 
-**Achieved in the working tree (pending Level 3 validation and commit).** `index.html` now contains **zero** occurrences of `telegram`, `window.Telegram`, `telegramWebApp`, `HapticFeedback`, `ready()`/`expand()` Telegram initialization, and `haptic` in any form. `index.html` is the only file in the repository containing executable code, so **the main web app is Telegram-independent.** Details in `analysis/phase-20.6/phase-definition.md` §14.
+**Achieved and merged to `main` (Pull Request #6, `275caf3`).** `index.html` on `main` contains **zero** occurrences of `telegram`, `window.Telegram`, `telegramWebApp`, `HapticFeedback`, `ready()`/`expand()` Telegram initialization, and `haptic` in any form — re-verified during Phase 20.7 (`grep -c -i "telegram\|haptic" index.html` → `0`). `index.html` is the only file in the repository containing executable code, so **the main web app is Telegram-independent.** Details in `analysis/phase-20.6/phase-definition.md` §14.
 
 ### Guardrail — a future Telegram Light version must not reintroduce coupling
 
@@ -158,7 +158,8 @@ Phases 20.4, 20.5, and 20.6 exist because Telegram and NACKL runtime code accumu
 | 20.3 | Message Load Failure Visibility | Merged to `main` (PR #3) |
 | 20.4 | Remove Premature NACKL Integration | Merged to `main` (PR #4) |
 | 20.5 | Evaluate and Isolate Telegram Runtime | Merged to `main` (PR #5) |
-| 20.6 | Remove Telegram Runtime from Full Web App | **Current phase** — implementation complete; 69 lines deleted + 1 in-place edit in `index.html`; SDK script, compatibility block, and all 28 `haptic(...)` call sites removed; static verification passed; local pre-merge browser validation passed; pushed to `phase-20.6-remove-telegram-runtime`; **not merged — authenticated production validation outstanding** |
+| 20.6 | Remove Telegram Runtime from Full Web App | Merged to `main` (PR #6, `275caf3`) — 69 lines deleted + 1 in-place edit in `index.html`; SDK script, compatibility block, and all 28 `haptic(...)` call sites removed. Deployed to production per product-owner report. *No post-deployment authenticated-validation record exists under `analysis/phase-20.6/`; the outcome is reported, not documented in this repository.* |
+| 20.7 | Codebase Assessment & Roadmap | **Current phase** — analysis only; no application code changed. Full assessment at `analysis/phase-20.7/codebase-assessment.md` |
 
 ### Phase 20.6 prerequisite — RESOLVED
 
@@ -167,6 +168,24 @@ Phase 20.6 carried one gate that this repository could not answer:
 > Does a live external Telegram Bot / Mini App entry point exist that points at STAGERZ, and do real users currently open the app inside Telegram?
 
 **Resolved by the product-owner decision recorded above (2026-07-28):** the existing Telegram Mini App configuration is outside the currently supported product scope and does not block removal. Implementation proceeded on that basis. Full record at `analysis/phase-20.6/phase-definition.md` §13.1.
+
+### Phase 20.7 — Codebase Assessment (recommendations, **not** decisions)
+
+Phase 20.7 was an analysis-only evaluation of the application after Telegram removal. It changed no application code and recorded no roadmap decision. Full document: `analysis/phase-20.7/codebase-assessment.md`.
+
+**Nothing in that document is binding.** Its roadmap is a *proposal* for ChatGPT review under `.apos/WORKFLOW.md`. Phase numbering (21.1–21.10) is suggested, not assigned.
+
+**Baseline measured (at `275caf3`):** `index.html` is 4,942 lines / ~265 KB — CSS 9–286, markup 288–958, JavaScript 960–4940. 20 screens, all reachable via `goTo()`. 139 functions, 47 module-level `var`s, 194 `getElementById` calls, 81 `.innerHTML` assignments. Backend surface: 20 RPCs and 14 tables/views across one Supabase project. Zero `@media` queries, zero `aria-*` attributes, zero tests/lint/CI.
+
+**Three findings ranked Critical:**
+
+1. **Incomplete output escaping.** `escapeCollaborationHtml()` exists and is applied at 32 sites, but 10 sites interpolate user-controlled values (`display_name`, `username`, `role`, `location`, Wanted `title`, collaboration `title`) unescaped into `innerHTML`, plus 4 `photo_url` injections into inline `style` attributes. Stored-XSS class.
+2. **Unpinned CDN dependency with no failure path.** `@supabase/supabase-js@2` floats across all v2 releases with no SRI and no lockfile. Because no screen carries `active` in the static markup, a CDN failure makes the whole inline script throw at `supabase.createClient()` and the user sees a permanently blank page.
+3. **The backend contract exists only inside Supabase.** 20 RPCs, 14 tables/views, RLS policies, column grants, the signup trigger, and Storage bucket policies have no representation in this repository. Nothing here can reconstruct the server — this is also the root cause of "no staging environment" and "authenticated flows unverifiable pre-merge."
+
+**Open question raised for the product owner (recorded, not answered):** `index.html` describes the Supabase project at `kbnmkyvbwkuvcklywdhk.supabase.co` as a *"disposable test project"* and the auth flow as *"TEST ONLY"* (lines 307–310, 1218–1225). Whether that is still accurate — and therefore whether production user data currently sits on a project not intended to persist — is **unknown from this repository and must be confirmed rather than assumed.**
+
+**Architecture verdict:** the single-file architecture is sound and is recommended for retention. No build step, bundler, framework, module system, or file split is proposed. The assessment found no compelling technical reason to change it.
 
 ---
 
@@ -184,12 +203,18 @@ The following are **not** established and must not be assumed:
 
 - APOS acronym expansion — unknown.
 - Release procedure beyond "deployed via GitHub Pages from `main`" — unknown.
-- Runtime dependencies, backend services, and third-party integrations — unknown from this document's scope.
 - Branching and merge policy (how development branches reach `main`) — unknown.
 - Definitions of the individual APOS phase deliverables — unknown.
+- Whether the Supabase project at `kbnmkyvbwkuvcklywdhk.supabase.co` is still the "disposable test project" the code describes, or is now the intended production data store — **unknown**; raised by Phase 20.7, not yet answered.
+- The full backend contract (RPC bodies, RLS policies, column grants, triggers, Storage policies) — **not recorded anywhere in this repository.** Phase 20.7 enumerated the 20 RPCs and 14 tables/views the client calls, but their definitions exist only inside the Supabase project.
+
+Previously listed as unknown, now established by Phase 20.7 (`analysis/phase-20.7/codebase-assessment.md`):
+
+- **Runtime dependencies and third-party integrations.** Exactly one runtime dependency: `@supabase/supabase-js@2`, loaded from jsDelivr at `index.html:8` (unpinned within v2, no SRI). Plus Google Fonts via a CSS `@import`. No other third-party code.
+- **Backend services.** One Supabase project providing PostgREST, Auth (email magic link), Realtime (`postgres_changes` + presence), and Storage (bucket `collaboration-assets`).
 
 ---
 
 ## Summary
 
-STAGERZ is the APOS reference implementation: a single-page application contained primarily in `index.html`, deployed to GitHub Pages from the `main` branch, with development currently on `phase-20.6-remove-telegram-runtime`. ChatGPT owns architecture, governance, reviews, and approval; Claude Code performs analysis and approved implementation; the user is the final authority for source changes and commits. Analysis output lives under `analysis/<phase>/` and governance rules under `.apos/`. Items listed under **Unknown** above are deliberately unrecorded rather than inferred.
+STAGERZ is the APOS reference implementation: a single-page application contained primarily in `index.html`, deployed to GitHub Pages from the `main` branch, with development currently on `phase-20.7-codebase-assessment`. Phases 20.4–20.6 removed NACKL and the Telegram runtime; Phase 20.7 assessed the resulting codebase and proposed a roadmap, changing no application code. ChatGPT owns architecture, governance, reviews, and approval; Claude Code performs analysis and approved implementation; the user is the final authority for source changes and commits. Analysis output lives under `analysis/<phase>/` and governance rules under `.apos/`. Items listed under **Unknown** above are deliberately unrecorded rather than inferred.
