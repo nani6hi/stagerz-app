@@ -1761,7 +1761,12 @@ function renderWanted(dbData, appliedIds){
   if(count) count.textContent = items.length+' open';
   items.forEach(function(item){
     var badgeClass = item.badge==='match' ? 'w-badge-gold' : item.badge==='hot' ? 'w-badge-hot' : 'w-badge-new';
-    var locText = item.remote ? (item.flag||'') + ' Remote' : (item.flag||'') + ' ' + item.loc;
+    // Phase 21.1 -- mixed-trust line, escaped per part rather than whole.
+    // item.flag is a developer-authored HTML entity pair from wantedData
+    // (e.g. '&#127475;&#127468;') and is trusted static markup: escaping it
+    // would render the entity literally. item.loc carries
+    // wanted_posts.location on real rows and is escaped on its own.
+    var locText = item.remote ? (item.flag||'') + ' Remote' : (item.flag||'') + ' ' + escapeCollaborationHtml(item.loc);
     var verifiedBadge = item.verified ? ' <span style="color:#e8b830;font-size:9px;">&#128309;</span>' : '';
     var el = document.createElement('div');
     el.className = 'w-card'+(item.badge==='new'?' w-card-alt':'');
@@ -1770,11 +1775,14 @@ function renderWanted(dbData, appliedIds){
         '<div class="w-badge '+badgeClass+'">'+item.badgeText+'</div>'+
         '<div style="font-size:8px;color:rgba(255,255,255,.2);">'+item.time+'</div>'+
       '</div>'+
-      '<div class="w-title">'+item.title+'</div>'+
-      '<div class="w-meta">'+item.user+verifiedBadge+' &middot; '+locText+' &middot; '+item.comp+'</div>'+
+      // Phase 21.1 -- item.title/comp/cat/role carry wanted_posts values on
+      // real rows and are escaped. item.badgeText, item.time, verifiedBadge
+      // and locText are trusted static markup or already handled above.
+      '<div class="w-title">'+escapeCollaborationHtml(item.title)+'</div>'+
+      '<div class="w-meta">'+escapeCollaborationHtml(item.user)+verifiedBadge+' &middot; '+locText+' &middot; '+escapeCollaborationHtml(item.comp)+'</div>'+
       '<div class="w-tags">'+
-        '<div class="w-tag">'+item.cat+'</div>'+
-        '<div class="w-tag">'+item.role+'</div>'+
+        '<div class="w-tag">'+escapeCollaborationHtml(item.cat)+'</div>'+
+        '<div class="w-tag">'+escapeCollaborationHtml(item.role)+'</div>'+
         (item.remote?'<div class="w-tag">&#127757; Remote OK</div>':'')+
       '</div>'+
       '<button class="w-apply">APPLY NOW</button>';
@@ -2289,9 +2297,13 @@ async function openApplicants(postId, postTitle){
     var pub = publicById[a.applicant_id] || {};
     var prof = profileById[a.applicant_id] || {};
     var metaParts = [];
-    if(pub.username) metaParts.push('@'+pub.username);
-    if(prof.role) metaParts.push(prof.role);
-    if(prof.location) metaParts.push(prof.location);
+    // Phase 21.1 -- escaped per part, not after join(): the ' &middot; '
+    // separator added below is trusted static markup and must stay an
+    // entity. username comes from users.username, role and location from
+    // profiles -- all three are user-controlled via saveProfile().
+    if(pub.username) metaParts.push('@'+escapeCollaborationHtml(pub.username));
+    if(prof.role) metaParts.push(escapeCollaborationHtml(prof.role));
+    if(prof.location) metaParts.push(escapeCollaborationHtml(prof.location));
     var appliedDate = a.created_at ? new Date(a.created_at).toLocaleDateString() : '';
     var card = document.createElement('div');
     card.style.cssText = 'background:#111118;border-radius:10px;padding:12px;margin-bottom:8px;cursor:pointer;';
@@ -2310,7 +2322,7 @@ async function openApplicants(postId, postTitle){
     }
 
     card.innerHTML =
-      '<div style="font-weight:600;font-size:11px;color:#fff;">'+(pub.display_name || 'STAGERZ Artist')+'</div>'+
+      '<div style="font-weight:600;font-size:11px;color:#fff;">'+escapeCollaborationHtml(pub.display_name || 'STAGERZ Artist')+'</div>'+
       '<div style="font-size:9px;color:rgba(255,255,255,.4);margin-top:2px;">'+metaParts.join(' &middot; ')+'</div>'+
       '<div style="font-size:8px;color:rgba(255,255,255,.2);margin-top:4px;">Applied '+appliedDate+'</div>'+
       actionsHtml;
@@ -2573,7 +2585,7 @@ async function loadMyCollaborations(){
     var card = document.createElement('div');
     card.style.cssText = 'background:#111118;border-radius:10px;padding:12px;margin-bottom:8px;cursor:pointer;';
     card.innerHTML =
-      '<div style="font-weight:600;font-size:11px;color:#fff;">'+c.title+'</div>'+
+      '<div style="font-weight:600;font-size:11px;color:#fff;">'+escapeCollaborationHtml(c.title)+'</div>'+
       '<div style="font-size:9px;color:rgba(255,255,255,.4);margin-top:2px;">'+statusLabel+' &middot; '+count+' participant'+(count===1?'':'s')+' &middot; '+myType+'</div>'+
       '<div style="font-size:8px;color:rgba(255,255,255,.2);margin-top:4px;">Started '+createdDate+'</div>';
     card.onclick = (function(collabId){ return function(){ openCollaboration(collabId); }; })(c.id);
@@ -2712,11 +2724,11 @@ async function openCollaboration(collaborationId){
       '<div style="display:flex;align-items:center;gap:10px;">'+
         '<div class="card-av">&#129309;</div>'+
         '<div style="flex:1;min-width:0;">'+
-          '<div style="font-weight:600;font-size:13px;color:#fff;">'+collab.title+'</div>'+
+          '<div style="font-weight:600;font-size:13px;color:#fff;">'+escapeCollaborationHtml(collab.title)+'</div>'+
           '<div style="font-size:9px;margin-top:2px;"><span style="color:'+statusColor+';font-weight:600;">'+statusLabel+'</span><span style="color:rgba(255,255,255,.4);"> &middot; Started '+createdDate+'</span></div>'+
         '</div>'+
       '</div>'+
-      (wantedTitle ? '<div style="font-size:9px;color:rgba(232,184,48,.6);margin-top:8px;">From: '+wantedTitle+'</div>' : '')+
+      (wantedTitle ? '<div style="font-size:9px;color:rgba(232,184,48,.6);margin-top:8px;">From: '+escapeCollaborationHtml(wantedTitle)+'</div>' : '')+
       statusControlsHtml+
       readOnlyNoticeHtml+
     '</div>'+
@@ -2818,9 +2830,10 @@ async function openCollaboration(collaborationId){
     var pub = publicById[p.user_id] || {};
     var prof = profileById[p.user_id] || {};
     var metaParts = [];
-    if(pub.username) metaParts.push('@'+pub.username);
-    if(prof.role) metaParts.push(prof.role);
-    if(prof.location) metaParts.push(prof.location);
+    // Phase 21.1 -- escaped per part, not after join(); see openApplicants().
+    if(pub.username) metaParts.push('@'+escapeCollaborationHtml(pub.username));
+    if(prof.role) metaParts.push(escapeCollaborationHtml(prof.role));
+    if(prof.location) metaParts.push(escapeCollaborationHtml(prof.location));
     var typeLabel = p.participant_type === 'owner' ? 'Owner' : 'Member';
     var row = document.createElement('div');
     row.style.cssText = 'display:flex;flex-direction:column;gap:8px;background:#111118;border-radius:10px;padding:12px;margin-bottom:8px;cursor:pointer;';
@@ -2829,21 +2842,25 @@ async function openCollaboration(collaborationId){
     // no data invented either way. created_at is already fetched but
     // deliberately not shown here -- reserved for a future
     // Activity/Timeline module.
-    var avatarStyle = pub.photo_url
-      ? 'background-image:url(\''+pub.photo_url+'\');background-size:cover;background-position:center;'
-      : 'background:#1a1228;';
-    var avatarContent = pub.photo_url ? '' : '&#128100;';
+    // Phase 21.1 -- photo_url is never interpolated into the markup. The
+    // neutral placeholder is emitted here exactly as before, and the real
+    // image, if the URL validates, is applied through the DOM style API
+    // once the node exists.
+    var hasPhoto = safeImageUrl(pub.photo_url) !== null;
+    var avatarStyle = hasPhoto ? '' : 'background:#1a1228;';
+    var avatarContent = hasPhoto ? '' : '&#128100;';
     row.innerHTML =
       '<div style="display:flex;align-items:center;justify-content:space-between;">'+
         '<div style="display:flex;align-items:center;gap:10px;min-width:0;">'+
           '<div class="artist-av" style="'+avatarStyle+'">'+avatarContent+'</div>'+
           '<div style="min-width:0;">'+
-            '<div style="font-weight:600;font-size:11px;color:#fff;">'+(pub.display_name || 'STAGERZ Artist')+'</div>'+
+            '<div style="font-weight:600;font-size:11px;color:#fff;">'+escapeCollaborationHtml(pub.display_name || 'STAGERZ Artist')+'</div>'+
             '<div style="font-size:9px;color:rgba(255,255,255,.4);margin-top:2px;">'+metaParts.join(' &middot; ')+'</div>'+
           '</div>'+
         '</div>'+
         '<div style="font-size:9px;color:rgba(232,184,48,.7);flex-shrink:0;">'+typeLabel+'</div>'+
       '</div>';
+    applyAvatarImage(row.querySelector('.artist-av'), pub.photo_url);
     row.onclick = (function(userId){ return function(){ openArtistProfile(userId, 'collaborationdetail'); }; })(p.user_id);
 
     // Owner-only management actions -- member rows only, never the
@@ -3007,10 +3024,12 @@ async function openCollaboration(collaborationId){
       sentence = 'performed an action';
     }
 
-    var avatarStyle = pub.photo_url
-      ? "background-image:url('"+pub.photo_url+"');background-size:cover;background-position:center;"
-      : 'background:#1a1228;';
-    var avatarContent = pub.photo_url ? '' : '&#128100;';
+    // Phase 21.1 -- photo_url applied via the DOM style API; see
+    // renderParticipantRow(). actorName and sentence are already escaped
+    // above and must not be escaped again here.
+    var hasPhoto = safeImageUrl(pub.photo_url) !== null;
+    var avatarStyle = hasPhoto ? '' : 'background:#1a1228;';
+    var avatarContent = hasPhoto ? '' : '&#128100;';
     var row = document.createElement('div');
     row.style.cssText = 'display:flex;align-items:center;gap:10px;background:#111118;border-radius:10px;padding:12px;margin-bottom:8px;';
     row.innerHTML =
@@ -3019,6 +3038,7 @@ async function openCollaboration(collaborationId){
         '<div style="font-size:11px;color:#fff;"><span style="font-weight:600;">'+actorName+'</span> '+sentence+'</div>'+
         '<div style="font-size:8px;color:rgba(255,255,255,.25);margin-top:2px;">'+boardTimeAgo(item.created_at)+'</div>'+
       '</div>';
+    applyAvatarImage(row.querySelector('.artist-av'), pub.photo_url);
     contentEl.appendChild(row);
   });
 
@@ -3188,10 +3208,10 @@ async function runInviteUserSearch(query){
 
   resultsEl.innerHTML = '';
   filtered.forEach(function(u){
-    var avatarStyle = u.photo_url
-      ? "background-image:url('"+u.photo_url+"');background-size:cover;background-position:center;"
-      : 'background:#1a1228;';
-    var avatarContent = u.photo_url ? '' : '&#128100;';
+    // Phase 21.1 -- photo_url applied via the DOM style API, not the markup.
+    var hasPhoto = safeImageUrl(u.photo_url) !== null;
+    var avatarStyle = hasPhoto ? '' : 'background:#1a1228;';
+    var avatarContent = hasPhoto ? '' : '&#128100;';
     var row = document.createElement('div');
     row.style.cssText = 'display:flex;align-items:center;gap:10px;padding:10px;border-radius:10px;cursor:pointer;margin-bottom:6px;background:#111118;';
     row.innerHTML =
@@ -3200,6 +3220,7 @@ async function runInviteUserSearch(query){
         '<div style="font-weight:600;font-size:11px;color:#fff;">'+escapeCollaborationHtml(u.display_name || 'STAGERZ Artist')+'</div>'+
         '<div style="font-size:9px;color:rgba(255,255,255,.4);margin-top:2px;">@'+escapeCollaborationHtml(u.username || '')+'</div>'+
       '</div>';
+    applyAvatarImage(row.querySelector('.artist-av'), u.photo_url);
     row.onclick = (function(user){ return function(){
       closeInviteUserPicker();
       performCollaborationInvite(user.id, user.display_name);
@@ -3405,10 +3426,10 @@ function buildCollaborationMessageRow(m, pubProfile, myId, isProvisional){
   var timeStr = m.created_at ? new Date(m.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
   var senderLine = escapeCollaborationHtml((pub.display_name || 'STAGERZ Artist') + (pub.username ? ' \u00b7 @' + pub.username : ''));
   var safeBody = escapeCollaborationHtml(m.body);
-  var avatarStyle = pub.photo_url
-    ? "background-image:url('" + pub.photo_url + "');background-size:cover;background-position:center;"
-    : 'background:#1a1228;';
-  var avatarContent = pub.photo_url ? '' : '&#128100;';
+  // Phase 21.1 -- photo_url applied via the DOM style API, not the markup.
+  var hasPhoto = safeImageUrl(pub.photo_url) !== null;
+  var avatarStyle = hasPhoto ? '' : 'background:#1a1228;';
+  var avatarContent = hasPhoto ? '' : '&#128100;';
 
   var row = document.createElement('div');
   row.style.cssText = 'display:flex;gap:8px;margin-bottom:12px;align-items:flex-end;' + (isOwn ? 'flex-direction:row-reverse;' : '') + (isProvisional ? 'opacity:.55;' : '');
@@ -3420,6 +3441,7 @@ function buildCollaborationMessageRow(m, pubProfile, myId, isProvisional){
       '<div style="background:' + (isOwn ? 'rgba(232,184,48,.12)' : '#111118') + ';border-radius:10px;padding:8px 12px;font-size:11px;color:#fff;word-break:break-word;" id="cmBodyText-' + m.id + '">' + safeBody + '</div>' +
       '<div style="font-size:7px;color:rgba(255,255,255,.2);margin-top:2px;' + (isOwn ? 'text-align:right;' : '') + '">' + timeStr + '</div>' +
     '</div>';
+  applyAvatarImage(row.querySelector('.card-av'), pub.photo_url);
 
   if(!isProvisional && (isOwn || canDelete) && currentCollaborationStatus === 'active'){
     var actionsRow = document.createElement('div');
@@ -4258,6 +4280,64 @@ function escapeCollaborationHtml(str){
     .replace(/'/g, '&#39;');
 }
 
+// Phase 21.1 -- validation for externally supplied image URLs (photo_url).
+//
+// Returns a safe absolute http/https URL string, or null when the value is
+// absent, malformed, or uses any other scheme. Never throws.
+//
+// Parsing, not pattern matching, is the protection. The URL constructor is
+// used as the authority on what a URL is and as the serializer for what
+// comes back out: parsed.href is already percent-encoded, so it cannot
+// contain a double quote, a backslash, a carriage return or a newline.
+// No base argument is supplied, so relative values and arbitrary payload
+// text fail to parse and are rejected.
+//
+// Rejected by design: javascript:, data:, blob:, file:, and every other
+// non-http(s) scheme, plus anything the parser cannot parse at all.
+function safeImageUrl(value){
+  try{
+    if(value === null || value === undefined) return null;
+    var raw = String(value).trim();
+    if(!raw) return null;
+    var parsed = new URL(raw);
+    if(parsed.protocol !== 'http:' && parsed.protocol !== 'https:') return null;
+    var href = parsed.href;
+    // Defensive invariant, not the primary protection. The URL serializer
+    // cannot emit these characters, so this can never fire for a URL that
+    // parsed successfully -- it exists so the guarantee is explicit and
+    // independently testable rather than assumed.
+    if(/["\\\r\n]/.test(href)) return null;
+    return href;
+  }catch(e){
+    return null;
+  }
+}
+
+// Phase 21.1 -- assigns an avatar background image through the DOM style
+// API instead of interpolating the URL into an HTML style attribute.
+//
+// The URL never appears in any HTML string, so there is no attribute and
+// no CSS declaration list to break out of. The value is written to a
+// single CSS property, and JSON.stringify produces the quoted CSS string,
+// which escapes quotes and backslashes independently of the URL encoding
+// already applied by safeImageUrl(). Parentheses need no special handling:
+// inside a quoted CSS string they are ordinary characters and cannot
+// terminate the url() token -- only the closing quote can, and that
+// character cannot survive either layer.
+//
+// Returns true when an image was applied, false when the caller's existing
+// neutral placeholder should stand. The visual fallback is unchanged from
+// before this phase.
+function applyAvatarImage(el, photoUrl){
+  if(!el) return false;
+  var safeUrl = safeImageUrl(photoUrl);
+  if(safeUrl === null) return false;
+  el.style.backgroundImage = 'url(' + JSON.stringify(safeUrl) + ')';
+  el.style.backgroundSize = 'cover';
+  el.style.backgroundPosition = 'center';
+  return true;
+}
+
 function revokeCollaborationAssetObjectUrls(){
   Object.keys(collaborationAssetObjectUrls).forEach(function(key){
     try{ URL.revokeObjectURL(collaborationAssetObjectUrls[key]); }catch(e){}
@@ -4326,7 +4406,13 @@ async function loadCollaborationAssets(collaborationId){
         '<div style="font-size:18px;flex-shrink:0;">'+icon+'</div>'+
         '<div style="flex:1;min-width:0;">'+
           '<div style="font-weight:600;font-size:11px;color:#fff;word-break:break-word;">'+safeFileName+'</div>'+
-          '<div style="font-size:9px;color:rgba(255,255,255,.4);margin-top:2px;">'+a.asset_type+' &middot; '+sizeLabel+' &middot; '+uploaderName+' &middot; '+dateLabel+'</div>'+
+          // Phase 21.1 -- asset_type is written by the client (supaInsert
+          // into collaboration_assets), so it is attacker-influencable by a
+          // participant posting directly to the REST endpoint, regardless of
+          // what classifyCollaborationAssetType() produces in the UI. Escaped
+          // for that reason. sizeLabel/dateLabel are numeric/date-formatted,
+          // uploaderName is already escaped above.
+          '<div style="font-size:9px;color:rgba(255,255,255,.4);margin-top:2px;">'+escapeCollaborationHtml(a.asset_type)+' &middot; '+sizeLabel+' &middot; '+uploaderName+' &middot; '+dateLabel+'</div>'+
         '</div>'+
       '</div>'+
       (a.title ? '<div style="font-size:10px;color:rgba(232,184,48,.8);margin-top:6px;font-weight:600;" id="caTitleText-'+a.id+'">'+escapeCollaborationHtml(a.title)+'</div>' : '<div id="caTitleText-'+a.id+'" style="display:none;"></div>')+
