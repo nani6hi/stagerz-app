@@ -11,8 +11,8 @@ Confirmed stable facts only. Anything not established is marked **unknown** rath
 | Project name | STAGERZ |
 | Process | APOS |
 | Role of this project | STAGERZ is the APOS reference implementation |
-| Current APOS phase of record | Phase 20.7 — Codebase Assessment & Roadmap |
-| Current phase status | **Assessment complete.** Analysis-only phase — no application code changed, `index.html` untouched. Output: `analysis/phase-20.7/codebase-assessment.md`. Its recommendations are **proposals awaiting ChatGPT review**; no roadmap decision is recorded by this phase |
+| Current APOS phase of record | Phase 21.1 — Complete Output Escaping |
+| Current phase status | **Implementation and Level 3 validation complete.** 33/33 static invariants · 38/38 adversarial harness · B1–B11 + B13 PASS · B12 N/A · B14 PASS (retargeted to `profiles.location`). Temporary validation redirect fully reverted, verified by SHA-256. Awaiting ChatGPT review and explicit user approval. Not committed, not pushed — `analysis/phase-21.1/validation.md` |
 
 ---
 
@@ -53,7 +53,7 @@ Confirmed stable facts only. Anything not established is marked **unknown** rath
 | Production domain | `stagerz.app` (`CNAME`) |
 | Pull-request previews | **None.** GitHub Pages provides no per-PR preview environment. Pre-merge Level 3 validation runs against a local server on `localhost`; authenticated flows that depend on the Supabase magic-link redirect to `https://stagerz.app` can only be validated after merge and deployment |
 | Production branch | `main` |
-| Current development branch | `phase-20.7-codebase-assessment` |
+| Current development branch | `phase-21.1-complete-output-escaping` (local only — no upstream) |
 
 ---
 
@@ -159,7 +159,40 @@ Phases 20.4, 20.5, and 20.6 exist because Telegram and NACKL runtime code accumu
 | 20.4 | Remove Premature NACKL Integration | Merged to `main` (PR #4) |
 | 20.5 | Evaluate and Isolate Telegram Runtime | Merged to `main` (PR #5) |
 | 20.6 | Remove Telegram Runtime from Full Web App | Merged to `main` (PR #6, `275caf3`) — 69 lines deleted + 1 in-place edit in `index.html`; SDK script, compatibility block, and all 28 `haptic(...)` call sites removed. Deployed to production per product-owner report. *No post-deployment authenticated-validation record exists under `analysis/phase-20.6/`; the outcome is reported, not documented in this repository.* |
-| 20.7 | Codebase Assessment & Roadmap | **Current phase** — analysis only; no application code changed. Full assessment at `analysis/phase-20.7/codebase-assessment.md` |
+| 20.7 | Codebase Assessment & Roadmap | Merged to `main` (PR #7, `6789493`) — analysis only; no application code changed. Full assessment at `analysis/phase-20.7/codebase-assessment.md` |
+| 21.1 | Complete Output Escaping | **Current phase** — implementation complete, static verification passed; Level 3 outstanding. `analysis/phase-21.1/` |
+
+### Phase 21.1 — Complete Output Escaping (implementation)
+
+Closes Phase 20.7 register item **C-1** (Critical) — incomplete output escaping / stored XSS.
+
+**Changed in `index.html`** (119 insertions, 33 deletions):
+
+- **18 HTML-text sinks** now escaped with the existing `escapeCollaborationHtml()`: Wanted feed (`title`, `location`, `compensation`, `category`, `role_needed`), Applicants and participant rows (`display_name`, `username`, `role`, `location`), collaboration titles in My Collaborations and the Workspace header, the linked Wanted title, and `collaboration_assets.asset_type`.
+- **4 `photo_url` CSS-`url()` sinks** removed from generated markup entirely. The URL is no longer interpolated into any inline `style` attribute; it is applied after the node exists via the DOM style API.
+- **Two helpers added:** `safeImageUrl(value)` — parses with the `URL` constructor, accepts only `http:`/`https:`, returns `null` for every rejection, never throws; and `applyAvatarImage(el, photoUrl)` — writes a single CSS property using `JSON.stringify()` for the quoted string.
+
+**Three findings beyond the Phase 20.7 table**, all recorded in `analysis/phase-21.1/phase-definition.md`:
+
+1. **`item.loc` in `renderWanted()`** carries `wanted_posts.location` and was a live stored-XSS vector on non-remote posts. It sits in a mixed-trust expression alongside `item.flag`, a developer-authored HTML entity pair, so only the user-controlled operand is escaped.
+2. **`collaboration_assets.asset_type`** is written by the client via `supaInsert`, so it is attacker-influencable regardless of what the UI computes. Escaped defensively — whether a `CHECK` constraint exists is unknowable from this repository (item C-3).
+3. **The demo datasets store HTML entities** in `wantedData.flag`/`badgeText` and `artistDB.role`. A blanket escape would render them literally. Trusted static presentation constants are explicitly excluded and documented.
+
+**Standing rule established by this phase:** escape values that originate in the database; do not escape developer-authored presentation constants or values already escaped upstream. Within database values, columns the **client** can write are escaped; columns only a **server RPC** writes (e.g. `collaborations.status`) are documented as safe rather than escaped.
+
+**Verification artefacts:** `analysis/phase-21.1/static-check.sh` (33 source invariants, no browser or network needed — **33/33 pass**) and `analysis/phase-21.1/xss-verification.html` (runtime adversarial harness that extracts the helpers from the live `index.html` — **38/38 pass**).
+
+**Level 3 validated in the live app** against `kbnmkyvbwkuvcklywdhk` with a real session. B1–B11 and B13 PASS; B12 **N/A** (no `photo_url` exists in the dataset); **B14 PASS** — a stored `<img src=x onerror=alert(1)>` rendered as inert literal text in a participant meta line, no alert, no HTML parsing. B14 was **retargeted from `display_name` to `profiles.location`** because of the reachability finding below. Full record: `analysis/phase-21.1/validation.md` §6.
+
+**Findings surfaced during validation — none a Phase 21.1 regression, all pre-existing:**
+
+1. **`public_profiles.display_name` does not reflect `profiles.display_name` — CONFIRMED.** All six `innerHTML` display-name sinks read the view; Edit Profile writes the table. Confirmed by querying the active project (`pg_get_viewdef('public.public_profiles')`): the view is sourced from **`public.users`** and resolves `display_name` as `'Deleted User'` for anonymized users → trimmed `first_name` + `last_name` when either exists → `users.username` → `'STAGERZ Artist'`. **It never reads `profiles.display_name`.**
+
+   Consequence: through the UI, no HTML metacharacter can reach that column — the app writes only `users.username`, which `saveProfile()` constrains to `^[a-z0-9_.]+$`, and never writes `first_name`/`last_name`. That lowers the practical severity of six of the eighteen corrected sinks. **Escaping is retained** because both the username restriction and any write protection on `first_name`/`last_name` are **client-side or unrecorded server-side grants** (item C-3) — a direct REST `PATCH` would bypass the client check. This is a **confirmed pre-existing data-model inconsistency, not a Phase 21.1 regression**, and `profiles.display_name` is currently written by the UI and read by nothing. Reconciling the two columns and capturing the `users` grants belongs to backend-contract capture.
+2. **Notification → Applicants routing does not fire.** `wanted.application.created` maps to `navigateToWantedPostApplicants`, but tapping such notifications does not open the view. Pre-existing Phase 13.2 behaviour.
+3. **Applicants reachable only via an unlabeled 8px `<div>`** in Profile → My WANTED. Aligns with item B.9.
+
+**Not addressed, recorded:** no Content-Security-Policy exists; `collaborations.status` remains unescaped by decision; demo-content presentation (item H-2) is untouched.
 
 ### Phase 20.6 prerequisite — RESOLVED
 
@@ -217,4 +250,4 @@ Previously listed as unknown, now established by Phase 20.7 (`analysis/phase-20.
 
 ## Summary
 
-STAGERZ is the APOS reference implementation: a single-page application contained primarily in `index.html`, deployed to GitHub Pages from the `main` branch, with development currently on `phase-20.7-codebase-assessment`. Phases 20.4–20.6 removed NACKL and the Telegram runtime; Phase 20.7 assessed the resulting codebase and proposed a roadmap, changing no application code. ChatGPT owns architecture, governance, reviews, and approval; Claude Code performs analysis and approved implementation; the user is the final authority for source changes and commits. Analysis output lives under `analysis/<phase>/` and governance rules under `.apos/`. Items listed under **Unknown** above are deliberately unrecorded rather than inferred.
+STAGERZ is the APOS reference implementation: a single-page application contained primarily in `index.html`, deployed to GitHub Pages from the `main` branch, with development currently on `phase-21.1-complete-output-escaping`. Phases 20.4–20.6 removed NACKL and the Telegram runtime; Phase 20.7 assessed the resulting codebase and proposed a roadmap, changing no application code; Phase 21.1 is closing the stored-XSS and CSS-injection surfaces that assessment identified. ChatGPT owns architecture, governance, reviews, and approval; Claude Code performs analysis and approved implementation; the user is the final authority for source changes and commits. Analysis output lives under `analysis/<phase>/` and governance rules under `.apos/`. Items listed under **Unknown** above are deliberately unrecorded rather than inferred.

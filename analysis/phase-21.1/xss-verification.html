@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang='en'>
+<head>
+<meta charset='UTF-8'>
+<title>STAGERZ Phase 21.1 - Adversarial Output-Escaping Verification</title>
+<style>
+  body{font-family:ui-monospace,Consolas,monospace;background:#08080f;color:#e8e8ee;margin:0;padding:24px;font-size:13px;}
+  h1{font-size:18px;margin:0 0 4px;}
+  h2{font-size:14px;margin:26px 0 8px;color:#e8b830;border-bottom:1px solid #2a2a3a;padding-bottom:4px;}
+  .sub{color:#8a8a9a;margin-bottom:18px;}
+  table{border-collapse:collapse;width:100%;margin-bottom:8px;}
+  th,td{text-align:left;padding:5px 8px;border-bottom:1px solid #1c1c28;vertical-align:top;}
+  th{color:#8a8a9a;font-weight:600;font-size:11px;text-transform:uppercase;}
+  td{word-break:break-all;font-size:12px;}
+  td.diag{white-space:pre-wrap;line-height:1.5;}
+  .pass{color:#64e68c;font-weight:700;}
+  .fail{color:#ff6464;font-weight:700;}
+  .summary{margin-top:26px;padding:14px;border-radius:8px;font-size:15px;font-weight:700;}
+  .ok{background:rgba(40,200,80,.12);border:1px solid rgba(40,200,80,.4);color:#64e68c;}
+  .bad{background:rgba(255,60,60,.12);border:1px solid rgba(255,60,60,.4);color:#ff6464;}
+  code{color:#e8b830;}
+  #sandbox{display:none;}
+</style>
+</head>
+<body>
+<h1>STAGERZ Phase 21.1 &mdash; Adversarial Output-Escaping Verification</h1>
+<div class='sub'>
+  Loads <code>escapeCollaborationHtml()</code>, <code>safeImageUrl()</code> and
+  <code>applyAvatarImage()</code> <b>directly out of ../../index.html</b> so this
+  page always tests the shipped implementation, never a copy that can drift.
+  No network access is required and no external resource is fetched.
+</div>
+<div id='out'>Loading index.html&hellip;</div>
+<div id='sandbox'></div>
+
+<script>
+var results = [];
+function record(section, name, input, expected, actual, pass){
+  results.push({section:section, name:name, input:input, expected:expected, actual:actual, pass:pass});
+}
+
+// Extracts a top-level function's source from index.html by brace matching,
+// so the harness executes the real code rather than a duplicated copy.
+function extractFunction(src, name){
+  var sig = 'function ' + name + '(';
+  var start = src.indexOf(sig);
+  if(start === -1) throw new Error('Function not found in index.html: ' + name);
+  var i = src.indexOf('{', start);
+  if(i === -1) throw new Error('Malformed function: ' + name);
+  var depth = 0;
+  for(var j = i; j < src.length; j++){
+    if(src[j] === '{') depth++;
+    else if(src[j] === '}'){ depth--; if(depth === 0) return src.slice(start, j + 1); }
+  }
+  throw new Error('Unbalanced braces in: ' + name);
+}
+
+function run(escapeCollaborationHtml, safeImageUrl, applyAvatarImage){
+
+  // ---------------------------------------------------------------
+  // 1. TEXT PAYLOADS -- must become inert visible text.
+  // ---------------------------------------------------------------
+  var textPayloads = [
+    '<img src=x onerror=alert(1)>',
+    '</div><script>alert(1)<\/script>',
+    '"><svg onload=alert(1)>',
+    '\'><iframe srcdoc="<script>alert(1)<\/script>">',
+    'Ada & Bob <friends>',
+    "O'Brien \"quoted\""
+  ];
+
+  textPayloads.forEach(function(payload){
+    var host = document.createElement('div');
+    // Exactly the shape the application uses: escaped value concatenated
+    // into an HTML string that is then assigned to innerHTML.
+    host.innerHTML = '<div class="w-title">' + escapeCollaborationHtml(payload) + '</div>';
+
+    var elementsCreated = host.querySelectorAll('*').length;   // expect 1: the wrapper div only
+    var scripts   = host.querySelectorAll('script').length;
+    var imgs      = host.querySelectorAll('img').length;
+    var svgs      = host.querySelectorAll('svg').length;
+    var iframes   = host.querySelectorAll('iframe').length;
+    var wrapper   = host.firstChild;
+    var roundTrip = wrapper ? wrapper.textContent : null;
+    // No attribute may have been created on the wrapper beyond class="w-title".
+    var attrNames = wrapper ? Array.prototype.map.call(wrapper.attributes, function(a){ return a.name; }).sort().join(',') : '';
+
+    var pass = elementsCreated === 1 && scripts === 0 && imgs === 0 && svgs === 0 &&
+               iframes === 0 && roundTrip === payload && attrNames === 'class';
+
+    record('Text payloads', 'renders as inert text', payload,
+      'no new elements/attributes; textContent === input',
+      'elements=' + elementsCreated + ' script=' + scripts + ' img=' + imgs +
+      ' svg=' + svgs + ' iframe=' + iframes + ' attrs=[' + attrNames + '] roundTrip=' +
+      (roundTrip === payload ? 'exact' : 'MISMATCH'), pass);
+  });
+
+  // ---------------------------------------------------------------
+  // 2. URL PAYLOADS -- prohibited schemes and malformed input rejected.
+  // ---------------------------------------------------------------
+  var rejectUrls = [
+    ['javascript:alert(1)',                          'javascript scheme'],
+    ['data:text/html,<script>alert(1)<\/script>',    'data scheme'],
+    ['blob:https://example.com/fake',                'blob scheme'],
+    ['file:///etc/passwd',                           'file scheme'],
+    ['vbscript:msgbox(1)',                           'vbscript scheme'],
+    ['JaVaScRiPt:alert(1)',                          'case-varied javascript'],
+    ['  javascript:alert(1)  ',                      'whitespace-padded javascript'],
+    ['not a url at all',                             'malformed text'],
+    ['//example.com/x.png',                          'protocol-relative (no base -> malformed)'],
+    ['/relative/path.png',                           'relative path'],
+    ['',                                             'empty string'],
+    ['   ',                                          'whitespace only'],
+    [null,                                           'null'],
+    [undefined,                                      'undefined'],
+    ['http://',                                      'scheme with no host']
+  ];
+
+  rejectUrls.forEach(function(pair){
+    var val = pair[0], label = pair[1];
+    var out;
+    var threw = false;
+    try{ out = safeImageUrl(val); }catch(e){ threw = true; out = 'THREW: ' + e; }
+    var pass = !threw && out === null;
+    record('URL rejection', label, String(val), 'null (and never throws)',
+      threw ? out : JSON.stringify(out), pass);
+  });
+
+  // ---------------------------------------------------------------
+  // 3. VALID URLS -- must remain usable.
+  // ---------------------------------------------------------------
+  var acceptUrls = [
+    ['https://example.com/avatar.png',                    'valid https'],
+    ['http://example.com/avatar.png',                     'valid http'],
+    ['https://cdn.example.com/a/b/c.jpg?v=2&size=big',    'https with query'],
+    ['https://example.com/img%20with%20space.png',        'https percent-encoded']
+  ];
+
+  acceptUrls.forEach(function(pair){
+    var val = pair[0], label = pair[1];
+    var out;
+    var threw = false;
+    try{ out = safeImageUrl(val); }catch(e){ threw = true; out = 'THREW: ' + e; }
+    var pass = !threw && typeof out === 'string' && out.length > 0 &&
+               (out.indexOf('http://') === 0 || out.indexOf('https://') === 0);
+    record('URL acceptance', label, val, 'usable http(s) string', String(out), pass);
+  });
+
+  // ---------------------------------------------------------------
+  // 4. CSS BREAKOUT -- the value must not escape url("...").
+  // ---------------------------------------------------------------
+  var cssPayloads = [
+    'https://example.com/a")};background-image:url("javascript:alert(1)',
+    'https://example.com/a");}body{display:none;}.x{background:url("b',
+    'https://example.com/a\\")x',
+    'https://example.com/a\nb',
+    'https://example.com/a(b)c'
+  ];
+
+  // The security boundary is CSSOM behaviour, not the shape of the string.
+  // A valid http(s) URL may legitimately contain ';', '(', ')' and text that
+  // merely LOOKS like CSS -- what matters is that after assignment the engine
+  // holds exactly one url() token, that its URL is byte-identical to what
+  // safeImageUrl() returned, and that no declaration outside background-*
+  // came into existence.
+  //
+  // Note on property enumeration: setting background-position causes Blink and
+  // WebKit to enumerate the longhands background-position-x / -y. Asserting an
+  // exact three-name allowlist is therefore wrong and engine-specific; the
+  // correct invariant is that every NEWLY ADDED property is in the background
+  // family, which is what actually proves no foreign declaration was injected.
+  function propSet(style){
+    var out = [];
+    for(var k = 0; k < style.length; k++) out.push(style[k]);
+    return out;
+  }
+
+  cssPayloads.forEach(function(payload){
+    var el = document.createElement('div');
+    document.getElementById('sandbox').appendChild(el);
+
+    var expectedUrl = safeImageUrl(payload);          // null => must be rejected
+    var propsBefore = propSet(el.style);
+    var applied = applyAvatarImage(el, payload);
+    var propsAfter = propSet(el.style);
+    var bg = el.style.getPropertyValue('background-image');
+    var cssText = el.style.cssText;
+
+    var added = propsAfter.filter(function(p){ return propsBefore.indexOf(p) === -1; });
+    var foreign = added.filter(function(p){ return p.indexOf('background-') !== 0; });
+
+    // Exactly one url() token, with or without quotes depending on the engine.
+    var m = bg.trim().match(/^url\((?:"([^"]*)"|'([^']*)'|([^()]*))\)$/);
+    var extracted = m ? (m[1] !== undefined ? m[1] : (m[2] !== undefined ? m[2] : m[3])) : null;
+
+    // The URL the engine now holds must be exactly what the validator returned,
+    // and must still be http(s) when re-parsed. Nothing appended, nothing split.
+    var urlIntact = false, reparsedProtocol = 'n/a';
+    if(extracted !== null){
+      urlIntact = (extracted === expectedUrl);
+      try{ reparsedProtocol = new URL(extracted).protocol; }catch(e){ reparsedProtocol = 'UNPARSEABLE'; }
+    }
+    var protocolSafe = (reparsedProtocol === 'http:' || reparsedProtocol === 'https:');
+    var consistent = (applied === (expectedUrl !== null));
+
+    var pass;
+    if(expectedUrl === null){
+      // Rejected outright: nothing may have been written at all.
+      pass = consistent && applied === false && added.length === 0;
+    }else{
+      pass = consistent && foreign.length === 0 && m !== null && urlIntact && protocolSafe;
+    }
+
+    record('CSS breakout', 'cannot escape url("...")', payload,
+      expectedUrl === null
+        ? 'rejected; no CSS property written'
+        : 'one url() token; URL identical to validator output; http(s); no foreign property',
+      'applied=' + applied +
+      '\nsafeImageUrl() = ' + JSON.stringify(expectedUrl) +
+      '\nstyle.backgroundImage = ' + JSON.stringify(bg) +
+      '\nstyle.cssText = ' + JSON.stringify(cssText) +
+      '\nproperties after = [' + propsAfter.join(', ') + ']' +
+      '\nforeign properties = [' + foreign.join(', ') + ']  (must be empty)' +
+      '\nurl() token parsed = ' + JSON.stringify(extracted) +
+      '\nidentical to validator output = ' + urlIntact +
+      '\nre-parsed protocol = ' + reparsedProtocol, pass);
+  });
+
+  // ---------------------------------------------------------------
+  // 5. FALLBACK BEHAVIOUR -- rejected/missing URL leaves the placeholder.
+  // ---------------------------------------------------------------
+  var fallbackCases = [
+    ['javascript:alert(1)', 'rejected scheme'],
+    ['not a url',           'malformed'],
+    [null,                  'missing (null)'],
+    [undefined,             'missing (undefined)'],
+    ['',                    'empty']
+  ];
+
+  fallbackCases.forEach(function(pair){
+    var val = pair[0], label = pair[1];
+    // Reproduces the application shape: placeholder emitted in markup,
+    // then applyAvatarImage() invoked against the created node.
+    var row = document.createElement('div');
+    var hasPhoto = safeImageUrl(val) !== null;
+    var avatarStyle = hasPhoto ? '' : 'background:#1a1228;';
+    var avatarContent = hasPhoto ? '' : '&#128100;';
+    row.innerHTML = '<div class="artist-av" style="' + avatarStyle + '">' + avatarContent + '</div>';
+    var av = row.querySelector('.artist-av');
+
+    // The placeholder markup uses the `background` SHORTHAND, which sets every
+    // background longhand -- so background-image legitimately reads back as
+    // "initial", never "". Requiring "" was an incorrect expectation: it can
+    // never hold for the production markup and says nothing about safety.
+    // The behaviour that actually matters is that a rejected value changes
+    // NOTHING, so the inline style is compared before and after.
+    var cssBefore = av.style.cssText;
+    var propsBefore = propSet(av.style);
+    var applied = applyAvatarImage(av, val);
+    var cssAfter = av.style.cssText;
+    var propsAfter = propSet(av.style);
+
+    var styleUntouched = (cssAfter === cssBefore);
+    var noPropsAdded = propsAfter.length === propsBefore.length;
+    var bgImage = av.style.getPropertyValue('background-image');
+    var noExternalImage = bgImage.indexOf('url(') === -1;   // '', 'initial' and 'none' all fine
+    var hasGlyph = av.textContent.trim() === '\u{1F464}';   // 👤 U+1F464 placeholder retained
+    var pass = applied === false && styleUntouched && noPropsAdded &&
+               noExternalImage && hasGlyph;
+
+    record('Fallback', label, String(val),
+      'returns false; inline style byte-identical; no url() applied; glyph retained',
+      'applied=' + applied +
+      '\nstyle.cssText before = ' + JSON.stringify(cssBefore) +
+      '\nstyle.cssText after  = ' + JSON.stringify(cssAfter) +
+      '\nstyle unchanged = ' + styleUntouched +
+      '\nbackground-image = ' + JSON.stringify(bgImage) + '  (no url() token = ' + noExternalImage + ')' +
+      '\nglyph retained = ' + hasGlyph, pass);
+  });
+
+  // Positive control: a valid URL must actually replace the placeholder.
+  (function(){
+    var row = document.createElement('div');
+    var val = 'https://example.com/avatar.png';
+    var hasPhoto = safeImageUrl(val) !== null;
+    row.innerHTML = '<div class="artist-av" style="' + (hasPhoto ? '' : 'background:#1a1228;') +
+                    '">' + (hasPhoto ? '' : '&#128100;') + '</div>';
+    var av = row.querySelector('.artist-av');
+    var applied = applyAvatarImage(av, val);
+    var pass = applied === true &&
+               av.style.backgroundImage.indexOf('https://example.com/avatar.png') !== -1 &&
+               av.textContent.trim() === '' &&
+               av.style.backgroundSize === 'cover';
+    record('Fallback', 'valid https replaces placeholder (positive control)', val,
+      'image applied; no glyph; cover',
+      'applied=' + applied + ' bgImage=' + av.style.backgroundImage +
+      ' glyph=' + JSON.stringify(av.textContent), pass);
+  })();
+
+  // ---------------------------------------------------------------
+  // 6. NO DOUBLE-ESCAPING -- entity-bearing trusted values are untouched
+  //     only when NOT passed through the escaper, and escaping is stable.
+  // ---------------------------------------------------------------
+  (function(){
+    var trusted = '&#127475;&#127468;';   // wantedData flag -- trusted static markup
+    var host = document.createElement('div');
+    host.innerHTML = '<div>' + trusted + '</div>';
+    var rendersAsFlag = host.textContent.trim() !== trusted;
+    record('Trusted static', 'entity flag renders as glyph when NOT escaped', trusted,
+      'entity decoded (not literal)', 'decoded=' + rendersAsFlag, rendersAsFlag);
+
+    var host2 = document.createElement('div');
+    host2.innerHTML = '<div>' + escapeCollaborationHtml(trusted) + '</div>';
+    var literal = host2.textContent.trim() === trusted;
+    record('Trusted static', 'escaping an entity WOULD render it literally (why flag is excluded)',
+      trusted, 'literal text (demonstrates the hazard)', 'literal=' + literal, literal);
+  })();
+
+  render();
+}
+
+function render(){
+  var sections = [];
+  results.forEach(function(r){ if(sections.indexOf(r.section) === -1) sections.push(r.section); });
+
+  var html = '';
+  sections.forEach(function(sec){
+    var rows = results.filter(function(r){ return r.section === sec; });
+    var secPass = rows.filter(function(r){ return r.pass; }).length;
+    html += '<h2>' + sec + ' &mdash; ' + secPass + '/' + rows.length + ' passed</h2>';
+    html += '<table><tr><th>Result</th><th>Case</th><th>Input</th><th>Expected</th><th>Observed</th></tr>';
+    rows.forEach(function(r){
+      html += '<tr>' +
+        '<td class="' + (r.pass ? 'pass' : 'fail') + '">' + (r.pass ? 'PASS' : 'FAIL') + '</td>' +
+        '<td>' + esc(r.name) + '</td>' +
+        '<td>' + esc(truncate(r.input, 90)) + '</td>' +
+        '<td>' + esc(r.expected) + '</td>' +
+        '<td class="diag">' + esc(truncate(r.actual, 1200)) + '</td>' +
+        '</tr>';
+    });
+    html += '</table>';
+  });
+
+  var total = results.length;
+  var passed = results.filter(function(r){ return r.pass; }).length;
+  var allPass = passed === total;
+  html += '<div class="summary ' + (allPass ? 'ok' : 'bad') + '">' +
+          (allPass ? 'ALL TESTS PASSED' : 'FAILURES PRESENT') +
+          ' &mdash; ' + passed + '/' + total + ' checks passed</div>';
+
+  document.getElementById('out').innerHTML = html;
+  document.title = (allPass ? 'PASS' : 'FAIL') + ' ' + passed + '/' + total +
+                   ' - Phase 21.1 verification';
+  // Machine-readable result for any external runner.
+  window.__PHASE_21_1_RESULT__ = { total: total, passed: passed, allPass: allPass, results: results };
+}
+
+function esc(s){
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+                  .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+function truncate(s, n){ s = String(s); return s.length > n ? s.slice(0,n) + '...' : s; }
+
+fetch('../../index.html')
+  .then(function(r){
+    if(!r.ok) throw new Error('HTTP ' + r.status + ' fetching ../../index.html');
+    return r.text();
+  })
+  .then(function(src){
+    var code = extractFunction(src, 'escapeCollaborationHtml') + '\n' +
+               extractFunction(src, 'safeImageUrl') + '\n' +
+               extractFunction(src, 'applyAvatarImage') + '\n' +
+               'return { e: escapeCollaborationHtml, s: safeImageUrl, a: applyAvatarImage };';
+    var fns = new Function(code)();
+    run(fns.e, fns.s, fns.a);
+  })
+  .catch(function(err){
+    document.getElementById('out').innerHTML =
+      '<div class="summary bad">HARNESS ERROR &mdash; ' + esc(err.message) + '<br><br>' +
+      'Serve the repository over http:// (e.g. VS Code Live Server) and open ' +
+      'analysis/phase-21.1/xss-verification.html. Opening via file:// is blocked ' +
+      'by the browser CORS policy for fetch().</div>';
+    document.title = 'ERROR - Phase 21.1 verification';
+  });
+</script>
+</body>
+</html>
