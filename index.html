@@ -5,7 +5,9 @@
 <meta name='viewport' content='width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no'>
 <meta name='version' content='3.0'>
 <title>STAGERZ</title>
-<script src='https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js'></script>
+<!-- Phase 21.2: the Supabase SDK <script> was here. It moved to <body>,
+     directly above the application script, so the boot screen parses
+     and paints before the SDK download can block anything. -->
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Inter:wght@400;500;600;700&display=swap');
 
@@ -286,6 +288,27 @@ html,body{width:100%;height:100%;background:#08080f;color:#f0f0f5;font-family:'I
 </style>
 </head>
 <body>
+
+<!-- ==========================================
+     STARTUP / BOOT (Phase 21.2)
+     The only screen carrying `active` in the static markup, so the
+     first paint is branded rather than black. goTo() already removes
+     `active` from every .screen, so the first successful navigation
+     clears this screen with no teardown code and no change to goTo().
+     When startup fails, goTo() never runs, this screen simply stays,
+     and showStartupFailure() swaps in the message and the Reload
+     control. It carries exactly one control, and that control calls
+     location.reload(), which never touches supabaseClient.
+========================================== -->
+<div class="screen active" id="screen-boot">
+  <div class="sa" style="display:flex;flex-direction:column;justify-content:center;align-items:center;padding:0 28px;text-align:center;">
+    <div class="logo" style="font-size:32px;letter-spacing:-1px;text-shadow:0 0 30px rgba(232,184,48,.25);">STA<em>G</em>ERZ</div>
+    <div id="bootMessage" style="font-size:10px;color:rgba(255,255,255,.35);margin-top:14px;letter-spacing:.5px;">Starting&hellip;</div>
+    <div id="bootActions" style="display:none;width:100%;max-width:260px;margin-top:22px;">
+      <button class="form-submit" onclick="location.reload()">RELOAD</button>
+    </div>
+  </div>
+</div>
 
 <!-- ==========================================
      AUTH: EMAIL
@@ -957,11 +980,79 @@ html,body{width:100%;height:100%;background:#08080f;color:#f0f0f5;font-family:'I
 <!-- TOAST -->
 <div class="toast" id="toast"></div>
 
+<!-- ==========================================
+     SUPABASE SDK (Phase 21.2)
+     Pinned to an exact version with Subresource Integrity. The
+     floating `@2` specifier it replaces was non-deterministic across
+     users: on 2026-08-05 the jsDelivr resolver reported 2.112.1 while
+     the edge served 2.112.0, and Phase 21.1 validated against 2.111.0
+     the day before. A hash cannot be pinned to content that changes,
+     so the version pin is a prerequisite for the integrity attribute.
+
+     crossorigin='anonymous' is mandatory, not optional: for a
+     cross-origin classic script, SRI is only enforced on a CORS-enabled
+     request, and `integrity` without `crossorigin` makes the browser
+     block the script outright on every load.
+
+     Do NOT add defer or async. The application script below is a
+     classic, non-deferred script that executes during parsing;
+     deferring this one would invert the order and leave `supabase`
+     undeclared at createClient() on every single load.
+
+     SHA-384: 0x8XPoHt08aHZj+RHs8ojmhZ5IDsTLjPgblgWdriayWriqv9dic3Vkv1K2+UqgZV
+     SHA-256: ed01c1c20daec4e06a08dbbf4fdc7d4a613091f7032a408faee2d6df45acad58
+     210,842 bytes. Recomputed from two independent downloads and
+     verified against x-jsd-version on 2026-08-06.
+========================================== -->
+<script src='https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.112.1/dist/umd/supabase.js'
+        integrity='sha384-0x8XPoHt08aHZj+RHs8ojmhZ5IDsTLjPgblgWdriayWriqv9dic3Vkv1K2+UqgZV'
+        crossorigin='anonymous'></script>
+
 <script>
 // --- SUPABASE ---
 var SUPA_URL = 'https://kbnmkyvbwkuvcklywdhk.supabase.co';
 var SUPA_KEY = 'sb_publishable_IEGmrqIhtavD8EtrA9_3NA_zfnU3UIw';
-var supabaseClient = supabase.createClient(SUPA_URL, SUPA_KEY);
+
+// Phase 21.2 -- guarded initialisation. The vendor bundle binds a global
+// `var supabase`, so when the SDK does not load the identifier is not
+// declared at all. `typeof` is therefore the only safe first test: any
+// expression that reads the bare identifier would itself throw, and an
+// uncaught throw here would abort this entire script before a single
+// function below is defined.
+//
+// startupFailure is null on the healthy path. When it is non-null the
+// app never leaves #screen-boot -- checkSessionAndStart() is not called,
+// goTo() is not called, and no control that reaches supabaseClient is
+// ever displayed. That invariant is what keeps the 12 unguarded
+// `supabaseClient.` call sites in this file unreachable while the
+// client is null. Adding any further control to the boot screen
+// requires re-examining it.
+var supabaseClient = null;
+var startupFailure = null;
+
+try{
+  if(typeof supabase === 'undefined' || !supabase || typeof supabase.createClient !== 'function'){
+    startupFailure = 'sdk-unavailable';
+  } else {
+    supabaseClient = supabase.createClient(SUPA_URL, SUPA_KEY);
+  }
+}catch(e){
+  console.error('STAGERZ startup: createClient failed', e);
+  startupFailure = 'client-init-failed';
+}
+
+// Phase 21.2 -- the only path that writes user-visible failure text.
+// One fixed string for every failure code: the caught error, its stack,
+// the SDK URL and the Supabase key are never interpolated into the DOM.
+// Written with textContent, never innerHTML. The code is carried for
+// console diagnostics only.
+function showStartupFailure(code){
+  console.error('STAGERZ startup failed:', code);
+  var msg = document.getElementById('bootMessage');
+  var actions = document.getElementById('bootActions');
+  if(msg) msg.textContent = 'STAGERZ could not start. Please check your connection and reload.';
+  if(actions) actions.style.display = 'block';
+}
 
 // REST helpers now attach the live session's access token when one
 // exists, so RLS-protected reads/writes resolve to the signed-in
@@ -1309,18 +1400,36 @@ async function checkSessionAndStart(){
 // the token in the URL automatically on page load and emits
 // SIGNED_IN), then confirms via getSession() and opens Stage
 // automatically. Also keeps the app in sync on SIGNED_OUT.
-supabaseClient.auth.onAuthStateChange(async function(event, session){
-  if(event === 'SIGNED_IN'){
-    var { data: { session: confirmedSession } } = await supabaseClient.auth.getSession();
-    if(confirmedSession){ enterApp(); }
+// Phase 21.2: guarded -- this is a top-level statement, so anything that
+// throws here aborts the script before the DOMContentLoaded listener
+// below is ever registered.
+//
+// The null check covers a client that was never created. The try/catch
+// covers D-1: a non-null client can still throw on registration if its
+// auth surface is incompatible or partial, and without this the user is
+// stranded on the boot screen with no message and no Reload control.
+// Both failures funnel into the same startupFailure state the other
+// startup guards use, so the init block presents the one fixed message.
+// Callback body unchanged.
+if(supabaseClient){
+  try{
+    supabaseClient.auth.onAuthStateChange(async function(event, session){
+      if(event === 'SIGNED_IN'){
+        var { data: { session: confirmedSession } } = await supabaseClient.auth.getSession();
+        if(confirmedSession){ enterApp(); }
+      }
+      if(event === 'SIGNED_OUT'){
+        unsubscribeFromCollaborationRealtime();
+        var authScreenActive = document.getElementById('screen-authemail').classList.contains('active') ||
+                                document.getElementById('screen-authwait').classList.contains('active');
+        if(!authScreenActive){ goTo('authemail'); }
+      }
+    });
+  }catch(e){
+    console.error('STAGERZ startup: onAuthStateChange registration failed', e);
+    startupFailure = 'client-init-failed';
   }
-  if(event === 'SIGNED_OUT'){
-    unsubscribeFromCollaborationRealtime();
-    var authScreenActive = document.getElementById('screen-authemail').classList.contains('active') ||
-                            document.getElementById('screen-authwait').classList.contains('active');
-    if(!authScreenActive){ goTo('authemail'); }
-  }
-});
+}
 
 
 // --- NAVIGATION ---
@@ -5017,11 +5126,23 @@ function switchBilling(type){
 }
 
 // --- INIT ---
+// Phase 21.2: startupFailure is checked before anything else, so a
+// failed SDK load shows the boot-screen message instead of running
+// application code against a null client. The try/catch covers the
+// synchronous prologue of the calls below; checkSessionAndStart() is
+// async and keeps its own internal catch, which routes a failed
+// getSession() to the auth screen rather than to a blank page.
 document.addEventListener('DOMContentLoaded', function(){
-  buildStageFeed('all');
-  renderArtists();
-  renderWanted(null);
-  checkSessionAndStart();
+  if(startupFailure){ showStartupFailure(startupFailure); return; }
+  try{
+    buildStageFeed('all');
+    renderArtists();
+    renderWanted(null);
+    checkSessionAndStart();
+  }catch(e){
+    console.error('STAGERZ startup: initialisation failed', e);
+    showStartupFailure('init-failed');
+  }
 });
 </script>
 </body>

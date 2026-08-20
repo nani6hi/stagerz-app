@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>STAGERZ Phase 21.2 -- startup failure harness</title>
+<!--
+  Drives the guarded initialiser and showStartupFailure() from the live
+  index.html against synthetic globals. It does NOT reimplement them: the
+  source is fetched and extracted at run time, so the harness cannot drift
+  away from the code it claims to verify.
+
+  This covers the failure modes DevTools request blocking cannot produce:
+  a global of the wrong shape (F4) and a constructor that throws (F5).
+  Blocking the network only ever produces F1/F3.
+
+  This page deliberately does NOT load the Supabase SDK. That is what
+  makes `typeof supabase === 'undefined'` genuinely true for case 2.
+
+  Run from the repository root:
+    python -m http.server 8080
+    open http://localhost:8080/analysis/phase-21.2/startup-failure-harness.html
+-->
+<style>
+  body{font-family:ui-monospace,Menlo,Consolas,monospace;background:#08080f;color:#f0f0f5;padding:24px;line-height:1.55;}
+  h1{font-size:16px;margin-bottom:4px;}
+  .sub{font-size:12px;color:rgba(255,255,255,.45);margin-bottom:18px;}
+  .grp{margin:18px 0 6px;font-size:12px;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.35);}
+  .t{padding:3px 0;font-size:13px;}
+  .p{color:#5fd38d;} .f{color:#ff6b5e;}
+  .d{color:rgba(255,255,255,.4);padding-left:26px;font-size:12px;}
+  #sum{margin-top:22px;padding:12px 14px;border-radius:8px;font-size:14px;font-weight:700;}
+  .okbox{background:rgba(95,211,141,.12);border:1px solid rgba(95,211,141,.4);color:#5fd38d;}
+  .nobox{background:rgba(255,107,94,.12);border:1px solid rgba(255,107,94,.4);color:#ff6b5e;}
+</style>
+</head>
+<body>
+<h1>Phase 21.2 &mdash; startup failure harness</h1>
+<div class="sub">Extracts the guarded initialiser from <code>index.html</code> and drives it against synthetic globals.</div>
+<div id="out"></div>
+<div id="sum"></div>
+
+<script>
+var pass = 0, fail = 0;
+var out = document.getElementById('out');
+
+// Sentinels stand in for SUPA_URL / SUPA_KEY so any leak into user-visible
+// text is unmistakable.
+var SENTINEL_URL = 'https://SENTINEL-URL-MUST-NOT-LEAK.example';
+var SENTINEL_KEY = 'SENTINEL-KEY-MUST-NOT-LEAK-9f3a';
+
+function group(t){ var d=document.createElement('div'); d.className='grp'; d.textContent=t; out.appendChild(d); }
+function rec(okv, name, detail){
+  var d = document.createElement('div');
+  d.className = 't ' + (okv ? 'p' : 'f');
+  d.textContent = (okv ? '  PASS  ' : '  FAIL  ') + name;
+  out.appendChild(d);
+  if(detail){ var e=document.createElement('div'); e.className='d'; e.textContent=detail; out.appendChild(e); }
+  okv ? pass++ : fail++;
+}
+function eq(name, actual, expected){
+  rec(actual === expected, name, actual === expected ? '' : 'expected ' + JSON.stringify(expected) + ', got ' + JSON.stringify(actual));
+}
+
+// A DOM stub that records writes and refuses innerHTML outright, so the
+// "textContent, never innerHTML" rule is enforced at run time rather than
+// only by the static grep.
+function makeDom(opts){
+  opts = opts || {};
+  function node(){
+    var o = { textContent: '', style: { display: 'none' }, _htmlWrites: 0 };
+    Object.defineProperty(o, 'innerHTML', {
+      set: function(){ o._htmlWrites++; throw new Error('innerHTML written on the failure path'); },
+      get: function(){ return ''; }
+    });
+    return o;
+  }
+  var msg = opts.noNodes ? null : node();
+  var actions = opts.noNodes ? null : node();
+  return {
+    msg: msg, actions: actions,
+    doc: { getElementById: function(id){
+      if(id === 'bootMessage') return msg;
+      if(id === 'bootActions') return actions;
+      return null;
+    }}
+  };
+}
+
+// Silence expected console.error noise while still counting the calls.
+function quietConsole(){
+  var calls = [];
+  return { calls: calls, obj: { error: function(){ calls.push([].slice.call(arguments)); }, log: function(){}, warn: function(){} } };
+}
+
+fetch('../../index.html', { cache: 'no-store' })
+  .then(function(r){ if(!r.ok) throw new Error('HTTP ' + r.status); return r.text(); })
+  .then(run)
+  .catch(function(e){
+    rec(false, 'fetch index.html', String(e && e.message));
+    finish();
+  });
+
+function run(src){
+  group('0. Extraction from the live source');
+
+  var start = src.indexOf('var supabaseClient = null;');
+  var fnStart = src.indexOf('function showStartupFailure(code){', start);
+  var fnEnd = fnStart >= 0 ? src.indexOf('\n}', fnStart) : -1;
+  var block = (start >= 0 && fnStart > start && fnEnd > fnStart) ? src.slice(start, fnEnd + 2) : null;
+
+  rec(start >= 0, 'guarded initialiser found in index.html');
+  rec(fnStart > start, 'showStartupFailure() found after the initialiser');
+  rec(!!block, 'contiguous block extracted', block ? block.length + ' chars' : 'extraction failed');
+  if(!block){ return finish(); }
+
+  rec(block.indexOf("typeof supabase === 'undefined'") >= 0, 'block contains the typeof guard');
+  rec(block.indexOf('supabase.createClient') >= 0, 'block contains the createClient call');
+
+  // Build the block in a scope where `supabase` is a parameter (declared),
+  // or absent entirely (genuinely undeclared -- the real F1/F3/F6 case).
+  function build(withGlobal){
+    var params = withGlobal
+      ? ['supabase', 'SUPA_URL', 'SUPA_KEY', 'document', 'console']
+      : ['SUPA_URL', 'SUPA_KEY', 'document', 'console'];
+    var body = block + '\nreturn { supabaseClient: supabaseClient, startupFailure: startupFailure, showStartupFailure: showStartupFailure };';
+    return Function.apply(null, params.concat([body]));
+  }
+
+  function runCase(globalValue, withGlobal, domOpts){
+    var dom = makeDom(domOpts);
+    var con = quietConsole();
+    var fn = build(withGlobal);
+    var args = withGlobal
+      ? [globalValue, SENTINEL_URL, SENTINEL_KEY, dom.doc, con.obj]
+      : [SENTINEL_URL, SENTINEL_KEY, dom.doc, con.obj];
+    var res = fn.apply(null, args);
+    res.dom = dom; res.con = con;
+    return res;
+  }
+
+  // ---------------------------------------------------------------
+  group('1. Healthy path is untouched');
+  var healthyMarker = { auth: {}, storage: {} };
+  var r = runCase({ createClient: function(u, k){ return healthyMarker; } }, true);
+  eq('healthy: startupFailure stays null', r.startupFailure, null);
+  eq('healthy: supabaseClient is the created client', r.supabaseClient, healthyMarker);
+  eq('healthy: no console.error emitted', r.con.calls.length, 0);
+  eq('healthy: boot message untouched', r.dom.msg.textContent, '');
+  eq('healthy: Reload control stays hidden', r.dom.actions.style.display, 'none');
+
+  // ---------------------------------------------------------------
+  group('2. SDK absent -- F1 / F3 / F6 (blocked, 404, SRI mismatch)');
+  r = runCase(null, false);
+  eq('absent: code is sdk-unavailable', r.startupFailure, 'sdk-unavailable');
+  eq('absent: supabaseClient stays null', r.supabaseClient, null);
+  rec(true, 'absent: no ReferenceError escaped the guard');
+
+  group('3. Global exists but is the wrong shape -- F4');
+  r = runCase({}, true);
+  eq('empty object: sdk-unavailable', r.startupFailure, 'sdk-unavailable');
+  r = runCase({ createClient: 'not a function' }, true);
+  eq('createClient is a string: sdk-unavailable', r.startupFailure, 'sdk-unavailable');
+  r = runCase({ createClient: 42 }, true);
+  eq('createClient is a number: sdk-unavailable', r.startupFailure, 'sdk-unavailable');
+  r = runCase(null, true);
+  eq('global is null: sdk-unavailable', r.startupFailure, 'sdk-unavailable');
+  r = runCase(undefined, true);
+  eq('global is undefined: sdk-unavailable', r.startupFailure, 'sdk-unavailable');
+
+  group('4. Constructor throws -- F5');
+  r = runCase({ createClient: function(){ throw new Error('boom ' + SENTINEL_KEY); } }, true);
+  eq('throwing createClient: client-init-failed', r.startupFailure, 'client-init-failed');
+  eq('throwing createClient: supabaseClient stays null', r.supabaseClient, null);
+  eq('throwing createClient: diagnostics go to console', r.con.calls.length, 1);
+
+  r = runCase({ createClient: function(){ throw 'a bare string, not an Error'; } }, true);
+  eq('non-Error throw: client-init-failed', r.startupFailure, 'client-init-failed');
+
+  // ---------------------------------------------------------------
+  group('5. Failure text is fixed, and leaks nothing (Q-6 / Q-7)');
+  var texts = [];
+  ['sdk-unavailable', 'client-init-failed', 'init-failed', 'a-code-that-does-not-exist'].forEach(function(code){
+    var c = runCase({}, true);
+    c.showStartupFailure(code);
+    texts.push(c.dom.msg.textContent);
+    rec(c.dom.msg.textContent.length > 0, 'code "' + code + '" renders a message', c.dom.msg.textContent);
+    eq('code "' + code + '": Reload control revealed', c.dom.actions.style.display, 'block');
+    eq('code "' + code + '": innerHTML never written', c.dom.msg._htmlWrites, 0);
+  });
+  var allSame = texts.every(function(t){ return t === texts[0]; });
+  rec(allSame, 'Q-7: one fixed message for every failure code', texts[0]);
+
+  var forbidden = [SENTINEL_URL, SENTINEL_KEY, 'SENTINEL', 'jsdelivr', 'supabase', 'Error', 'boom', 'undefined', 'null', 'stack', 'at Object'];
+  forbidden.forEach(function(needle){
+    var leaked = texts.some(function(t){ return t.indexOf(needle) >= 0; });
+    rec(!leaked, 'failure text never contains "' + needle + '"');
+  });
+
+  // The code itself must not reach the DOM either.
+  var c2 = runCase({}, true);
+  c2.showStartupFailure('sdk-unavailable');
+  rec(c2.dom.msg.textContent.indexOf('sdk-unavailable') < 0, 'the machine code is not shown to the user', c2.dom.msg.textContent);
+
+  group('6. Defensive behaviour when the boot nodes are missing');
+  var threw = false;
+  try{
+    var c3 = runCase({}, true, { noNodes: true });
+    c3.showStartupFailure('sdk-unavailable');
+  }catch(e){ threw = true; }
+  rec(!threw, 'showStartupFailure() survives absent boot nodes');
+
+  finish();
+}
+
+function finish(){
+  var s = document.getElementById('sum');
+  s.className = fail === 0 ? 'okbox' : 'nobox';
+  s.textContent = 'RESULT: ' + pass + ' passed, ' + fail + ' failed'
+    + (fail === 0 ? '  — ALL STARTUP GUARDS HOLD' : '  — STARTUP GUARDS VIOLATED');
+}
+</script>
+</body>
+</html>
