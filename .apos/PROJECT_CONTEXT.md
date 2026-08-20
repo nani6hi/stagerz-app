@@ -11,8 +11,8 @@ Confirmed stable facts only. Anything not established is marked **unknown** rath
 | Project name | STAGERZ |
 | Process | APOS |
 | Role of this project | STAGERZ is the APOS reference implementation |
-| Current APOS phase of record | Phase 21.1 — Complete Output Escaping |
-| Current phase status | **Implementation and Level 3 validation complete.** 33/33 static invariants · 38/38 adversarial harness · B1–B11 + B13 PASS · B12 N/A · B14 PASS (retargeted to `profiles.location`). Temporary validation redirect fully reverted, verified by SHA-256. Awaiting ChatGPT review and explicit user approval. Not committed, not pushed — `analysis/phase-21.1/validation.md` |
+| Current APOS phase of record | Phase 21.2 — Startup Resilience and Dependency Pinning |
+| Current phase status | **Approved, implemented, and PRE-MERGE LEVEL 3 VALIDATION COMPLETE; no open defects.** Decisions approved 2026-08-06; `index.html` modified (138 insertions, 17 deletions), including the approved **D-1 fix**. **57/57 static invariants, 42/42 headless guard assertions, 48/48 in-browser harness assertions, 12/12 browser tests (Edge 151), 7/7 authenticated regressions against a real magic-link session on the live project — risk R1 closed for 11 of the 12 `supabaseClient` call sites.** Outstanding only: production **P-1…P-7** (require deployment) and `storage.remove` (4836), an error-cleanup path deliberately not manufactured. Output: `analysis/phase-21.2/{phase-definition,validation}.md`, `static-check.sh`, `startup-failure-harness.html`. **Awaiting approval to commit.** Not committed, not pushed |
 
 ---
 
@@ -53,7 +53,7 @@ Confirmed stable facts only. Anything not established is marked **unknown** rath
 | Production domain | `stagerz.app` (`CNAME`) |
 | Pull-request previews | **None.** GitHub Pages provides no per-PR preview environment. Pre-merge Level 3 validation runs against a local server on `localhost`; authenticated flows that depend on the Supabase magic-link redirect to `https://stagerz.app` can only be validated after merge and deployment |
 | Production branch | `main` |
-| Current development branch | `phase-21.1-complete-output-escaping` (local only — no upstream) |
+| Current development branch | `phase-21.2-startup-resilience` (local only — no upstream) |
 
 ---
 
@@ -160,7 +160,8 @@ Phases 20.4, 20.5, and 20.6 exist because Telegram and NACKL runtime code accumu
 | 20.5 | Evaluate and Isolate Telegram Runtime | Merged to `main` (PR #5) |
 | 20.6 | Remove Telegram Runtime from Full Web App | Merged to `main` (PR #6, `275caf3`) — 69 lines deleted + 1 in-place edit in `index.html`; SDK script, compatibility block, and all 28 `haptic(...)` call sites removed. Deployed to production per product-owner report. *No post-deployment authenticated-validation record exists under `analysis/phase-20.6/`; the outcome is reported, not documented in this repository.* |
 | 20.7 | Codebase Assessment & Roadmap | Merged to `main` (PR #7, `6789493`) — analysis only; no application code changed. Full assessment at `analysis/phase-20.7/codebase-assessment.md` |
-| 21.1 | Complete Output Escaping | **Current phase** — implementation complete, static verification passed; Level 3 outstanding. `analysis/phase-21.1/` |
+| 21.1 | Complete Output Escaping | Merged to `main` (PR #8, `780d6f9`) — 18 HTML-text sinks escaped, 4 `photo_url` CSS-`url()` sinks removed from markup, 2 helpers added. Level 3 validated: 33/33 static invariants, 38/38 adversarial harness, B1–B11 + B13 PASS, B12 N/A, B14 PASS. `analysis/phase-21.1/` |
+| 21.2 | Startup Resilience & Dependency Pinning | **Current phase** — approved and implemented on branch `phase-21.2-startup-resilience`; not committed. SDK pinned to 2.112.1 with SRI, boot screen added, three top-level statements guarded. **Pre-merge Level 3 complete** (57/57 static, 42/42 headless, 48/48 harness, **12/12 browser**, **7/7 authenticated**). Defect **D-1 found, approved and fixed**. Outstanding: production P-checks only. `analysis/phase-21.2/` |
 
 ### Phase 21.1 — Complete Output Escaping (implementation)
 
@@ -193,6 +194,59 @@ Closes Phase 20.7 register item **C-1** (Critical) — incomplete output escapin
 3. **Applicants reachable only via an unlabeled 8px `<div>`** in Profile → My WANTED. Aligns with item B.9.
 
 **Not addressed, recorded:** no Content-Security-Policy exists; `collaborations.status` remains unescaped by decision; demo-content presentation (item H-2) is untouched.
+
+### Phase 21.2 — Startup Resilience and Dependency Pinning (implementation)
+
+Addresses Phase 20.7 register item **C-2** (Critical) — unpinned CDN dependency with no failure path — plus **M-12** (cold-start blank screen) and risk **R-2**.
+
+**Approved 2026-08-06 and implemented.** `index.html` modified: 138 insertions, 17 deletions across five edits plus the approved D-1 fix. Applied in the binding order — boot screen first, guards second, pin and hash last — so a wrong hash could only have surfaced as a readable failure screen, never as the blank page the phase exists to remove. **Not committed, not pushed.**
+
+**Startup path established (at `780d6f9`).** The inline script contains exactly **three** top-level executable statements — `supabase.createClient()` at `index.html:964`, `onAuthStateChange` at 1312, and the `DOMContentLoaded` registration at 5020. **None is guarded.** The vendor UMD bundle binds `var supabase`, so a CDN failure leaves the identifier undeclared and line 964 raises a `ReferenceError` that aborts the single ~4,000-line script before any function is defined. **Zero** of the 20 `.screen` elements carry `active` in the static markup, `.screen{display:none}` is the default (line 17), and the first `active` is added by `goTo()` (1331) — which never runs. Confirmed outcome: a permanently black page, no message, no recovery. No `try/catch`, no `onerror`, and no global error handler exists anywhere on the startup path.
+
+**Measured finding — the dependency is non-deterministic across users, not merely unpinned.** Measured 2026-08-05:
+
+| Source | Version |
+|---|---|
+| jsDelivr resolver API for `@2` | 2.112.1 |
+| npm `latest` | 2.112.1 |
+| **Bytes actually served by the `@2` URL** (Frankfurt edge, `x-cache: HIT`, `age: 34115`) | **2.112.0** |
+| Bundle observed during Phase 21.1 validation, 2026-08-04 | **2.111.0** |
+
+Three versions inside two days, **two live simultaneously**, and the version served depends on edge-cache state rather than on the URL. Two consequences: Subresource Integrity is **impossible** on the floating URL by construction, and the Phase 20.7 instruction *"pin to the version currently resolved in production"* is **unsatisfiable as written** — recorded as open question **Q-1**.
+
+**Implemented:** the SDK is pinned to **2.112.1** with SHA-384 `integrity` and the mandatory `crossorigin='anonymous'`, and **moved out of `<head>`** to sit after the boot markup and immediately above the application script — with neither `defer` nor `async`, which would invert execution order and break `createClient()` on every load. A 21st `.screen` (`#screen-boot`) carries `active` in the static markup and is deactivated automatically by the existing `goTo()`, which is **byte-identical to base**. `createClient()` is guarded behind a `typeof` check and a `try/catch` setting an explicit `startupFailure` code; the `onAuthStateChange` registration and the `DOMContentLoaded` body are guarded. **One** fixed message is written via `textContent` with a single **Reload** control. Retry-initialization was evaluated and **rejected** — a script that never loaded leaves a global that will never appear.
+
+**Hash recomputed at implementation time (Q-2), not copied:** SHA-384 `0x8XPoHt08aHZj+RHs8ojmhZ5IDsTLjPgblgWdriayWriqv9dic3Vkv1K2+UqgZV`, SHA-256 `ed01c1c20daec4e06a08dbbf4fdc7d4a613091f7032a408faee2d6df45acad58`, 210,842 bytes, verified from two byte-identical independent downloads and confirmed by both the embedded `supabase-js/2.112.1` constant and the `x-jsd-version: 2.112.1` header.
+
+**Failure coverage: 8 of the 11 enumerated paths fully closed** (F1, F3, F4, F5, F6, F7, F8, F11), each confirmed in a browser. **F2, F9 and F10 are reduced from a permanently black page to a branded "Starting…" splash but are not closed** — the accepted consequence of **Q-4 excluding the watchdog**. That is now the phase's only residual startup gap.
+
+**DEFECT D-1 — found by browser validation, approved, FIXED, re-verified.** `if(supabaseClient){…}` guarded only against a *null* client. If the client was created successfully but `supabaseClient.auth.onAuthStateChange(…)` **threw** — the shape an incompatible or partial SDK build produces — the uncaught `TypeError` aborted the rest of the inline script, the `DOMContentLoaded` listener was never registered, and the user was stranded on `#screen-boot` showing "Starting…" with no message and no Reload control. It was **reported rather than improvised**, because the implemented code matched approved design §6.4 exactly and the fix changes an approved decision (`.apos/WORKFLOW.md` stop-and-report rule). **Approved as in-scope and fixed with six lines:** the registration call alone is wrapped in a `try/catch` that logs to the console and sets `startupFailure = 'client-init-failed'` — the code the `createClient`-throws path already uses. No new failure code, no new message, no new DOM node, no watchdog, no retry, no change to the callback body or normal-path auth. Re-verified in the same simulation that exposed it: `startupFailure='client-init-failed'`, fixed message shown, Reload visible, **zero uncaught errors**, and the screen renders identically to every other failure state (4.60 % non-background pixels, versus 0.87 % when stuck). New static invariant **S-23b** prevents a silent regression.
+
+**Invariant change recorded by D-1:** `supabaseClient` can now be non-null while `startupFailure` is set. The rule "a failed startup never leaves the boot screen" is therefore carried by `startupFailure` alone, not by the client being null.
+
+**Validation status.** `analysis/phase-21.2/static-check.sh` — **57/57 pass**, including byte-identical comparison of `goTo()`, `checkSessionAndStart()`, `enterApp()` and the `onAuthStateChange` callback body against `780d6f9`, plus machine-checked assertions that the excluded scope (watchdog, `window.onerror`, CSP, service worker) was not crossed. Headless guard suite against code extracted from the live source — **42/42 pass**. In-browser harness — **48/48 pass**.
+
+**Browser validation executed 2026-08-06 in Microsoft Edge (Chromium) 151.0.4129.59**, headless, against a local `System.Net.HttpListener` server (no Node or Python is available on this machine), and **fully re-run after the D-1 fix**. **B-1, B-3, B-4, B-5, B-6, B-8, B-9, B-10, B-11, B-12 PASS; B-2 partial** (session branch reached `screen-stage` via a stubbed client, not a real session); **B-7 not runnable**. Blocked-CDN and normal-load cases ran against the **unmodified working-tree `index.html`** using `--host-resolver-rules`; everything needing modified source used scratchpad copies, and `git diff --numstat index.html` stayed `127 18` throughout. **No tested failure state produced a black screen**, and a scan of all 19 captured DOM dumps found **zero** leaked secrets, URLs, error messages, stacks or machine codes — including a case where the thrown `Error` deliberately carried the publishable key and project URL. A navigation sweep activated **20/20** screens with **0** uncaught errors.
+
+**M-12 / F11 closed, measured.** First Contentful Paint against an 8-second-delayed SDK: **224 ms** with the shipped layout versus **8,064 ms** with the SDK returned to `<head>`. The Q-3 script-position change moves first paint ahead of the SDK download by 7.8 seconds.
+
+**Authenticated regression N-1…N-7 executed 2026-08-17 — all seven PASS**, against a genuine magic-link session on the live project `kbnmkyvbwkuvcklywdhk`, driven manually by the product owner and recorded only from observed output. Coverage: sign-in, session restore across both reload types, sign-out, authenticated REST read and write, Storage upload with a **byte-identical** download round-trip plus inline preview, realtime `postgres_changes` delivered to a second tab in 1–2 s, presence, and clean channel teardown. Phase 21.1 escaping re-confirmed at the real `innerHTML` sink — a stored `<img src=x onerror=alert(1)>` rendered as inert text, zero `img` nodes in the participant list. **No behavioural difference from the 2.111.0 baseline was found, so risk R1 is closed for 11 of the 12 `supabaseClient` call sites.** The twelfth, `storage.remove` (index.html:4836), is an error-cleanup path that runs only when a metadata insert fails after a successful upload; it was not manufactured and is recorded as uncovered.
+
+**Constraint discovered, relevant to all future local authenticated testing:** `emailRedirectTo` is hardcoded to `https://stagerz.app` (index.html:1329), so a magic link returns to production, not to a local build. Changing it is a source edit and allow-listing localhost is a backend change — both out of scope. Resolved instead with a `curl` hand-off that reads the tokens from the `302 Location` fragment of Supabase's verify endpoint and launches the local build in one motion (~600 ms), staying inside the token lifetime.
+
+**Environmental finding, not a regression:** auth-js probes `localStorage` with a write test and, on failure, **silently** falls back to in-memory storage. An Edge profile that denies `localStorage` therefore signs in successfully but loses the session on every reload, with no error. Identical behaviour in 2.111.0. Re-run in a dedicated default-settings profile, session restore passed. **Product observation for a future phase:** any STAGERZ user who blocks site data silently cannot stay signed in, and the app neither detects nor explains it.
+
+**B-7 PASS (2026-08-19) — the final pre-merge item.** With a real session live, the SDK request was failed on demand and then restored **without restarting the browser**, so the page's own RELOAD control remained the thing under test. This Edge build has no DevTools "Network request blocking" panel, so the failure was induced with a local HTTP **CONNECT proxy** (`scratchpad/proxy.ps1`) that Edge routes through, with localhost bypassed and QUIC disabled. It is a raw byte relay, so TLS stayed end-to-end and **SRI still validated** — verified before use: in `allow` mode the relayed bytes hashed to the pinned SHA-384 exactly; in `block` mode only `*jsdelivr*` got 502 while Google Fonts still returned 200. Observed: during the failure the session key remained in `localStorage` while `supabaseClient` was `null` and `startupFailure` was `sdk-unavailable`, the fixed message and Reload were shown, the leak scan was CLEAN, and there was no black screen; after unblocking, the page's RELOAD control returned the user to **Stage** with the nav bar and **no re-login**. No source was modified — `index.html` was served unchanged from the working tree throughout.
+
+**PRE-MERGE LEVEL 3 IS COMPLETE:** 57/57 static invariants, 42/42 headless guard assertions, 48/48 in-browser harness assertions, **12/12 browser tests**, **7/7 authenticated regressions**. The only remaining validation is production **P-1…P-7**, which cannot run before deployment. Full record: `analysis/phase-21.2/validation.md`.
+
+**Per `.apos/WORKFLOW.md`, a commit now requires explicit user approval; pushing is a separate approval, and a push to `main` is a production release.**
+
+**Counting artefact, Phase 20.5 precedent, recorded to prevent a false alarm:** the comments this phase added mention identifiers, so raw greps now over-count. `crossorigin='anonymous'` appears **2** times (1 attribute + 1 comment) and `supabaseClient.` appears **14** times (**12 executable call sites** + 2 comment mentions). **The executable counts are unchanged from base.** `static-check.sh` matches the executable forms only.
+
+**Standing rule established by this phase:** validation must not edit the repository working tree. SDK failure is simulated by **DevTools request blocking**; any test needing modified source operates on a copy held outside the repository. This deliberately avoids the temporary-source-edit hazard that Phase 21.1 had to contain with a `pre-commit` marker hook and SHA-256 verification.
+
+**Q-5 remains open:** pinning converts silent drift into a standing maintenance obligation this repository has no process for — no lockfile, no CI, no dependency-update process. The pin will silently age.
 
 ### Phase 20.6 prerequisite — RESOLVED
 
@@ -243,11 +297,11 @@ The following are **not** established and must not be assumed:
 
 Previously listed as unknown, now established by Phase 20.7 (`analysis/phase-20.7/codebase-assessment.md`):
 
-- **Runtime dependencies and third-party integrations.** Exactly one runtime dependency: `@supabase/supabase-js@2`, loaded from jsDelivr at `index.html:8` (unpinned within v2, no SRI). Plus Google Fonts via a CSS `@import`. No other third-party code.
+- **Runtime dependencies and third-party integrations.** Exactly one runtime dependency: `@supabase/supabase-js@2`, loaded from jsDelivr at `index.html:8` (unpinned within v2, no SRI, no `crossorigin`, render-blocking, no failure path). Plus Google Fonts via a CSS `@import`. No other third-party code. **Refined by Phase 21.2 (measured 2026-08-05):** the floating `@2` URL was not merely unpinned but **non-deterministic across users** — the resolver reported 2.112.1 while the Frankfurt edge served 2.112.0, and Phase 21.1 validated against 2.111.0 the day before. The version a user received depended on edge-cache state, so SRI was impossible on that URL as written. **Resolved by Phase 21.2 (implemented, not yet merged):** the dependency is now pinned to exactly **2.112.1** with SHA-384 Subresource Integrity and `crossorigin='anonymous'`, loaded from `<body>` above the application script rather than from `<head>`.
 - **Backend services.** One Supabase project providing PostgREST, Auth (email magic link), Realtime (`postgres_changes` + presence), and Storage (bucket `collaboration-assets`).
 
 ---
 
 ## Summary
 
-STAGERZ is the APOS reference implementation: a single-page application contained primarily in `index.html`, deployed to GitHub Pages from the `main` branch, with development currently on `phase-21.1-complete-output-escaping`. Phases 20.4–20.6 removed NACKL and the Telegram runtime; Phase 20.7 assessed the resulting codebase and proposed a roadmap, changing no application code; Phase 21.1 is closing the stored-XSS and CSS-injection surfaces that assessment identified. ChatGPT owns architecture, governance, reviews, and approval; Claude Code performs analysis and approved implementation; the user is the final authority for source changes and commits. Analysis output lives under `analysis/<phase>/` and governance rules under `.apos/`. Items listed under **Unknown** above are deliberately unrecorded rather than inferred.
+STAGERZ is the APOS reference implementation: a single-page application contained primarily in `index.html`, deployed to GitHub Pages from the `main` branch, with development currently on `phase-21.2-startup-resilience`. Phases 20.4–20.6 removed NACKL and the Telegram runtime; Phase 20.7 assessed the resulting codebase and proposed a roadmap, changing no application code; Phase 21.1 closed the stored-XSS and CSS-injection surfaces that assessment identified and merged in Pull Request #8; Phase 21.2 has pinned the CDN dependency to an integrity-checked 2.112.1 and removed the permanently-blank-page startup failure — implemented, and **pre-merge Level 3 validation is complete** — defect D-1 found and fixed, 12/12 browser tests and 7/7 authenticated regressions against a real session — but **not yet committed**, with only the production P-checks still outstanding. ChatGPT owns architecture, governance, reviews, and approval; Claude Code performs analysis and approved implementation; the user is the final authority for source changes and commits. Analysis output lives under `analysis/<phase>/` and governance rules under `.apos/`. Items listed under **Unknown** above are deliberately unrecorded rather than inferred.
