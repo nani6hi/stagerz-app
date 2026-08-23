@@ -1,13 +1,15 @@
 # Phase 21.2 — Validation Record
 
-**Branch:** `phase-21.2-startup-resilience`
+**Branch:** `phase-21.2-startup-resilience` (merged; retained)
 **Base commit:** `780d6f92263d51874d660fff53801899f4fff2de`
+**Phase commit:** `5a8d253095885a39b218cdf4dae505638e7a8220`
+**Merge commit:** **`968b501c768a4bac9f4d070c6b3ad6cbe7fb6263`** (PR #9 → `main`, "Create a merge commit")
 **Validation level:** 3 (behaviour change in `index.html`, per `.apos/VALIDATION_STANDARD.md` §2)
-**Status:** Implementation complete, including the approved **D-1 fix**. Static, headless, browser and authenticated-regression validation **all executed and passing**. **B-1…B-12: 12/12 PASS. N-1…N-7: 7/7 PASS against a real magic-link session. D-1 found, approved, fixed and re-verified. Risk R1 closed for 11 of the 12 `supabaseClient` call sites.**
+**Status:** Implementation complete, including the approved **D-1 fix**. Static, headless, browser, authenticated-regression **and production** validation all executed and passing. **B-1…B-12: 12/12 PASS. N-1…N-7: 7/7 PASS against a real magic-link session. P-1…P-7: 7/7 PASS on `stagerz.app`, 5/5 applicable on the Netlify surface. D-1 found, approved, fixed and re-verified. Risk R1 closed for 11 of the 12 `supabaseClient` call sites.**
 
-> **PRE-MERGE LEVEL 3 IS COMPLETE.** The only outstanding items are production **P-1…P-7**, which cannot run before deployment, and `storage.remove` ([4836](../../index.html#L4836)), an error-cleanup path deliberately not manufactured.
+> **LEVEL 3 IS COMPLETE, PRE-MERGE AND POST-MERGE.** Remaining known gaps are recorded in §9 and none of them block: `storage.remove` ([4836](../../index.html#L4836)) is an error-cleanup path deliberately not manufactured, and F2/F9/F10 stay reduced-not-closed by the approved Q-4 decision.
 
-**The only source change beyond the approved implementation is the approved D-1 fix (§8.4). No source was changed during any validation run.** Not committed. Not pushed.
+**The only source change beyond the approved implementation is the approved D-1 fix (§8.4). No source was changed during any validation run, and none was changed after merge.**
 
 ---
 
@@ -499,19 +501,59 @@ Because the block is toggled outside the browser, the session, the profile and t
 
 One practical detail worth recording: the SDK is served `Cache-Control: immutable, max-age=31536000`, so **DevTools → Network → Disable cache** must be ticked or the browser serves it from cache and the block never bites.
 
-### 8.9 Production post-merge checks — NOT RUN
+### 8.9 Production post-merge checks — EXECUTED 2026-08-21
 
-No PR preview environment exists, so these run against `https://stagerz.app` after deployment.
+Merged to `main` as merge commit **`968b501`** (PR #9, "Create a merge commit" — the method the rollback in §9.7 of the phase definition depends on, since `git revert -m 1` requires two parents).
 
-| # | Check |
-|---|---|
-| P-1 | View source: pinned URL, `integrity`, `crossorigin` present; SDK tag in `<body>`, not `<head>` |
-| P-2 | Network: SDK returns 200 with `x-jsd-version: 2.112.1`, not blocked by an integrity error |
-| P-3 | Console free of `Failed to find a valid digest in the 'integrity' attribute` |
-| P-4 | Cold load in a fresh profile reaches the auth screen |
-| P-5 | Signed-in load reaches Stage; boot screen clears |
-| P-6 | One full magic-link sign-in against production |
-| P-7 | Second browser or PoP serves the same version — the §4.2 drift no longer occurs |
+**Two production surfaces were verified, not one.** The deployment model recorded before this phase was incomplete; see §8.10.
+
+| # | Check | `stagerz.app` (GitHub Pages) | Netlify production |
+|---|---|---|---|
+| **P-1** | Pinned URL, `integrity`, `crossorigin` present; SDK tag in `<body>`, not `<head>` | **PASS** | **PASS** |
+| **P-2** | SDK returns 200 with `x-jsd-version: 2.112.1`, not blocked by an integrity error | **PASS** | **PASS** |
+| **P-3** | Console free of `Failed to find a valid digest in the 'integrity' attribute` | **PASS** | **PASS** |
+| **P-4** | Cold load in a fresh profile reaches the auth screen | **PASS** | **PASS** |
+| **P-5** | Signed-in load reaches Stage; boot screen clears | **PASS** | **n/a natively** |
+| **P-6** | One full magic-link sign-in against production | **PASS** | **n/a natively** |
+| **P-7** | Second PoP serves the same version — the §4.2 drift no longer occurs | **PASS** | **PASS** |
+
+**7/7 on the primary surface; 5/5 of the applicable checks on Netlify.** P-5 and P-6 are **not natively runnable on Netlify** because `emailRedirectTo` is hardcoded to `https://stagerz.app` ([index.html:1329](../../index.html#L1329)), so a magic link always returns to the GitHub Pages surface. They were not forced through the fragment hand-off there; Netlify carries no custom domain and is the secondary surface.
+
+**Artifact identity.** Both surfaces serve HTML **byte-identical to the merged commit blob** (LF-normalised SHA-256 match). The Netlify deploy-preview badge documented in §8.8 is preview-only and is **absent** from the production deploy.
+
+**P-1 detail, identical on both surfaces:** pinned URL ×1, `integrity` ×1, `crossorigin` ×1, `class="screen active" id="screen-boot"` ×1, both `typeof` guards, `showStartupFailure` ×1, D-1 handler ×1, floating `@2` = **0**, `defer`/`async` = **0**, SDK tag at line 1007 against `</head>` at line 289 — correctly in `<body>`.
+
+**P-2 detail:** HTTP 200, 210,842 bytes, `x-jsd-version: 2.112.1`, embedded constant `supabase-js/2.112.1`, and a live SHA-384 equal to the deployed `integrity` attribute. Served from a **warm** edge (`X-Cache: HIT`, `Age: 420231`) and still correct — precisely the condition under which the floating `@2` previously served a stale 2.112.0.
+
+**P-3 / P-4 detail:** on both surfaces `screen-authemail` active, `bootMessage` still `Starting…` (so `showStartupFailure()` never ran), Reload hidden. Zero occurrences of `integrity`, `digest`, `Subresource`, `Refused to`, `ERR_`, `SecurityError`, `Uncaught`, `ReferenceError`, `TypeError`. The only console line on either surface originates from a browser extension, not the application.
+
+**P-5 / P-6 detail:** the magic link was clicked normally — no hand-off needed, because on production `emailRedirectTo` matches the actual origin. It landed on **Stage** with the nav bar present and no console errors (**P-6**). A subsequent `F5` returned to **Stage** with no re-login (**P-5**), confirmed by `localStorage writable: true`, `session key present: true`, `storage in use: localStorage`, `active screen: screen-stage`.
+
+**P-7 detail — the drift test, and the clearest evidence the phase achieved its objective:**
+
+```
+104.17.208.5   HTTP 200  x-jsd-version=2.112.1  x-cache=HIT  age=1335700  210842 bytes  SHA-384 MATCH
+104.17.207.5   HTTP 200  x-jsd-version=2.112.1  x-cache=HIT  age=1335700  210842 bytes  SHA-384 MATCH
+```
+
+Two independent warm edges, byte-identical 2.112.1. §4.2 measured the floating `@2` serving **2.112.0 from a warm edge while the resolver reported 2.112.1**; that non-determinism no longer reproduces.
+
+*Caveat carried forward from §9: browser coverage is Edge-only, and the automated portions ran headless.*
+
+### 8.10 Deployment model — corrected by direct observation
+
+The deployment facts recorded before this phase were incomplete. Corrected here to what was **actually verified**, and nothing beyond it:
+
+| Surface | Server header | Serves |
+|---|---|---|
+| `https://stagerz.app` | `Server: GitHub.com` | `main`, via GitHub Pages |
+| `https://aquamarine-puppy-beccd9.netlify.app` | `Server: Netlify` | `main`, via Netlify |
+
+Both were observed serving `main` **before** the merge (pre-fix content, floating `@2`, no boot screen, both byte-identical to `780d6f9`) and **after** the merge (both byte-identical to the merged blob). **Merging to `main` therefore publishes to two production surfaces.**
+
+**Netlify PR deploy previews exist.** PR #9 had one at `https://deploy-preview-9--aquamarine-puppy-beccd9.netlify.app`, reported through the commit status `netlify/aquamarine-puppy-beccd9/deploy-preview` (state `success`) plus three `neutral` Netlify check runs. This directly contradicts the earlier record that no per-PR preview environment exists. Preview-equivalents of P-1…P-4 were run against it successfully before merge.
+
+**Not established, and deliberately not assumed:** whether the Netlify site is intended to be user-facing, who owns its configuration, and whether it is reachable under any other domain. No Netlify configuration was inspected beyond public HTTP responses and read-only GitHub API calls, and none was changed. There is no `netlify.toml` in the repository — Netlify is configured outside it.
 
 ---
 
@@ -527,7 +569,9 @@ No PR preview environment exists, so these run against `https://stagerz.app` aft
 8. **A user who blocks site data cannot stay signed in, silently** (§8.7.5). Pre-existing, unrelated to the pin, but surfaced by this campaign and worth a product decision.
 9. **Browser testing used Edge, not Chrome or Firefox.** Edge is Chromium, so Chrome behaviour should match closely; Firefox and Safari have independent SRI and script-ordering implementations and were **not** tested.
 10. **Headless is not identical to headed.** Paint timing, in particular, was measured headless; the ordering conclusion (paint at 224 ms vs 8,064 ms) is far too large a margin to be an artefact, but the absolute numbers are not user-facing measurements.
-11. **`.apos/PROJECT_CONTEXT.md` was already modified before this session.** That pre-existing change is unrelated to the code edit and is carried in the same working tree.
+11. **A second production surface exists, and its ownership is not established.** `https://aquamarine-puppy-beccd9.netlify.app` serves `main` alongside GitHub Pages (§8.10). Merging publishes to both. Whether it is intended to be user-facing, who controls its configuration, and whether it answers on any other domain are all **unknown** and were deliberately not investigated beyond public HTTP responses. Worth a decision: keep it, retire it, or document it as intentional.
+12. **Netlify P-5/P-6 are not covered.** `emailRedirectTo` is hardcoded to `stagerz.app`, so a magic link never returns to the Netlify surface. Authenticated behaviour there is therefore **unverified** — it was not forced through the fragment hand-off. Low practical risk while Netlify carries no custom domain, but it is a real coverage gap if that surface ever becomes user-facing. Ties directly to concern 7.
+13. **`.apos/PROJECT_CONTEXT.md` carried a pre-existing working-tree modification** when this phase began — the Phase 21.2 status entry, written during the analysis stage before implementation started. It is Phase 21.2 work and was committed as part of `5a8d253`. Recorded so the commit's authorship of those lines is not misread later.
 
 ---
 
@@ -549,4 +593,8 @@ The pre-edit gates passed: branch `phase-21.2-startup-resilience`, HEAD `780d6f9
 
 **B-7, the last outstanding browser test, then passed.** With a real session live, the SDK request was failed on demand through a local CONNECT proxy (§8.8) — necessary because this Edge build has no DevTools request-blocking panel, and because the block had to be *removable* with the browser still open for the page's own RELOAD control to be the thing under test. During the failure the session key remained in `localStorage` while `supabaseClient` was `null`, the fixed message and Reload were shown, the leak scan was CLEAN, and there was no black screen. Unblocking and clicking RELOAD returned the user to Stage with the nav bar and **no re-login**.
 
-**Pre-merge Level 3 is complete: 57/57 static invariants, 42/42 headless guard assertions, 48/48 in-browser harness assertions, 12/12 browser tests, 7/7 authenticated regressions.** The only remaining work is production **P-1…P-7**, which cannot run before deployment, plus `storage.remove` (4836), an error-cleanup path deliberately not manufactured. The only source change beyond the approved implementation is the approved D-1 fix; **no source was changed during any validation run**. No commit has been made and nothing has been pushed.
+**The phase then merged to `main` as `968b501` (PR #9) and production validation was executed against both live surfaces (§8.9).** `stagerz.app` passed **P-1…P-7**; the Netlify surface passed **P-1…P-4 and P-7**, with P-5/P-6 not natively runnable there because `emailRedirectTo` always returns a magic link to `stagerz.app`. Both surfaces serve HTML byte-identical to the merged commit. P-7 is the result that most directly demonstrates the objective: two independent warm edges (`x-cache: HIT`) returned byte-identical **2.112.1** with a SHA-384 matching the deployed `integrity` attribute, where §4.2 had measured the floating `@2` serving a stale 2.112.0 under exactly those conditions.
+
+**LEVEL 3 IS COMPLETE, PRE-MERGE AND POST-MERGE: 57/57 static invariants, 42/42 headless guard assertions, 48/48 in-browser harness assertions, 12/12 browser tests, 7/7 authenticated regressions, 7/7 production checks on the primary surface.**
+
+Remaining known gaps, none of them blocking and all recorded in §9: F2/F9/F10 stay reduced-not-closed by the approved Q-4 decision; `storage.remove` (4836) is an error-cleanup path deliberately not manufactured; Q-5 — the maintenance obligation the pin creates — is still unanswered; and a second production surface exists whose ownership is not established. The only source change beyond the approved implementation is the approved D-1 fix; **no source was changed during any validation run, and none after merge**.
