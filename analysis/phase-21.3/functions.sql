@@ -1,0 +1,59 @@
+-- =====================================================================
+-- STAGERZ -- Phase 21.3 -- RPC / function snapshot
+-- =====================================================================
+-- DESCRIPTIVE SNAPSHOT / EXTRACTION ARTIFACT. NOT A MIGRATION.
+--
+-- This file records what the live Supabase project CONTAINS. It is not an
+-- instruction to create, alter or apply anything, and it must never be
+-- executed against a database. Phase 21.3 is read-only: nothing in it
+-- modifies the backend.
+--
+-- Project ref : kbnmkyvbwkuvcklywdhk
+-- Captured    : PENDING -- see "Extraction status" at the foot of this file
+-- Method      : read-only SELECT against catalog views
+-- =====================================================================
+
+-- Scope: the 20 RPCs the frontend calls (backend-contract.md section 3),
+-- the trigger functions they depend on, and helpers such as
+-- current_stagerz_user_id() referenced in index.html comments.
+
+-- EXTRACTION QUERIES (read-only) ---------------------------------------
+-- 1. Full definitions, volatility, security mode, search_path, owner
+--    SELECT n.nspname AS schema, p.proname AS name,
+--           pg_get_function_identity_arguments(p.oid) AS args,
+--           pg_get_functiondef(p.oid) AS definition,
+--           p.provolatile, p.prosecdef AS security_definer,
+--           p.proconfig AS config, pg_get_userbyid(p.proowner) AS owner
+--    FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace
+--    WHERE n.nspname = 'public' ORDER BY p.proname;
+--
+-- 2. EXECUTE grants
+--    SELECT p.proname, x.grantee::regrole::text AS grantee, x.privilege_type
+--    FROM pg_proc p
+--    JOIN pg_namespace n ON n.oid = p.pronamespace
+--    CROSS JOIN LATERAL aclexplode(p.proacl) x
+--    WHERE n.nspname = 'public' ORDER BY p.proname, grantee;
+--
+-- 3. Custom SQLSTATEs -- source of truth for the error contract (section 7).
+--    Scan each captured definition for RAISE ... ERRCODE and record every
+--    code found, not only the four the frontend currently branches on.
+
+-- ---------------------------------------------------------------------
+-- EXTRACTION STATUS: ACCESS CONFIRMED -- SNAPSHOT AWAITING DELIVERY
+-- ---------------------------------------------------------------------
+-- Read-only access to project kbnmkyvbwkuvcklywdhk has been verified and
+-- headline counts are confirmed (see backend-contract.md section 11).
+-- No writes were performed.
+--
+-- The detailed snapshot for THIS file has not been delivered yet. It is
+-- being extracted externally; this file will be completed verbatim from
+-- that output. Nothing is invented in the meantime, and no placeholder
+-- stands in for data that can now be read live.
+-- ---------------------------------------------------------------------
+
+-- CONFIRMED LIVE COUNT (read-only, no writes)
+--   public functions: 34
+--   The frontend calls 20 of them as RPCs. The remaining 14 are expected to
+--   be trigger functions and helpers -- including handle_new_auth_user()
+--   and the current_stagerz_user_id() referenced in index.html comments --
+--   but that split is unconfirmed until the definitions arrive.

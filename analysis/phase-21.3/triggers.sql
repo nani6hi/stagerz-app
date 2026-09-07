@@ -1,0 +1,62 @@
+-- =====================================================================
+-- STAGERZ -- Phase 21.3 -- Trigger snapshot
+-- =====================================================================
+-- DESCRIPTIVE SNAPSHOT / EXTRACTION ARTIFACT. NOT A MIGRATION.
+--
+-- This file records what the live Supabase project CONTAINS. It is not an
+-- instruction to create, alter or apply anything, and it must never be
+-- executed against a database. Phase 21.3 is read-only: nothing in it
+-- modifies the backend.
+--
+-- Project ref : kbnmkyvbwkuvcklywdhk
+-- Captured    : PENDING -- see "Extraction status" at the foot of this file
+-- Method      : read-only SELECT against catalog views
+-- =====================================================================
+
+-- Of particular interest: the signup / user-creation trigger that populates
+-- public.users and public.user_auth_accounts from auth.users. getMyDomainId()
+-- in index.html depends on that mapping existing, but the repository has no
+-- record of what creates it.
+
+-- EXTRACTION QUERIES (read-only) ---------------------------------------
+-- 1. Triggers in public
+--    SELECT c.relname AS table_name, t.tgname AS trigger_name,
+--           pg_get_triggerdef(t.oid) AS definition, t.tgenabled
+--    FROM pg_trigger t
+--    JOIN pg_class c ON c.oid = t.tgrelid
+--    JOIN pg_namespace n ON n.oid = c.relnamespace
+--    WHERE NOT t.tgisinternal AND n.nspname = 'public'
+--    ORDER BY c.relname, t.tgname;
+--
+-- 2. Triggers on auth.users -- the signup hook
+--    SELECT t.tgname, pg_get_triggerdef(t.oid) AS definition, t.tgenabled
+--    FROM pg_trigger t
+--    JOIN pg_class c ON c.oid = t.tgrelid
+--    JOIN pg_namespace n ON n.oid = c.relnamespace
+--    WHERE NOT t.tgisinternal AND n.nspname = 'auth' AND c.relname = 'users';
+--
+-- Trigger function bodies are captured in functions.sql, not duplicated here.
+
+-- ---------------------------------------------------------------------
+-- EXTRACTION STATUS: ACCESS CONFIRMED -- SNAPSHOT AWAITING DELIVERY
+-- ---------------------------------------------------------------------
+-- Read-only access to project kbnmkyvbwkuvcklywdhk has been verified and
+-- headline counts are confirmed (see backend-contract.md section 11).
+-- No writes were performed.
+--
+-- The detailed snapshot for THIS file has not been delivered yet. It is
+-- being extracted externally; this file will be completed verbatim from
+-- that output. Nothing is invented in the meantime, and no placeholder
+-- stands in for data that can now be read live.
+-- ---------------------------------------------------------------------
+
+-- CONFIRMED LIVE COUNTS AND FACTS (read-only, no writes)
+--   public trigger rows: 3
+--   auth   trigger rows: 1
+--
+--   The auth trigger is the signup hook the repository has never recorded:
+--     on_auth_user_created  AFTER INSERT ON auth.users
+--       -> handle_new_auth_user()
+--
+--   This is what populates the identity chain that getMyDomainId()
+--   (index.html:1358) depends on. Its body is captured in functions.sql.

@@ -1,0 +1,49 @@
+-- =====================================================================
+-- STAGERZ -- Phase 21.3 -- Row Level Security snapshot
+-- =====================================================================
+-- DESCRIPTIVE SNAPSHOT / EXTRACTION ARTIFACT. NOT A MIGRATION.
+--
+-- This file records what the live Supabase project CONTAINS. It is not an
+-- instruction to create, alter or apply anything, and it must never be
+-- executed against a database. Phase 21.3 is read-only: nothing in it
+-- modifies the backend.
+--
+-- Project ref : kbnmkyvbwkuvcklywdhk
+-- Captured    : PENDING -- see "Extraction status" at the foot of this file
+-- Method      : read-only SELECT against catalog views
+-- =====================================================================
+
+-- EXTRACTION QUERIES (read-only) ---------------------------------------
+-- 1. RLS enabled / forced, per table
+--    SELECT c.relname AS table_name, c.relrowsecurity AS rls_enabled,
+--           c.relforcerowsecurity AS rls_forced
+--    FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace
+--    WHERE n.nspname = 'public' AND c.relkind = 'r' ORDER BY c.relname;
+--
+-- 2. Every policy, with both expressions
+--    SELECT tablename, policyname, permissive, roles, cmd,
+--           qual AS using_expression, with_check AS with_check_expression
+--    FROM pg_policies WHERE schemaname = 'public'
+--    ORDER BY tablename, cmd, policyname;
+--
+-- INTERPRETATION NOTE for the write-up: a table with rls_enabled = true and
+-- zero policies denies all access to non-owner roles. Record any such table
+-- explicitly rather than leaving it to be inferred from an absence.
+
+-- ---------------------------------------------------------------------
+-- EXTRACTION STATUS: ACCESS CONFIRMED -- SNAPSHOT AWAITING DELIVERY
+-- ---------------------------------------------------------------------
+-- Read-only access to project kbnmkyvbwkuvcklywdhk has been verified and
+-- headline counts are confirmed (see backend-contract.md section 11).
+-- No writes were performed.
+--
+-- The detailed snapshot for THIS file has not been delivered yet. It is
+-- being extracted externally; this file will be completed verbatim from
+-- that output. Nothing is invented in the meantime, and no placeholder
+-- stands in for data that can now be read live.
+-- ---------------------------------------------------------------------
+
+-- CONFIRMED LIVE COUNT (read-only, no writes)
+--   public RLS policies: 27
+--   Distribution across the 19 tables is unknown until delivery. Tables
+--   with RLS enabled and zero policies must be called out explicitly.

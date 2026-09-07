@@ -1,0 +1,57 @@
+-- =====================================================================
+-- STAGERZ -- Phase 21.3 -- Grants snapshot
+-- =====================================================================
+-- DESCRIPTIVE SNAPSHOT / EXTRACTION ARTIFACT. NOT A MIGRATION.
+--
+-- This file records what the live Supabase project CONTAINS. It is not an
+-- instruction to create, alter or apply anything, and it must never be
+-- executed against a database. Phase 21.3 is read-only: nothing in it
+-- modifies the backend.
+--
+-- Project ref : kbnmkyvbwkuvcklywdhk
+-- Captured    : PENDING -- see "Extraction status" at the foot of this file
+-- Method      : read-only SELECT against catalog views
+-- =====================================================================
+
+-- Focus: what anon and authenticated may read and write.
+-- The frontend performs only 7 direct REST writes across 5 tables
+-- (backend-contract.md section 5); every other mutation goes through an
+-- RPC. Whatever enforces that split is contract-critical, so non-uniform
+-- and column-level grants matter as much as table-level ones.
+
+-- EXTRACTION QUERIES (read-only) ---------------------------------------
+-- 1. Table-level grants
+--    SELECT table_name, grantee, privilege_type, is_grantable
+--    FROM information_schema.role_table_grants
+--    WHERE table_schema = 'public'
+--      AND grantee IN ('anon','authenticated','service_role','PUBLIC')
+--    ORDER BY table_name, grantee, privilege_type;
+--
+-- 2. Column-level grants -- e.g. whether users.username is separately granted
+--    SELECT table_name, column_name, grantee, privilege_type
+--    FROM information_schema.column_privileges
+--    WHERE table_schema = 'public' AND grantee IN ('anon','authenticated')
+--    ORDER BY table_name, column_name, grantee;
+--
+-- 3. Default privileges
+--    SELECT defaclrole::regrole::text, defaclobjtype, defaclacl
+--    FROM pg_default_acl;
+--
+-- RECONCILIATION: for each of the 7 direct-write sites in
+-- backend-contract.md section 5, confirm a grant exists permitting exactly
+-- that write and no more. Any write the frontend performs that is NOT
+-- covered by a matching grant, or any grant materially wider than the
+-- frontend uses, is a finding.
+
+-- ---------------------------------------------------------------------
+-- EXTRACTION STATUS: ACCESS CONFIRMED -- SNAPSHOT AWAITING DELIVERY
+-- ---------------------------------------------------------------------
+-- Read-only access to project kbnmkyvbwkuvcklywdhk has been verified and
+-- headline counts are confirmed (see backend-contract.md section 11).
+-- No writes were performed.
+--
+-- The detailed snapshot for THIS file has not been delivered yet. It is
+-- being extracted externally; this file will be completed verbatim from
+-- that output. Nothing is invented in the meantime, and no placeholder
+-- stands in for data that can now be read live.
+-- ---------------------------------------------------------------------
