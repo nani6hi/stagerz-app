@@ -1,0 +1,68 @@
+-- =====================================================================
+-- STAGERZ -- Phase 21.3 -- Storage snapshot -- bucket collaboration-assets
+-- =====================================================================
+-- DESCRIPTIVE SNAPSHOT / EXTRACTION ARTIFACT. NOT A MIGRATION.
+--
+-- This file records what the live Supabase project CONTAINS. It is not an
+-- instruction to create, alter or apply anything, and it must never be
+-- executed against a database. Phase 21.3 is read-only: nothing in it
+-- modifies the backend.
+--
+-- Project ref : kbnmkyvbwkuvcklywdhk
+-- Captured    : PENDING -- see "Extraction status" at the foot of this file
+-- Method      : read-only SELECT against catalog views
+-- =====================================================================
+
+-- The frontend performs upload / download / remove against exactly one
+-- bucket, collaboration-assets (backend-contract.md section 6), and applies
+-- NO client-side size or MIME restriction. Any limit that exists is purely
+-- server-side and therefore part of the contract.
+
+-- EXTRACTION QUERIES (read-only) ---------------------------------------
+-- 1. Bucket definition, public flag, limits
+--    SELECT id, name, public, file_size_limit, allowed_mime_types,
+--           owner, created_at, updated_at
+--    FROM storage.buckets ORDER BY name;
+--
+-- 2. Object-level policies
+--    SELECT policyname, permissive, roles, cmd,
+--           qual AS using_expression, with_check AS with_check_expression
+--    FROM pg_policies
+--    WHERE schemaname = 'storage' AND tablename = 'objects'
+--    ORDER BY cmd, policyname;
+--
+-- 3. RLS state on the storage tables
+--    SELECT c.relname, c.relrowsecurity, c.relforcerowsecurity
+--    FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace
+--    WHERE n.nspname = 'storage' AND c.relname IN ('objects','buckets');
+--
+-- COUPLING NOTE: the frontend builds object paths as
+--   <collaboration_id>/<epoch_ms>-<rand6>-<sanitized_filename>
+-- (index.html:4795-4797). Any policy that authorises by path prefix is
+-- coupled to that exact format and must be recorded as such.
+
+-- ---------------------------------------------------------------------
+-- EXTRACTION STATUS: ACCESS CONFIRMED -- SNAPSHOT AWAITING DELIVERY
+-- ---------------------------------------------------------------------
+-- Read-only access to project kbnmkyvbwkuvcklywdhk has been verified and
+-- headline counts are confirmed (see backend-contract.md section 11).
+-- No writes were performed.
+--
+-- The detailed snapshot for THIS file has not been delivered yet. It is
+-- being extracted externally; this file will be completed verbatim from
+-- that output. Nothing is invented in the meantime, and no placeholder
+-- stands in for data that can now be read live.
+-- ---------------------------------------------------------------------
+
+-- CONFIRMED LIVE FACTS (read-only, no writes)
+--   storage RLS policies on storage.objects: 2
+--
+--   Bucket collaboration-assets:
+--     public             = false   (private)
+--     file_size_limit    = NULL    (no limit)
+--     allowed_mime_types = NULL    (no restriction)
+--
+--   FINDING -- see backend-contract.md section 11.2. The frontend imposes no
+--   size or MIME restriction either, so there is no limit at ANY layer. A
+--   private bucket is consistent with the frontend using .download() rather
+--   than public URLs, so that part of the contract holds.

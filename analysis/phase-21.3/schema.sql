@@ -1,0 +1,69 @@
+-- =====================================================================
+-- STAGERZ -- Phase 21.3 -- Database schema snapshot
+-- =====================================================================
+-- DESCRIPTIVE SNAPSHOT / EXTRACTION ARTIFACT. NOT A MIGRATION.
+--
+-- This file records what the live Supabase project CONTAINS. It is not an
+-- instruction to create, alter or apply anything, and it must never be
+-- executed against a database. Phase 21.3 is read-only: nothing in it
+-- modifies the backend.
+--
+-- Project ref : kbnmkyvbwkuvcklywdhk
+-- Captured    : PENDING -- see "Extraction status" at the foot of this file
+-- Method      : read-only SELECT against catalog views
+-- =====================================================================
+
+-- Scope: application tables and views in schema public.
+-- Expected inventory: the 14 tables/views the frontend references
+-- (backend-contract.md section 2).
+
+-- EXTRACTION QUERIES (read-only) ---------------------------------------
+-- 1. Table vs view classification
+--    SELECT table_name, table_type FROM information_schema.tables
+--    WHERE table_schema = 'public' ORDER BY table_type, table_name;
+--
+-- 2. Columns, types, nullability, defaults
+--    SELECT table_name, ordinal_position, column_name, data_type,
+--           is_nullable, column_default, character_maximum_length
+--    FROM information_schema.columns
+--    WHERE table_schema = 'public'
+--    ORDER BY table_name, ordinal_position;
+--
+-- 3. Constraints: PK / FK / UNIQUE / CHECK
+--    SELECT conrelid::regclass AS table_name, conname, contype,
+--           pg_get_constraintdef(oid) AS definition
+--    FROM pg_constraint WHERE connamespace = 'public'::regnamespace
+--    ORDER BY conrelid::regclass::text, contype, conname;
+--
+-- 4. Indexes
+--    SELECT tablename, indexname, indexdef FROM pg_indexes
+--    WHERE schemaname = 'public' ORDER BY tablename, indexname;
+--
+-- 5. View definitions -- public_profiles especially
+--    SELECT table_name,
+--           pg_get_viewdef((quote_ident(table_name))::regclass, true) AS definition
+--    FROM information_schema.views WHERE table_schema = 'public';
+
+-- ---------------------------------------------------------------------
+-- EXTRACTION STATUS: ACCESS CONFIRMED -- SNAPSHOT AWAITING DELIVERY
+-- ---------------------------------------------------------------------
+-- Read-only access to project kbnmkyvbwkuvcklywdhk has been verified and
+-- headline counts are confirmed (see backend-contract.md section 11).
+-- No writes were performed.
+--
+-- The detailed snapshot for THIS file has not been delivered yet. It is
+-- being extracted externally; this file will be completed verbatim from
+-- that output. Nothing is invented in the meantime, and no placeholder
+-- stands in for data that can now be read live.
+-- ---------------------------------------------------------------------
+
+-- CONFIRMED LIVE COUNTS (read-only, no writes)
+--   public tables : 19
+--   public views  :  1   -- public_profiles
+--   Total relations in public: 20; the frontend references 14 of them.
+--
+-- CONFIRMED FACT
+--   public.public_profiles is sourced from public.users. It does NOT read
+--   profiles.display_name. This confirms discrepancy 1 in
+--   backend-contract.md section 9: the Edit Profile screen writes
+--   profiles.display_name, a column this view never reads.
