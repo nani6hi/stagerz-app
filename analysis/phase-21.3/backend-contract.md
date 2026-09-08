@@ -34,24 +34,33 @@ The client half is not a placeholder either. It is the **demand side of the cont
 >
 > §11.0 and §12 are **preserved deliberately and unedited in substance** — they are the evidence that found and proved the exposure, and erasing them would erase the finding. Read them as *"what was true before Phase 21.4"*, not as current state. Each carries its own banner.
 
-**Two evidence epochs are used throughout this document:**
+> **A second remediation has since landed. S-2 is also HISTORICAL.**
+>
+> **S-2 is REMEDIATED.** Phase 21.5 dropped `public._test_results` and `public._test_run_log` on **2026-09-08**. Both tables and both owned sequences are gone; the two `rls_disabled_in_public` Security Advisor ERRORs they produced no longer appear. §11.1 is preserved unedited as the evidence that found the exposure, and carries its own banner.
+>
+> The 28 rows those tables held are preserved in `analysis/phase-21.5/pre-drop-snapshot.sql`, committed before the drop. Their content is summarised in `analysis/phase-21.5/phase-definition.md` §3.
+
+**Three evidence epochs are used throughout this document:**
 
 | Label | Meaning |
 |---|---|
 | **HISTORICAL (pre-21.4)** | Captured 2026-08-22/23, before the ACL was fixed. §11.0, §11.4's first paragraph, all of §12 |
-| **CURRENT (post-21.4)** | Re-verified live 2026-08-31 against `kbnmkyvbwkuvcklywdhk`. §0.2, §11.4's current-state block, §12.7 |
+| **HISTORICAL (pre-21.5)** | Captured 2026-08-22/23 and re-confirmed 2026-08-31, before the test tables were dropped. §11.1 |
+| **CURRENT (post-21.5)** | Re-verified live 2026-09-08 against `kbnmkyvbwkuvcklywdhk`. §0.2. The post-21.4 re-verification of 2026-08-31 stands for §11.4's current-state block and §12.7, neither of which Phase 21.5 touched |
 
-### 0.2 Current status of all findings — live-verified 2026-08-31
+### 0.2 Current status of all findings — S-2 row live-verified 2026-09-08; all others 2026-08-31
 
 | ID | Finding | Status |
 |---|---|---|
 | **S-1** | `anon` write path to `public.users` via `public_profiles` | ✅ **REMEDIATED — Phase 21.4 / PR #11.** ACL now `anon=r`, `authenticated=r` |
-| **S-2** | `_test_results` / `_test_run_log` world-writable by `anon` | ⚠️ **OPEN** — RLS still disabled, 0 policies, `anon` still holds all 7 privileges incl. TRUNCATE |
+| **S-2** | `_test_results` / `_test_run_log` world-writable by `anon` | ✅ **REMEDIATED — Phase 21.5.** Both tables dropped 2026-09-08. `public` table count 19 → 17; both owned sequences gone; both Advisor ERRORs cleared; the REST endpoints now return 404. 28 rows preserved in `analysis/phase-21.5/pre-drop-snapshot.sql` |
 | **S-3** | No DELETE policy on `storage.objects` | ⚠️ **OPEN** — still only SELECT + INSERT policies |
 | **S-4** | Unhandled backend SQLSTATEs | ⚠️ **OPEN** — 58 backend-raised, **55 unhandled** (see §11.3 correction) |
 | **S-5** | Default privileges grant ALL on new objects to `anon` | ⚠️ **OPEN** — `pg_default_acl` still `anon=arwdDxtm` for TABLES |
 
-Only S-1 changed. **No other finding was remediated, and none is remediated by this document.**
+**S-1 and S-2 are now remediated, each by its own approved phase — S-1 by Phase 21.4, S-2 by Phase 21.5. S-3, S-4 and S-5 remain OPEN and are remediated by nothing in this document.**
+
+**S-5 is the root cause of both fixed findings** and is still in force: `ALTER DEFAULT PRIVILEGES FOR ROLE postgres GRANT ALL ON TABLES TO anon, authenticated, service_role`. Every table created by `postgres` in `public` is still granted ALL — including TRUNCATE — to `anon` at creation. S-1 and S-2 were its two visible symptoms; removing them does not remove the mechanism, and the next table created will reproduce it.
 
 ---
 
@@ -293,6 +302,8 @@ This was not previously known and is the most serious result of the phase.
 **Not fixed here.** Phase 21.3 captures the contract; it does not change it. Remediation is a separate, approved change.
 
 ### 11.1 FINDING S-2 — two test tables are world-writable by `anon`
+
+> **HISTORICAL (pre-21.5) — this describes state that no longer exists.** Both tables were dropped by Phase 21.5 on 2026-09-08 and S-2 is **REMEDIATED** (§0.2). This section is preserved unedited because it is the evidence that found the exposure; erasing it would erase the finding. Read it as *"what was true before Phase 21.5"*.
 
 | Table | RLS | Policies | `anon` privileges |
 |---|---|---|---|

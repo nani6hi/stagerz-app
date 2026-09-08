@@ -1,0 +1,154 @@
+-- =====================================================================
+-- STAGERZ - Phase 21.5 - S-2 remediation
+-- =====================================================================
+--  ####  EXECUTABLE MIGRATION - APPLIED.  ####
+--
+-- The two statements below WERE APPLIED to the live project on
+-- 2026-09-08. They ran exactly as written: two bare DROP TABLE
+-- statements, no CASCADE, no IF EXISTS, nothing else.
+--
+-- This file is NOT a descriptive snapshot. It differs deliberately from
+-- the .sql files in analysis/phase-21.3/, which carry the opposite
+-- header and contain no executable statements.
+--
+-- (The counterpart marker string used by those snapshots is deliberately
+--  not reproduced here, so a grep for it cannot misclassify this file.)
+--
+-- Project ref : kbnmkyvbwkuvcklywdhk  (stagerz-foundation-v2-test)
+-- Prepared    : 2026-09-08
+-- Applied     : 2026-09-08, between 15:22:07+00 (pre-flight) and
+--               15:23:46+00 (post-mutation verification)
+-- Approved by : user, explicitly, as the ONLY permitted production
+--               mutation of Phase 21.5
+-- Checkpoint  : commit d5417e90191f6b99923c7f8de2117475f34ff11a,
+--               pushed to origin/phase-21.5-s2-test-table-removal before
+--               this ran, carrying pre-drop-snapshot.sql (SHA-256
+--               adb374b76d5ed2ccc9c1bb4130b826d9a857a0efad9f4023d274cc4a0e7baa97)
+-- Addresses   : S-2 - public._test_results and public._test_run_log have
+--               RLS disabled with 0 policies while anon and authenticated
+--               hold all seven table privileges, including TRUNCATE
+--
+-- Applied with a direct SQL execution, NOT through the migration tool.
+-- That was deliberate: the approval named exactly two statements, and
+-- recording a migration would have written an additional row to
+-- supabase_migrations.schema_migrations. That table still holds 41
+-- records, unchanged, verified after the drop.
+-- =====================================================================
+
+-- ---------------------------------------------------------------------
+-- PRE-CHANGE STATE
+--   first captured read-only 2026-09-08 12:32:35+00
+--   RE-VERIFIED IDENTICAL at pre-flight, 2026-09-08 15:22:07+00
+-- ---------------------------------------------------------------------
+--   Both tables, identical ACL:
+--     postgres=arwdDxtm/postgres | anon=arwdDxtm/postgres
+--   | authenticated=arwdDxtm/postgres | service_role=arwdDxtm/postgres
+--
+--   anon          : SELECT=t INSERT=t UPDATE=t DELETE=t TRUNCATE=t
+--   authenticated : SELECT=t INSERT=t UPDATE=t DELETE=t TRUNCATE=t
+--   RLS           : enabled=false forced=false policies=0
+--   Triggers      : 0        Inbound FKs : 0      Outbound FKs : 0
+--   Dependent views : 0      Publications : 0     Functions referencing : 0
+--   Rows          : _test_results = 4    _test_run_log = 24
+--   Owned sequences : _test_results_id_seq (last_value 5)
+--                     _test_run_log_id_seq (last_value 62)
+--   index.html references : 0
+--
+--   All 17 pre-flight requirements in validation.md section 3 matched
+--   exactly. No hard-stop condition fired.
+-- ---------------------------------------------------------------------
+
+-- ---------------------------------------------------------------------
+-- MIGRATION - exactly the two applied statements, nothing else
+-- ---------------------------------------------------------------------
+
+DROP TABLE public._test_results;
+
+DROP TABLE public._test_run_log;
+
+-- ---------------------------------------------------------------------
+-- POST-CHANGE STATE (verified 2026-09-08 15:23:46+00)
+-- ---------------------------------------------------------------------
+--   Both statements returned success with no error. Because neither
+--   carried CASCADE, that success is itself proof that nothing depended
+--   on either table - the empirical confirmation of the catalog
+--   evidence.
+--
+--   _test_results / _test_run_log in pg_class     : 0  (were 2)
+--   _test_results_id_seq / _test_run_log_id_seq   : 0  (were 2)
+--   public tables (relkind r)                     : 17 (was 19)
+--   public views                                  : 1  (unchanged)
+--   public sequences                              : 0  (were 2 - both
+--                                                   belonged to these
+--                                                   tables)
+--   public functions                              : 34 (unchanged)
+--   policies, all schemas                         : 29 (unchanged)
+--   triggers, all schemas                         : 9  (unchanged)
+--   supabase_migrations.schema_migrations records : 41 (unchanged)
+--
+--   Relation list diff: exactly four entries removed
+--     r:_test_results, r:_test_run_log,
+--     S:_test_results_id_seq, S:_test_run_log_id_seq
+--   The remaining 18 relations are byte-identical to the pre-change
+--   list. No relation was added, removed or changed in kind.
+--
+--   S-5 default ACL for postgres / TABLES / public, re-read after the
+--   drop and UNCHANGED - S-5 remains OPEN, deliberately:
+--     {postgres=arwdDxtm/postgres,anon=arwdDxtm/postgres,
+--      authenticated=arwdDxtm/postgres,service_role=arwdDxtm/postgres}
+--   pg_default_acl entry count: 24 (unchanged)
+--
+--   Security Advisor, security: the rls_disabled_in_public lint no
+--   longer appears at all - both ERROR findings gone. Every other lint
+--   is unchanged in name, level and count. Zero new findings at any
+--   severity. ERROR-level findings: 3 -> 1.
+--
+--   PostgREST: GET /rest/v1/_test_results and /rest/v1/_test_run_log
+--   now return HTTP 404 PGRST205 as anon. GET /rest/v1/public_profiles
+--   returns HTTP 200 with a row, so the read path is intact.
+-- ---------------------------------------------------------------------
+
+-- ---------------------------------------------------------------------
+-- WHY NO CASCADE AND NO IF EXISTS
+-- ---------------------------------------------------------------------
+--   No CASCADE. Verification found zero dependent objects, so a bare
+--   DROP must succeed. If it fails on a dependency, something has been
+--   created since verification and the phase must stop and re-examine.
+--   CASCADE would destroy that unknown object silently instead.
+--
+--   No IF EXISTS. If either table is already absent, that is an
+--   unexplained change to production and is information worth failing
+--   on. IF EXISTS would suppress exactly the signal that matters.
+--
+--   Both sequences are OWNED BY their id columns and are dropped
+--   automatically with their tables. No separate DROP SEQUENCE is
+--   needed, and issuing one would be a third statement this phase has
+--   not approved.
+-- ---------------------------------------------------------------------
+
+-- ---------------------------------------------------------------------
+-- ROLLBACK
+-- ---------------------------------------------------------------------
+--   Run analysis/phase-21.5/pre-drop-snapshot.sql, which recreates both
+--   tables, all 28 rows with their original ids and timestamps, and both
+--   sequence positions.
+--
+--   READ THE WARNING IN THAT FILE FIRST. Recreating the tables while
+--   finding S-5 is unremediated re-acquires the postgres default table
+--   privileges and can reintroduce S-2 in full. Rollback is for a
+--   confirmed regression only, under the same approval as any other
+--   production change.
+-- ---------------------------------------------------------------------
+
+-- ---------------------------------------------------------------------
+-- DELIBERATELY NOT CHANGED
+-- ---------------------------------------------------------------------
+--   * ALTER DEFAULT PRIVILEGES (finding S-5, the root cause) - untouched
+--     and explicitly out of scope for this phase
+--   * Every other relation in public, including public_profiles
+--   * RLS state or policies on any surviving table
+--   * Grants to any role on any surviving object
+--   * Storage, auth, realtime, functions, views, triggers
+--   * index.html and all application source
+--   * S-3 storage DELETE policy, S-4 SQLSTATE handling
+-- ---------------------------------------------------------------------
