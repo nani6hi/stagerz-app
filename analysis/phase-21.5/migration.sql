@@ -1,0 +1,98 @@
+-- =====================================================================
+-- STAGERZ - Phase 21.5 - S-2 remediation
+-- =====================================================================
+--  ####  EXECUTABLE MIGRATION - NOT YET APPLIED.  ####
+--
+-- The two statements below have NOT been run against any database. They
+-- are prepared for review and await explicit production-mutation
+-- approval, which has not been given.
+--
+-- This file is NOT a descriptive snapshot. It differs deliberately from
+-- the .sql files in analysis/phase-21.3/, which carry the opposite
+-- header and contain no executable statements.
+--
+-- (The counterpart marker string used by those snapshots is deliberately
+--  not reproduced here, so a grep for it cannot misclassify this file.)
+--
+-- Project ref : kbnmkyvbwkuvcklywdhk  (stagerz-foundation-v2-test)
+-- Prepared    : 2026-09-08
+-- Applied     : NOT APPLIED
+-- Approved by : NOT APPROVED - preparation only
+-- Addresses   : S-2 - public._test_results and public._test_run_log have
+--               RLS disabled with 0 policies while anon and authenticated
+--               hold all seven table privileges, including TRUNCATE
+-- =====================================================================
+
+-- ---------------------------------------------------------------------
+-- PRE-CHANGE STATE (captured read-only 2026-09-08 12:32:35+00)
+-- ---------------------------------------------------------------------
+--   Both tables, identical ACL:
+--     postgres=arwdDxtm/postgres | anon=arwdDxtm/postgres
+--   | authenticated=arwdDxtm/postgres | service_role=arwdDxtm/postgres
+--
+--   anon          : SELECT=t INSERT=t UPDATE=t DELETE=t TRUNCATE=t
+--   authenticated : SELECT=t INSERT=t UPDATE=t DELETE=t TRUNCATE=t
+--   RLS           : enabled=false forced=false policies=0
+--   Triggers      : 0        Inbound FKs : 0      Outbound FKs : 0
+--   Dependent views : 0      Publications : 0     Functions referencing : 0
+--   Rows          : _test_results = 4    _test_run_log = 24
+--   Owned sequences : _test_results_id_seq (last_value 5)
+--                     _test_run_log_id_seq (last_value 62)
+--   index.html references : 0
+--
+--   This state must be re-verified immediately before applying. See
+--   validation.md section 3. HARD STOP ON MISMATCH.
+-- ---------------------------------------------------------------------
+
+-- ---------------------------------------------------------------------
+-- MIGRATION - exactly the two intended statements, nothing else
+-- ---------------------------------------------------------------------
+
+DROP TABLE public._test_results;
+
+DROP TABLE public._test_run_log;
+
+-- ---------------------------------------------------------------------
+-- WHY NO CASCADE AND NO IF EXISTS
+-- ---------------------------------------------------------------------
+--   No CASCADE. Verification found zero dependent objects, so a bare
+--   DROP must succeed. If it fails on a dependency, something has been
+--   created since verification and the phase must stop and re-examine.
+--   CASCADE would destroy that unknown object silently instead.
+--
+--   No IF EXISTS. If either table is already absent, that is an
+--   unexplained change to production and is information worth failing
+--   on. IF EXISTS would suppress exactly the signal that matters.
+--
+--   Both sequences are OWNED BY their id columns and are dropped
+--   automatically with their tables. No separate DROP SEQUENCE is
+--   needed, and issuing one would be a third statement this phase has
+--   not approved.
+-- ---------------------------------------------------------------------
+
+-- ---------------------------------------------------------------------
+-- ROLLBACK
+-- ---------------------------------------------------------------------
+--   Run analysis/phase-21.5/pre-drop-snapshot.sql, which recreates both
+--   tables, all 28 rows with their original ids and timestamps, and both
+--   sequence positions.
+--
+--   READ THE WARNING IN THAT FILE FIRST. Recreating the tables while
+--   finding S-5 is unremediated re-acquires the postgres default table
+--   privileges and can reintroduce S-2 in full. Rollback is for a
+--   confirmed regression only, under the same approval as any other
+--   production change.
+-- ---------------------------------------------------------------------
+
+-- ---------------------------------------------------------------------
+-- DELIBERATELY NOT CHANGED
+-- ---------------------------------------------------------------------
+--   * ALTER DEFAULT PRIVILEGES (finding S-5, the root cause) - untouched
+--     and explicitly out of scope for this phase
+--   * Every other relation in public, including public_profiles
+--   * RLS state or policies on any surviving table
+--   * Grants to any role on any surviving object
+--   * Storage, auth, realtime, functions, views, triggers
+--   * index.html and all application source
+--   * S-3 storage DELETE policy, S-4 SQLSTATE handling
+-- ---------------------------------------------------------------------
