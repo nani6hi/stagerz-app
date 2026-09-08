@@ -3,10 +3,10 @@
 **Branch:** `phase-21.5-s2-test-table-removal`
 **Base commit:** `4ed53b9` (`main`, merge of PR #12 — Phase 21.3 backend contract)
 **Addresses:** finding **S-2** from `analysis/phase-21.3/backend-contract.md` §0.2
-**Status:** **PREPARATION ONLY. The production DROP is NOT approved and has NOT been applied.**
-**Validation level:** **Level 1** — documentation and a prepared migration; `index.html` is not touched (`.apos/VALIDATION_STANDARD.md` §2)
+**Status:** **COMPLETE — S-2 REMEDIATED.** Both tables dropped 2026-09-08 under explicit approval; all pre-flight requirements matched and all post-mutation checks pass. See §13.
+**Validation level:** **Level 1** — documentation and a backend-only migration; `index.html` is not touched (`.apos/VALIDATION_STANDARD.md` §2)
 
-Nothing in this phase has been executed against the backend. No repository file outside `analysis/phase-21.5/` has been modified. Not committed, not pushed.
+Exactly one backend change was made: the two approved `DROP TABLE` statements. No application source was modified. Not yet committed, not yet pushed.
 
 ---
 
@@ -237,12 +237,55 @@ Any of the following **stops the phase before mutation**. Report, do not proceed
 
 ---
 
-## 13. Summary
+## 13. Remediation result — applied 2026-09-08
 
-Two tables in the PostgREST-exposed `public` schema have RLS disabled, zero policies, and grant `anon` and `authenticated` every table privilege including `TRUNCATE`. The Security Advisor flags both at ERROR severity. The grants were never deliberate — they were applied automatically by the still-open finding S-5 at `CREATE TABLE` time.
+**S-2 is REMEDIATED.**
 
-The tables are abandoned test-harness output: created outside all 41 migrations, written once each on the project's creation day, already cleared twice by their own author, untouched for eight weeks, referenced by no function, view, policy, publication or line of `index.html`, and depended on by nothing.
+The pre-flight was re-run at `15:22:07+00` and **all 17 requirements matched the reviewed state exactly** — row counts 4 and 24, all nine dependency classes at zero, zero `index.html` references, and a byte-identical ACL with all ten `has_table_privilege` probes still `true`. No hard-stop condition fired. The snapshot commit `d5417e9` was confirmed present on `origin` with the expected blob SHA-256 before anything was executed.
 
-Their 28 rows do carry real documentary value — a structured 24-case backend behaviour suite — so they are preserved in a committed snapshot rather than discarded. That preserves the evidence while removing the exposure; the two goals do not conflict.
+Exactly two statements ran, verbatim from `migration.sql`:
 
-**Nothing has been executed.** The DROP requires explicit production-mutation approval that has not been given.
+```sql
+DROP TABLE public._test_results;
+DROP TABLE public._test_run_log;
+```
+
+Both succeeded. **Because neither carried `CASCADE`, that success is itself proof that nothing depended on either table** — the empirical confirmation of the catalog evidence in §5, which until then rested entirely on reading system catalogs.
+
+**Post-mutation state, verified `15:23:46+00`:**
+
+| | Before | After |
+|---|---|---|
+| `public` tables | 19 | **17** |
+| `public` sequences | 2 | **0** |
+| `public` relations (all kinds) | 22 | **18** |
+| `public` views / functions | 1 / 34 | **1 / 34** |
+| Policies / triggers, all schemas | 29 / 9 | **29 / 9** |
+| `pg_default_acl` entries | 24 | **24** |
+| Migration records | 41 | **41** |
+| Advisor lints / findings | 6 / 37 | **5 / 35** |
+| Advisor ERROR-level findings | 3 | **1** |
+
+The relation list lost **exactly four objects** — the two tables and their two owned sequences — and the remaining 18 are identical. The `rls_disabled_in_public` lint no longer appears at all, and **no new Advisor finding was introduced at any severity**.
+
+**The exposure is closed at the API layer, which is the layer that mattered.** As `anon`, `GET /rest/v1/_test_results` and `GET /rest/v1/_test_run_log` now return **HTTP 404 `PGRST205`**. The same role previously held SELECT, INSERT, UPDATE, DELETE and TRUNCATE on both. `GET /rest/v1/public_profiles` still returns HTTP 200 with a row, so the read path is intact.
+
+**Final S-2 state: REMEDIATED, permanently and without residue.** The tables no longer exist, so no future application of the S-5 default privileges can reach them. The 28 rows survive in `pre-drop-snapshot.sql`, committed and pushed before the drop.
+
+**S-5 was re-read after the mutation and is unchanged. It remains OPEN**, deliberately and in scope-conformance: the default ACL still grants ALL on new `public` tables to `anon`. S-2 was one of its two visible symptoms; the mechanism is untouched.
+
+**Production smoke passed at both levels.** At the server level, `stagerz.app` returns HTTP 200 with the expected page, SDK tag and SRI hash intact, and the `public_profiles` read succeeded. At the browser level, manually confirmed against production after the mutation: **Stage loads normally, navigation is visible, a profile opens successfully, and no visible errors were observed.** The browser half was held open as NOT RUN until it was actually observed rather than inferred from the server response — `validation.md` §4.1 records why that distinction was kept.
+
+---
+
+## 14. Summary
+
+Two tables in the PostgREST-exposed `public` schema had RLS disabled, zero policies, and granted `anon` and `authenticated` every table privilege including `TRUNCATE`. The Security Advisor flagged both at ERROR severity. The grants were never deliberate — they were applied automatically by the still-open finding S-5 at `CREATE TABLE` time.
+
+The tables were abandoned test-harness output: created outside all 41 migrations, written once each on the project's creation day, already cleared twice by their own author, untouched for eight weeks, referenced by no function, view, policy, publication or line of `index.html`, and depended on by nothing.
+
+Their 28 rows do carry real documentary value — a structured 24-case backend behaviour suite — so they were preserved in a snapshot committed and pushed **before** the mutation, rather than discarded. That preserved the evidence while removing the exposure; the two goals did not conflict.
+
+**Both tables were dropped on 2026-09-08 under explicit approval.** All 17 pre-flight requirements matched exactly, exactly two bare `DROP TABLE` statements were executed, and **all 11 post-mutation checks pass**, including a manually confirmed production browser check. **S-2 is REMEDIATED** — permanently, since the tables no longer exist for the S-5 defaults to reach.
+
+**S-5 itself is untouched and still OPEN.** It is the mechanism that produced both S-1 and S-2, and until it is addressed the next table created in `public` will reproduce the same exposure.

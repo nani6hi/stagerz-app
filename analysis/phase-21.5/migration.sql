@@ -1,11 +1,11 @@
 -- =====================================================================
 -- STAGERZ - Phase 21.5 - S-2 remediation
 -- =====================================================================
---  ####  EXECUTABLE MIGRATION - NOT YET APPLIED.  ####
+--  ####  EXECUTABLE MIGRATION - APPLIED.  ####
 --
--- The two statements below have NOT been run against any database. They
--- are prepared for review and await explicit production-mutation
--- approval, which has not been given.
+-- The two statements below WERE APPLIED to the live project on
+-- 2026-09-08. They ran exactly as written: two bare DROP TABLE
+-- statements, no CASCADE, no IF EXISTS, nothing else.
 --
 -- This file is NOT a descriptive snapshot. It differs deliberately from
 -- the .sql files in analysis/phase-21.3/, which carry the opposite
@@ -16,15 +16,29 @@
 --
 -- Project ref : kbnmkyvbwkuvcklywdhk  (stagerz-foundation-v2-test)
 -- Prepared    : 2026-09-08
--- Applied     : NOT APPLIED
--- Approved by : NOT APPROVED - preparation only
+-- Applied     : 2026-09-08, between 15:22:07+00 (pre-flight) and
+--               15:23:46+00 (post-mutation verification)
+-- Approved by : user, explicitly, as the ONLY permitted production
+--               mutation of Phase 21.5
+-- Checkpoint  : commit d5417e90191f6b99923c7f8de2117475f34ff11a,
+--               pushed to origin/phase-21.5-s2-test-table-removal before
+--               this ran, carrying pre-drop-snapshot.sql (SHA-256
+--               adb374b76d5ed2ccc9c1bb4130b826d9a857a0efad9f4023d274cc4a0e7baa97)
 -- Addresses   : S-2 - public._test_results and public._test_run_log have
 --               RLS disabled with 0 policies while anon and authenticated
 --               hold all seven table privileges, including TRUNCATE
+--
+-- Applied with a direct SQL execution, NOT through the migration tool.
+-- That was deliberate: the approval named exactly two statements, and
+-- recording a migration would have written an additional row to
+-- supabase_migrations.schema_migrations. That table still holds 41
+-- records, unchanged, verified after the drop.
 -- =====================================================================
 
 -- ---------------------------------------------------------------------
--- PRE-CHANGE STATE (captured read-only 2026-09-08 12:32:35+00)
+-- PRE-CHANGE STATE
+--   first captured read-only 2026-09-08 12:32:35+00
+--   RE-VERIFIED IDENTICAL at pre-flight, 2026-09-08 15:22:07+00
 -- ---------------------------------------------------------------------
 --   Both tables, identical ACL:
 --     postgres=arwdDxtm/postgres | anon=arwdDxtm/postgres
@@ -40,17 +54,59 @@
 --                     _test_run_log_id_seq (last_value 62)
 --   index.html references : 0
 --
---   This state must be re-verified immediately before applying. See
---   validation.md section 3. HARD STOP ON MISMATCH.
+--   All 17 pre-flight requirements in validation.md section 3 matched
+--   exactly. No hard-stop condition fired.
 -- ---------------------------------------------------------------------
 
 -- ---------------------------------------------------------------------
--- MIGRATION - exactly the two intended statements, nothing else
+-- MIGRATION - exactly the two applied statements, nothing else
 -- ---------------------------------------------------------------------
 
 DROP TABLE public._test_results;
 
 DROP TABLE public._test_run_log;
+
+-- ---------------------------------------------------------------------
+-- POST-CHANGE STATE (verified 2026-09-08 15:23:46+00)
+-- ---------------------------------------------------------------------
+--   Both statements returned success with no error. Because neither
+--   carried CASCADE, that success is itself proof that nothing depended
+--   on either table - the empirical confirmation of the catalog
+--   evidence.
+--
+--   _test_results / _test_run_log in pg_class     : 0  (were 2)
+--   _test_results_id_seq / _test_run_log_id_seq   : 0  (were 2)
+--   public tables (relkind r)                     : 17 (was 19)
+--   public views                                  : 1  (unchanged)
+--   public sequences                              : 0  (were 2 - both
+--                                                   belonged to these
+--                                                   tables)
+--   public functions                              : 34 (unchanged)
+--   policies, all schemas                         : 29 (unchanged)
+--   triggers, all schemas                         : 9  (unchanged)
+--   supabase_migrations.schema_migrations records : 41 (unchanged)
+--
+--   Relation list diff: exactly four entries removed
+--     r:_test_results, r:_test_run_log,
+--     S:_test_results_id_seq, S:_test_run_log_id_seq
+--   The remaining 18 relations are byte-identical to the pre-change
+--   list. No relation was added, removed or changed in kind.
+--
+--   S-5 default ACL for postgres / TABLES / public, re-read after the
+--   drop and UNCHANGED - S-5 remains OPEN, deliberately:
+--     {postgres=arwdDxtm/postgres,anon=arwdDxtm/postgres,
+--      authenticated=arwdDxtm/postgres,service_role=arwdDxtm/postgres}
+--   pg_default_acl entry count: 24 (unchanged)
+--
+--   Security Advisor, security: the rls_disabled_in_public lint no
+--   longer appears at all - both ERROR findings gone. Every other lint
+--   is unchanged in name, level and count. Zero new findings at any
+--   severity. ERROR-level findings: 3 -> 1.
+--
+--   PostgREST: GET /rest/v1/_test_results and /rest/v1/_test_run_log
+--   now return HTTP 404 PGRST205 as anon. GET /rest/v1/public_profiles
+--   returns HTTP 200 with a row, so the read path is intact.
+-- ---------------------------------------------------------------------
 
 -- ---------------------------------------------------------------------
 -- WHY NO CASCADE AND NO IF EXISTS
