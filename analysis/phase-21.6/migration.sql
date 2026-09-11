@@ -1,11 +1,11 @@
 -- =====================================================================
 -- STAGERZ - Phase 21.6 - S-5 remediation
 -- =====================================================================
---  ####  EXECUTABLE MIGRATION - NOT YET APPLIED.  ####
+--  ####  EXECUTABLE MIGRATION - APPLIED.  ####
 --
--- The four statements below have NOT been run against any database.
--- They are prepared for review and await explicit production-mutation
--- approval, which has not been given.
+-- The four statements below WERE APPLIED to the live project on
+-- 2026-09-11. They ran exactly as written, in a single execution: four
+-- ALTER DEFAULT PRIVILEGES statements, nothing else.
 --
 -- This file is NOT a descriptive snapshot. It differs deliberately from
 -- the .sql files in analysis/phase-21.3/, which carry the opposite
@@ -16,16 +16,39 @@
 --
 -- Project ref : kbnmkyvbwkuvcklywdhk  (stagerz-foundation-v2-test)
 -- Prepared    : 2026-09-11
--- Applied     : NOT APPLIED
--- Approved by : NOT APPROVED - preparation only
--- Addresses   : S-5 - default privileges for role postgres grant ALL,
+-- Applied     : 2026-09-11, between 21:24:38+00 (pre-flight) and
+--               21:26:04+00 (post-change verification)
+-- Approved by : user, explicitly, as the ONLY permitted production
+--               mutation of Phase 21.6
+-- Checkpoint  : commit c06c6758b7a804a0d866e5fbc2d282105a40f64e, pushed to
+--               origin/phase-21.6-s5-default-privileges before this ran.
+--               migration.sql as committed there has SHA-256
+--               bf5cb656476df916d6488a0cc37a9f9ec029010b705c7b798e9381a2fbaab2d0.
+--               This annotated copy differs from it in comments only; the
+--               four executable statements are byte-identical.
+-- Executed as : current_user = session_user = postgres (not superuser),
+--               so FOR ROLE postgres targeted the executing role itself
+-- Validation  : COMPLETE - pre-flight 14/14 PASS, post-change 15/15 PASS.
+--               M-15, the authenticated write smoke test, was closed
+--               2026-09-12 via Profile -> Edit Profile -> Save with no
+--               values changed. Its original wording named a Like action
+--               the application does not implement; that was a
+--               test-design correction, not a product failure and not a
+--               regression. See validation.md section 4.3.
+-- Addresses   : S-5 - default privileges for role postgres granted ALL,
 --               including TRUNCATE, on every future TABLE, VIEW and
 --               SEQUENCE in schemas public and storage to anon and
 --               authenticated. Root cause of S-1 and S-2.
+--
+-- Applied with a direct SQL execution, NOT through the migration tool,
+-- for the same reason as Phase 21.5: the approval named exactly four
+-- statements, and recording a migration would have written a fifth
+-- change. supabase_migrations.schema_migrations still holds 41 records,
+-- verified after the change.
 -- =====================================================================
 
 -- ---------------------------------------------------------------------
---  ####  READ BEFORE EXECUTING - SIX RULES  ####
+--  ####  READ BEFORE RE-EXECUTING OR ROLLING BACK - SIX RULES  ####
 --
 --  1. FOR ROLE postgres IS MANDATORY.
 --     Without it the statement targets the defaults of whichever role
@@ -60,18 +83,15 @@
 --  6. EXISTING OBJECT ACLs MUST REMAIN UNCHANGED.
 --     ALTER DEFAULT PRIVILEGES affects only objects created AFTER it
 --     runs. Every existing relacl and proacl must be byte-identical
---     before and after. If any changed, something other than these four
---     statements ran: HARD STOP.
---
---  All four statements must be sent in a single execution so they apply
---  together. Post-change check M-1 verifies all four entries changed; a
---  partial result is a hard-stop outcome (phase-definition.md sec. 12).
+--     before and after. Verified: they were.
 -- ---------------------------------------------------------------------
 
 -- ---------------------------------------------------------------------
--- PRE-CHANGE STATE (captured read-only 2026-09-09)
+-- PRE-CHANGE STATE
+--   first captured read-only 2026-09-09
+--   RE-VERIFIED IDENTICAL at pre-flight, 2026-09-11 21:24:38+00
 -- ---------------------------------------------------------------------
---   pg_default_acl: 24 entries, ALL schema-scoped, none global.
+--   pg_default_acl: 24 entries, ALL schema-scoped, 0 global.
 --
 --   Targeted - grantor postgres:
 --     oid 16492  public   TABLES
@@ -86,22 +106,21 @@
 --   Deliberately NOT targeted - grantor postgres:
 --     oid 16493  public   FUNCTIONS
 --     oid 16549  storage  FUNCTIONS
+--       {postgres=X/postgres,anon=X/postgres,
+--        authenticated=X/postgres,service_role=X/postgres}
 --
 --   Deliberately NOT targeted - platform roles:
 --     15 entries, grantor supabase_admin
 --        (extensions, graphql, graphql_public, public, realtime)
 --      3 entries, grantor supabase_auth_admin (auth)
 --
---   Existing objects: none of the 18 relations in public carries the
---   unsafe signature; public holds 0 sequences. Current live exposure
---   from this mechanism is zero. The risk is recurrence.
---
---   This state must be re-verified immediately before applying. See
---   validation.md section 3. HARD STOP ON MISMATCH.
+--   Existing objects: 18 relations in public, none carrying the unsafe
+--   anon signature; 0 sequences; S-2 tables absent; public_profiles
+--   anon=r / authenticated=r. All 14 pre-flight requirements matched.
 -- ---------------------------------------------------------------------
 
 -- ---------------------------------------------------------------------
--- MIGRATION - exactly the four intended statements, nothing else
+-- MIGRATION - exactly the four applied statements, nothing else
 -- ---------------------------------------------------------------------
 
 ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public
@@ -117,20 +136,41 @@ ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA storage
   REVOKE ALL ON SEQUENCES FROM anon, authenticated;
 
 -- ---------------------------------------------------------------------
--- EXPECTED POST-CHANGE STATE
+-- POST-CHANGE STATE (verified 2026-09-11 21:26:04+00)
 -- ---------------------------------------------------------------------
---   postgres / public  / TABLES     {postgres=arwdDxtm/postgres,service_role=arwdDxtm/postgres}
---   postgres / public  / SEQUENCES  {postgres=rwU/postgres,service_role=rwU/postgres}
---   postgres / storage / TABLES     {postgres=arwdDxtm/postgres,service_role=arwdDxtm/postgres}
---   postgres / storage / SEQUENCES  {postgres=rwU/postgres,service_role=rwU/postgres}
+--   All four statements returned success with no error.
 --
---   pg_default_acl entry count: still 24. Each targeted entry keeps a
---   non-empty ACL (postgres + service_role), so Postgres updates the row
---   in place rather than deleting it.
+--   The four targeted entries, same oids, updated in place:
+--     oid 16492  public   TABLES     {postgres=arwdDxtm/postgres,service_role=arwdDxtm/postgres}
+--     oid 16494  public   SEQUENCES  {postgres=rwU/postgres,service_role=rwU/postgres}
+--     oid 16548  storage  TABLES     {postgres=arwdDxtm/postgres,service_role=arwdDxtm/postgres}
+--     oid 16550  storage  SEQUENCES  {postgres=rwU/postgres,service_role=rwU/postgres}
 --
---   Global entries (defaclnamespace = 0): still 0.
---   The other 20 entries: byte-identical.
---   Every existing relacl and proacl: byte-identical.
+--   anon and authenticated: absent from all four.
+--   postgres and service_role: retained in all four, unchanged.
+--
+--   pg_default_acl entries        : 24 (unchanged)
+--   global entries (namespace 0)  : 0  (unchanged - IN SCHEMA trap did
+--                                       not fire)
+--   the other 20 entries          : byte-identical
+--                                   (md5 214c7692b94b0410bd43ed623d5f0b40
+--                                    before and after)
+--
+--   Existing objects - byte-identical before and after:
+--     18 public relations    md5 eb5f241e4fc2107e9b063e0d105f9080
+--     34 public functions    md5 b573f7fd22d2ce5a2c810b78318b47a3
+--      8 storage relations   md5 219b3af9ad84bd4396b5002d61bff025
+--     17 storage functions   md5 9004d75ecb8885e8796438e688236ef6
+--   public.users still carries anon=m / authenticated=m (S-6, deferred)
+--   - its survival is part of the proof that no existing object moved.
+--
+--   Security Advisor: 5 lints, 35 findings (1 ERROR, 32 WARN, 2 INFO)
+--   before and after. Unchanged, as expected - the Advisor has no
+--   default-privilege lint, so it cannot show this fix, only catch a
+--   regression. None occurred.
+--
+--   PostgREST, as anon: GET /rest/v1/public_profiles -> HTTP 200 with a
+--   row. GET /rest/v1/_test_results and /_test_run_log -> HTTP 404.
 -- ---------------------------------------------------------------------
 
 -- ---------------------------------------------------------------------

@@ -48,7 +48,7 @@ The client half is not a placeholder either. It is the **demand side of the cont
 | **HISTORICAL (pre-21.5)** | Captured 2026-08-22/23 and re-confirmed 2026-08-31, before the test tables were dropped. §11.1 |
 | **CURRENT (post-21.5)** | Re-verified live 2026-09-08 against `kbnmkyvbwkuvcklywdhk`. §0.2. The post-21.4 re-verification of 2026-08-31 stands for §11.4's current-state block and §12.7, neither of which Phase 21.5 touched |
 
-### 0.2 Current status of all findings — S-2 row live-verified 2026-09-08; all others 2026-08-31
+### 0.2 Current status of all findings — S-5, S-6, S-7 rows live-verified 2026-09-11; S-2 row 2026-09-08; all others 2026-08-31
 
 | ID | Finding | Status |
 |---|---|---|
@@ -56,11 +56,13 @@ The client half is not a placeholder either. It is the **demand side of the cont
 | **S-2** | `_test_results` / `_test_run_log` world-writable by `anon` | ✅ **REMEDIATED — Phase 21.5.** Both tables dropped 2026-09-08. `public` table count 19 → 17; both owned sequences gone; both Advisor ERRORs cleared; the REST endpoints now return 404. 28 rows preserved in `analysis/phase-21.5/pre-drop-snapshot.sql` |
 | **S-3** | No DELETE policy on `storage.objects` | ⚠️ **OPEN** — still only SELECT + INSERT policies |
 | **S-4** | Unhandled backend SQLSTATEs | ⚠️ **OPEN** — 58 backend-raised, **55 unhandled** (see §11.3 correction) |
-| **S-5** | Default privileges grant ALL on new objects to `anon` | ⚠️ **OPEN** — `pg_default_acl` still `anon=arwdDxtm` for TABLES |
+| **S-5** | Default privileges grant ALL on new objects to `anon` | ✅ **REMEDIATED — Phase 21.6.** 2026-09-11: `anon` and `authenticated` removed from the `postgres` TABLES and SEQUENCES defaults in `public` and `storage`; `postgres` and `service_role` retained. Every existing object ACL byte-identical. FUNCTIONS and `supabase_admin` defaults deliberately unchanged |
+| **S-6** | `anon` / `authenticated` hold `MAINTAIN` on `public.users` | ⚠️ **OPEN** — found in the Phase 21.6 analysis; residue of an enumerated revoke in migration `20260712144926`. Deferred to Phase 21.7 |
+| **S-7** | Three `log_collaboration_*_activity` trigger functions executable by `PUBLIC`, and so by `anon` | ⚠️ **OPEN** — found in the Phase 21.6 analysis; built-in `EXECUTE`-to-`PUBLIC` default, not `pg_default_acl`. Deferred to Phase 21.7 |
 
-**S-1 and S-2 are now remediated, each by its own approved phase — S-1 by Phase 21.4, S-2 by Phase 21.5. S-3, S-4 and S-5 remain OPEN and are remediated by nothing in this document.**
+**S-1, S-2 and S-5 are now remediated, each by its own approved phase — S-1 by Phase 21.4, S-2 by Phase 21.5, S-5 by Phase 21.6. S-3, S-4, S-6 and S-7 remain OPEN and are remediated by nothing in this document.**
 
-**S-5 is the root cause of both fixed findings** and is still in force: `ALTER DEFAULT PRIVILEGES FOR ROLE postgres GRANT ALL ON TABLES TO anon, authenticated, service_role`. Every table created by `postgres` in `public` is still granted ALL — including TRUNCATE — to `anon` at creation. S-1 and S-2 were its two visible symptoms; removing them does not remove the mechanism, and the next table created will reproduce it.
+**S-5 was the root cause of S-1 and S-2, and it is now closed for future objects.** Until 2026-09-11, the `postgres` default privileges in `public` and `storage` granted ALL — including TRUNCATE — to `anon` and `authenticated` on every new table, view and sequence. Phase 21.6 removed both roles from those four entries, keeping `postgres` and `service_role`. The fix is deliberately not retroactive: no existing object's ACL changed, which is why S-6 — a residue on `public.users` left by an earlier incomplete revoke — survives and is tracked separately. One latent twin outside this project's control remains: the `supabase_admin` / `public` TABLES default, which applies only to objects created *as* `supabase_admin`. Detail: `analysis/phase-21.6/`.
 
 ---
 

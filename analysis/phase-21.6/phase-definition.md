@@ -3,10 +3,10 @@
 **Branch:** `phase-21.6-s5-default-privileges`
 **Base commit:** `168d068` (`main`, merge of PR #13 — Phase 21.5 / S-2)
 **Addresses:** finding **S-5** from `analysis/phase-21.3/backend-contract.md` §0.2 — the root cause of S-1 and S-2
-**Status:** **PREPARATION ONLY. The production mutation is NOT approved and has NOT been applied.**
-**Validation level:** **Level 1** — documentation and a prepared backend-only migration; `index.html` is not touched (`.apos/VALIDATION_STANDARD.md` §2)
+**Status:** **COMPLETE — S-5 REMEDIATED, production mutation applied 2026-09-11, validation closed 2026-09-12.** Pre-flight **14/14 PASS**; post-change **15/15 PASS**, including the authenticated browser write smoke test. See §16.
+**Validation level:** **Level 1** — documentation and a backend-only change; `index.html` is not touched (`.apos/VALIDATION_STANDARD.md` §2)
 
-Nothing in this phase has been executed against the backend. No repository file outside `analysis/phase-21.6/` has been modified. Not committed, not pushed.
+Exactly one backend change was made: the four approved `ALTER DEFAULT PRIVILEGES` statements. No existing object was modified and no application source was touched. Not yet committed, not yet pushed.
 
 ---
 
@@ -252,8 +252,8 @@ Any of these **stops the phase before mutation**. Report; do not proceed; do not
 | Path | Contents | State |
 |---|---|---|
 | `phase-definition.md` | This document | Complete |
-| `migration.sql` | The 4 intended `ALTER DEFAULT PRIVILEGES` statements | Prepared — **NOT APPLIED** |
-| `validation.md` | Pre-flight and post-change checks | Defined; mutation-dependent results **PENDING** |
+| `migration.sql` | The 4 `ALTER DEFAULT PRIVILEGES` statements, with pre- and post-change evidence | **APPLIED** 2026-09-11 |
+| `validation.md` | Pre-flight and post-change checks | 14/14 pre-flight **PASS**; **15/15** post-change **PASS** (M-15 closed 2026-09-12 after a test-design correction) |
 
 **Not updated in this phase, deliberately.** `analysis/phase-21.3/*`, `analysis/phase-21.4/*`, `analysis/phase-21.5/*` and `.apos/PROJECT_CONTEXT.md` are untouched. They record S-5 as OPEN, which is still true, and are updated only after a successful remediation.
 
@@ -273,12 +273,63 @@ Any of these **stops the phase before mutation**. Report; do not proceed; do not
 
 ---
 
-## 16. Summary
+## 16. Remediation result — applied 2026-09-11
 
-S-5 is a Supabase bootstrap default: `postgres` default privileges grant `anon` and `authenticated` everything — including `TRUNCATE` — on every future table, view and sequence in `public` and `storage`. It is schema-scoped rather than global, it predates every migration, and it has already caused two ERROR-severity findings.
+**S-5 is REMEDIATED.**
 
-Current live exposure from it is **zero** — every existing relation was manually narrowed and `public` holds no sequences — but that is discipline, not design, and the evidence shows the discipline failing three times.
+The pre-flight was re-run at `21:24:38+00` and **all 14 requirements matched the reviewed baseline exactly**: 24 entries with none global; the four target ACLs and both FUNCTIONS ACLs byte-identical to §2; all 18 `public` relation ACLs as documented; `public_profiles` at `anon=r` / `authenticated=r`; the Advisor at 35 findings; the session running as `postgres` (`current_user` = `session_user` = `postgres`). Checkpoint `c06c675` was confirmed on `origin` with the committed `migration.sql` hash `bf5cb656…aab2d0` before anything ran. No hard-stop condition fired.
 
-This phase removes `anon` and `authenticated` from exactly four `pg_default_acl` entries, keeping `postgres` and `service_role`. It modifies no existing object, makes every future public API surface an explicit decision, and is exactly reversible. FUNCTIONS defaults, platform-role defaults, and the two residues S-6 and S-7 are deliberately left for separate treatment.
+Exactly four statements ran, in one call, verbatim from `migration.sql`:
 
-**Nothing has been executed.** The mutation requires explicit production-mutation approval that has not been given.
+```sql
+ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public
+  REVOKE ALL ON TABLES FROM anon, authenticated;
+ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public
+  REVOKE ALL ON SEQUENCES FROM anon, authenticated;
+ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA storage
+  REVOKE ALL ON TABLES FROM anon, authenticated;
+ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA storage
+  REVOKE ALL ON SEQUENCES FROM anon, authenticated;
+```
+
+All returned success. Post-change state, verified `21:26:04+00`:
+
+| | Before | After |
+|---|---|---|
+| `postgres`/`public`/TABLES | `postgres`, `anon`, `authenticated`, `service_role` — all `arwdDxtm` | **`postgres`, `service_role` only** |
+| `postgres`/`public`/SEQUENCES | all four roles `rwU` | **`postgres`, `service_role` only** |
+| `postgres`/`storage`/TABLES | as `public` | **`postgres`, `service_role` only** |
+| `postgres`/`storage`/SEQUENCES | as `public` | **`postgres`, `service_role` only** |
+| `pg_default_acl` entries | 24 | **24** |
+| Global entries | 0 | **0** |
+| The other 20 entries | — | **fingerprint-identical** |
+| `public` relations / functions ACLs | 18 / 34 | **byte-identical** |
+| `storage` relations / functions ACLs | 8 / 17 | **byte-identical** |
+| Migration records | 41 | **41** |
+| Security Advisor | 5 lints / 35 findings | **5 lints / 35 findings** |
+
+**The change landed in exactly the right place.** Each of the four targeted entries lost precisely its `anon` and `authenticated` elements and kept `postgres` and `service_role`. The count held at 24, because each row kept a non-empty ACL and was updated in place. No global entry appeared, so the `IN SCHEMA` trap in `migration.sql` rule 2 did not fire.
+
+**The non-retroactivity claim held empirically.** Every existing ACL across 77 relations and functions in `public` and `storage` is byte-identical before and after. `public.users` still carries `anon=m` / `authenticated=m` — S-6, deferred — and its survival is part of that proof.
+
+**No regression.** `public_profiles` is still SELECT-only for both roles; `public.users` grants neither role SELECT, INSERT, UPDATE, DELETE or TRUNCATE; the S-2 tables are still absent and their endpoints return 404; `GET /rest/v1/public_profiles` as `anon` still returns 200 with a row; the Advisor is unchanged in every lint's name, level and count.
+
+**What the Advisor could not show.** It has no default-privilege lint, so it was never going to reflect this fix. The fix is proven by the `pg_default_acl` diff alone.
+
+**Column-level grants were checked too, after a gap was found.** The fingerprints above cover table and function ACLs but not `attacl`. Since the application's real authenticated writes depend on column-level UPDATE grants, those were compared against the pre-Phase-21.6 baseline in `analysis/phase-21.3/backend-contract.md` §11.4: `users` **6** columns, `profiles` **9**, `notifications` **`read` only**, `wanted_posts` **7** — all matching exactly. **No column-level permission changed during Phase 21.6.** Detail and the limits of that instrument: `validation.md` §4.5.
+
+**The authenticated write smoke test passed, after its design was corrected.** M-15 originally named "a like or follow". That action does not exist: no Like element in the app has a click handler, the counts come from a static `stageData` array, no Supabase write targets `likes` or `follows`, Phase 21.3 had already recorded both tables as unreferenced, and both hold 0 rows. **That is a test-design error of mine, not a product failure and not a regression** — `Like` and `Follow` are display-only in the current build, and this phase changed nothing about them. M-15 was replaced with **Profile → Edit Profile → Save with no values changed**, which exercises the same class of permission on a path the app genuinely uses: column-level UPDATE grants on `profiles` and `users.username`, own-row RLS UPDATE policies, and EXECUTE on the SECURITY DEFINER helper those policies call. Confirmed by the user on production `stagerz.app` on 2026-09-12: the save completed with no visible error and no unintended data change. **M-15 = PASS.**
+
+**Final S-5 state: REMEDIATED for future objects.** No table, view, materialized view or sequence created by `postgres` in `public` or `storage` will be granted anything automatically to `anon` or `authenticated`. The mechanism that produced S-1 and S-2 is closed. What remains open is listed, not implied closed: S-6 and S-7 (Phase 21.7), the FUNCTIONS defaults, and the `supabase_admin` twin at oid 16496.
+
+---
+
+## 17. Summary
+
+S-5 was a Supabase bootstrap default: `postgres` default privileges granted `anon` and `authenticated` everything — including `TRUNCATE` — on every future table, view and sequence in `public` and `storage`. It was schema-scoped rather than global, it predated every migration, and it had already caused two ERROR-severity findings.
+
+Current live exposure from it was **zero** — every existing relation had been manually narrowed and `public` held no sequences — but that was discipline, not design, and the evidence showed the discipline failing three times.
+
+**On 2026-09-11, under explicit approval, this phase removed `anon` and `authenticated` from exactly four `pg_default_acl` entries**, keeping `postgres` and `service_role`. **Pre-flight 14/14 PASS; post-change 15/15 PASS.** Exactly four statements ran. No existing object changed — table, function and column permissions are all byte-identical — and that was the design, not a happy accident.
+
+The one check that could not be automated, a signed-in write on production, needed its wording corrected before it could run at all, and then passed. Every future public API surface is now an explicit decision rather than an automatic grant. The change is exactly reversible. FUNCTIONS defaults, platform-role defaults, and the two residues S-6 and S-7 are deliberately left for separate treatment.
