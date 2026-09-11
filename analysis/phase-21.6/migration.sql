@@ -1,0 +1,212 @@
+-- =====================================================================
+-- STAGERZ - Phase 21.6 - S-5 remediation
+-- =====================================================================
+--  ####  EXECUTABLE MIGRATION - APPLIED.  ####
+--
+-- The four statements below WERE APPLIED to the live project on
+-- 2026-09-11. They ran exactly as written, in a single execution: four
+-- ALTER DEFAULT PRIVILEGES statements, nothing else.
+--
+-- This file is NOT a descriptive snapshot. It differs deliberately from
+-- the .sql files in analysis/phase-21.3/, which carry the opposite
+-- header and contain no executable statements.
+--
+-- (The counterpart marker string used by those snapshots is deliberately
+--  not reproduced here, so a grep for it cannot misclassify this file.)
+--
+-- Project ref : kbnmkyvbwkuvcklywdhk  (stagerz-foundation-v2-test)
+-- Prepared    : 2026-09-11
+-- Applied     : 2026-09-11, between 21:24:38+00 (pre-flight) and
+--               21:26:04+00 (post-change verification)
+-- Approved by : user, explicitly, as the ONLY permitted production
+--               mutation of Phase 21.6
+-- Checkpoint  : commit c06c6758b7a804a0d866e5fbc2d282105a40f64e, pushed to
+--               origin/phase-21.6-s5-default-privileges before this ran.
+--               migration.sql as committed there has SHA-256
+--               bf5cb656476df916d6488a0cc37a9f9ec029010b705c7b798e9381a2fbaab2d0.
+--               This annotated copy differs from it in comments only; the
+--               four executable statements are byte-identical.
+-- Executed as : current_user = session_user = postgres (not superuser),
+--               so FOR ROLE postgres targeted the executing role itself
+-- Validation  : COMPLETE - pre-flight 14/14 PASS, post-change 15/15 PASS.
+--               M-15, the authenticated write smoke test, was closed
+--               2026-09-12 via Profile -> Edit Profile -> Save with no
+--               values changed. Its original wording named a Like action
+--               the application does not implement; that was a
+--               test-design correction, not a product failure and not a
+--               regression. See validation.md section 4.3.
+-- Addresses   : S-5 - default privileges for role postgres granted ALL,
+--               including TRUNCATE, on every future TABLE, VIEW and
+--               SEQUENCE in schemas public and storage to anon and
+--               authenticated. Root cause of S-1 and S-2.
+--
+-- Applied with a direct SQL execution, NOT through the migration tool,
+-- for the same reason as Phase 21.5: the approval named exactly four
+-- statements, and recording a migration would have written a fifth
+-- change. supabase_migrations.schema_migrations still holds 41 records,
+-- verified after the change.
+-- =====================================================================
+
+-- ---------------------------------------------------------------------
+--  ####  READ BEFORE RE-EXECUTING OR ROLLING BACK - SIX RULES  ####
+--
+--  1. FOR ROLE postgres IS MANDATORY.
+--     Without it the statement targets the defaults of whichever role
+--     is executing. If that is not postgres, the statement succeeds and
+--     changes nothing. A silent no-op, indistinguishable from success.
+--
+--  2. IN SCHEMA IS MANDATORY.
+--     Without it Postgres writes a NEW GLOBAL entry (defaclnamespace = 0)
+--     instead of modifying the schema-scoped one. The dangerous entry is
+--     left untouched and a second, confusing entry is added. Another
+--     silent failure.
+--
+--  3. REVOKE ALL IS DELIBERATE AND FUTURE-PROOF.
+--     Never replace it with an enumerated privilege list. Migration
+--     20260712144926 enumerated six privileges on public.users and
+--     silently left MAINTAIN behind (finding S-6), because MAINTAIN did
+--     not exist when that style was learned. ALL covers privilege types
+--     that do not exist yet.
+--
+--  4. service_role AND postgres MUST REMAIN UNTOUCHED.
+--     Neither appears in any revoke list below, deliberately. Naming
+--     service_role would cut off the trusted backend role; postgres is
+--     the owner.
+--
+--  5. FUNCTIONS DEFAULTS ARE INTENTIONALLY OUT OF SCOPE.
+--     Entries postgres/public/FUNCTIONS and postgres/storage/FUNCTIONS
+--     are not touched. The only live function exposure on this project
+--     comes from the built-in EXECUTE-to-PUBLIC default, not from these
+--     entries, so changing them would look like a fix without being one.
+--     See phase-definition.md section 7.3.
+--
+--  6. EXISTING OBJECT ACLs MUST REMAIN UNCHANGED.
+--     ALTER DEFAULT PRIVILEGES affects only objects created AFTER it
+--     runs. Every existing relacl and proacl must be byte-identical
+--     before and after. Verified: they were.
+-- ---------------------------------------------------------------------
+
+-- ---------------------------------------------------------------------
+-- PRE-CHANGE STATE
+--   first captured read-only 2026-09-09
+--   RE-VERIFIED IDENTICAL at pre-flight, 2026-09-11 21:24:38+00
+-- ---------------------------------------------------------------------
+--   pg_default_acl: 24 entries, ALL schema-scoped, 0 global.
+--
+--   Targeted - grantor postgres:
+--     oid 16492  public   TABLES
+--       {postgres=arwdDxtm/postgres,anon=arwdDxtm/postgres,
+--        authenticated=arwdDxtm/postgres,service_role=arwdDxtm/postgres}
+--     oid 16494  public   SEQUENCES
+--       {postgres=rwU/postgres,anon=rwU/postgres,
+--        authenticated=rwU/postgres,service_role=rwU/postgres}
+--     oid 16548  storage  TABLES     (identical to 16492)
+--     oid 16550  storage  SEQUENCES  (identical to 16494)
+--
+--   Deliberately NOT targeted - grantor postgres:
+--     oid 16493  public   FUNCTIONS
+--     oid 16549  storage  FUNCTIONS
+--       {postgres=X/postgres,anon=X/postgres,
+--        authenticated=X/postgres,service_role=X/postgres}
+--
+--   Deliberately NOT targeted - platform roles:
+--     15 entries, grantor supabase_admin
+--        (extensions, graphql, graphql_public, public, realtime)
+--      3 entries, grantor supabase_auth_admin (auth)
+--
+--   Existing objects: 18 relations in public, none carrying the unsafe
+--   anon signature; 0 sequences; S-2 tables absent; public_profiles
+--   anon=r / authenticated=r. All 14 pre-flight requirements matched.
+-- ---------------------------------------------------------------------
+
+-- ---------------------------------------------------------------------
+-- MIGRATION - exactly the four applied statements, nothing else
+-- ---------------------------------------------------------------------
+
+ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public
+  REVOKE ALL ON TABLES FROM anon, authenticated;
+
+ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public
+  REVOKE ALL ON SEQUENCES FROM anon, authenticated;
+
+ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA storage
+  REVOKE ALL ON TABLES FROM anon, authenticated;
+
+ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA storage
+  REVOKE ALL ON SEQUENCES FROM anon, authenticated;
+
+-- ---------------------------------------------------------------------
+-- POST-CHANGE STATE (verified 2026-09-11 21:26:04+00)
+-- ---------------------------------------------------------------------
+--   All four statements returned success with no error.
+--
+--   The four targeted entries, same oids, updated in place:
+--     oid 16492  public   TABLES     {postgres=arwdDxtm/postgres,service_role=arwdDxtm/postgres}
+--     oid 16494  public   SEQUENCES  {postgres=rwU/postgres,service_role=rwU/postgres}
+--     oid 16548  storage  TABLES     {postgres=arwdDxtm/postgres,service_role=arwdDxtm/postgres}
+--     oid 16550  storage  SEQUENCES  {postgres=rwU/postgres,service_role=rwU/postgres}
+--
+--   anon and authenticated: absent from all four.
+--   postgres and service_role: retained in all four, unchanged.
+--
+--   pg_default_acl entries        : 24 (unchanged)
+--   global entries (namespace 0)  : 0  (unchanged - IN SCHEMA trap did
+--                                       not fire)
+--   the other 20 entries          : byte-identical
+--                                   (md5 214c7692b94b0410bd43ed623d5f0b40
+--                                    before and after)
+--
+--   Existing objects - byte-identical before and after:
+--     18 public relations    md5 eb5f241e4fc2107e9b063e0d105f9080
+--     34 public functions    md5 b573f7fd22d2ce5a2c810b78318b47a3
+--      8 storage relations   md5 219b3af9ad84bd4396b5002d61bff025
+--     17 storage functions   md5 9004d75ecb8885e8796438e688236ef6
+--   public.users still carries anon=m / authenticated=m (S-6, deferred)
+--   - its survival is part of the proof that no existing object moved.
+--
+--   Security Advisor: 5 lints, 35 findings (1 ERROR, 32 WARN, 2 INFO)
+--   before and after. Unchanged, as expected - the Advisor has no
+--   default-privilege lint, so it cannot show this fix, only catch a
+--   regression. None occurred.
+--
+--   PostgREST, as anon: GET /rest/v1/public_profiles -> HTTP 200 with a
+--   row. GET /rest/v1/_test_results and /_test_run_log -> HTTP 404.
+-- ---------------------------------------------------------------------
+
+-- ---------------------------------------------------------------------
+-- ROLLBACK - restores the exact prior state of all four entries
+-- ---------------------------------------------------------------------
+--   ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public
+--     GRANT ALL ON TABLES TO anon, authenticated;
+--   ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public
+--     GRANT ALL ON SEQUENCES TO anon, authenticated;
+--   ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA storage
+--     GRANT ALL ON TABLES TO anon, authenticated;
+--   ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA storage
+--     GRANT ALL ON SEQUENCES TO anon, authenticated;
+--
+--   ALL on TABLES restores arwdDxtm; ALL on SEQUENCES restores rwU.
+--   Byte-exact.
+--
+--   Rollback RE-OPENS S-5 and must not be run except to recover from a
+--   confirmed regression, under the same approval as any production
+--   change. It cannot damage existing objects - it is no more
+--   retroactive than the migration is.
+-- ---------------------------------------------------------------------
+
+-- ---------------------------------------------------------------------
+-- DELIBERATELY NOT CHANGED
+-- ---------------------------------------------------------------------
+--   * FUNCTIONS defaults (oids 16493, 16549) - see rule 5 above
+--   * All 15 supabase_admin and 3 supabase_auth_admin entries -
+--     platform-owned, including the latent supabase_admin/public/TABLES
+--     twin (oid 16496)
+--   * Every existing object ACL in every schema
+--   * S-6: MAINTAIN held by anon/authenticated on public.users -
+--     deferred to Phase 21.7
+--   * S-7: EXECUTE-to-PUBLIC on the three log_collaboration_*_activity
+--     trigger functions - deferred to Phase 21.7
+--   * public_profiles, RLS, policies, storage policies, auth settings
+--   * S-3 storage DELETE policy, S-4 SQLSTATE handling
+--   * index.html and all application source
+-- ---------------------------------------------------------------------
