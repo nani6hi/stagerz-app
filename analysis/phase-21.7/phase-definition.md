@@ -3,10 +3,10 @@
 **Branch:** `phase-21.7-s6-s7-privilege-cleanup`
 **Base commit:** `452b12b` (`main`, merge of PR #14 — Phase 21.6 / S-5)
 **Addresses:** findings **S-6** and **S-7** from `analysis/phase-21.3/backend-contract.md` §0.2
-**Status:** **PREPARATION ONLY. The production mutation is NOT approved and has NOT been applied.**
-**Validation level:** **Level 1** — documentation and a prepared backend-only migration; `index.html` is not touched (`.apos/VALIDATION_STANDARD.md` §2)
+**Status:** **COMPLETE — S-6 and S-7 REMEDIATED.** Production mutation applied 2026-09-11 (UTC) under explicit approval; validation closed 2026-09-12. Pre-flight **21/21 PASS**, post-change **16/16 PASS**, smoke tests **A, B, C all PASS**. See §15.
+**Validation level:** **Level 1** — documentation and a backend-only change; `index.html` is not touched (`.apos/VALIDATION_STANDARD.md` §2)
 
-Nothing in this phase has been executed against the backend. No repository file outside `analysis/phase-21.7/` and `.apos/PROJECT_CONTEXT.md` has been modified. Not committed, not pushed at the time of writing.
+Exactly one backend change was made: the seven approved `REVOKE` statements, in a single atomic call. No existing object definition, policy, trigger or row was modified, and no application source was touched. PR and merge still pending.
 
 ---
 
@@ -238,10 +238,10 @@ Any of these **stops the phase before mutation**. Report; do not proceed; do not
 | Path | Contents | State |
 |---|---|---|
 | `phase-definition.md` | This document | Complete |
-| `migration.sql` | The 7 intended statements | Prepared — **NOT APPLIED** |
-| `validation.md` | Pre-flight and post-change checks, smoke tests | Defined; mutation-dependent results **PENDING** |
+| `migration.sql` | The 7 statements, with pre- and post-change evidence | **APPLIED** 2026-09-11 (UTC) |
+| `validation.md` | Pre-flight, post-change checks and smoke tests | **21/21 pre-flight PASS; 16/16 post-change PASS; smoke A/B/C PASS** |
 
-**Not updated in this phase.** `analysis/phase-21.3/*`, `analysis/phase-21.4/*`, `analysis/phase-21.5/*` and `analysis/phase-21.6/*` are untouched. `backend-contract.md` §0.2 still records S-6 and S-7 as OPEN, which is still true; it is updated only after a successful remediation.
+**Prior-phase artifacts.** `analysis/phase-21.4/*`, `analysis/phase-21.5/*` and `analysis/phase-21.6/*` are untouched. `analysis/phase-21.3/backend-contract.md` receives **current-status changes only** — §0.2 now records S-6 and S-7 as REMEDIATED, since that section is this project's single record of finding status. Its historical evidence sections are preserved exactly and are **not** rewritten to suggest the remediated state existed during Phase 21.3.
 
 ---
 
@@ -258,12 +258,53 @@ Any of these **stops the phase before mutation**. Report; do not proceed; do not
 
 ---
 
-## 15. Summary
+## 15. Production result — applied 2026-09-11 (UTC)
 
-Two residual grants, both found during the Phase 21.6 analysis and neither caused by it. `anon` and `authenticated` hold `MAINTAIN` on `public.users` — the remainder of five enumerated revokes written before PostgreSQL 17 gave that privilege a name. Three trigger functions are executable by `PUBLIC`, and explicitly by `authenticated`, from PostgreSQL's built-in default for new functions.
+**S-6 and S-7 are REMEDIATED.**
 
-Neither is reachable in any useful way: `MAINTAIN` grants no row access and no HTTP verb maps to a maintenance command, and a direct call to a trigger function raises `0A000` before its body runs. Both are removed because they were never intended, not because they are exploitable.
+The four stages are kept distinct below, because they are different kinds of claim.
 
-Seven statements. No existing object's definition, policy, trigger or data changes. The seven column grants that profile editing depends on are provably untouchable by the form of revoke chosen. The three functions end up in exactly the posture `handle_new_auth_user()` already has, which is the in-project proof that their triggers keep firing.
+### 15.1 The original findings
 
-**Nothing has been executed.** The mutation requires explicit production-mutation approval that has not been given.
+Both were discovered during the Phase 21.6 analysis of S-5, and neither was caused by it. **S-6:** `anon` and `authenticated` held `MAINTAIN` on `public.users`, the residue of five enumerated revokes written before PostgreSQL 17 gave that privilege a name (§3). **S-7:** three trigger functions were executable by `PUBLIC`, and explicitly by `authenticated`, from PostgreSQL's built-in default for new functions (§5–§6).
+
+### 15.2 The approved remediation
+
+Seven statements, no more: one `REVOKE MAINTAIN` for S-6 and six `REVOKE EXECUTE` for S-7. The `authenticated` revoke was explicitly approved scope expansion beyond S-7's original PUBLIC-only wording (§7).
+
+### 15.3 The production result
+
+Pre-flight was run as an approval gate and **re-run immediately before execution; all 21 requirements matched with zero drift.** The seven statements executed in a **single atomic call** as `postgres` (`current_user` = `session_user` = `postgres`), with **no SQL errors**. No rollback was run. No unapproved statement of any kind was issued.
+
+| | Before | After |
+|---|---|---|
+| `public.users` relacl | `{postgres=arwdDxtm,anon=m,authenticated=m,service_role=arwdDxtm}` | **`{postgres=arwdDxtm/postgres,service_role=arwdDxtm/postgres}`** |
+| `anon` / `authenticated` table privileges | MAINTAIN | **none of the eight** |
+| Seven column grants | `id=r`; six × `rw` | **byte-identical** |
+| RLS / policies / triggers / dependent view | `true/false` / 2 / 0 / 1 | **unchanged** |
+| Each of the three functions | `{=X,postgres=X,authenticated=X,service_role=X}` | **`{postgres=X/postgres,service_role=X/postgres}`** |
+| `PUBLIC` / `anon` / `authenticated` EXECUTE | true / true / true | **false / false / false** |
+| Function bodies, security attrs, triggers | — | **byte-identical (md5-verified)** |
+| `handle_new_auth_user()` control case | — | **byte-identical** |
+
+### 15.4 The validation result
+
+**Post-change 16/16 PASS.** Blast radius was proven rather than asserted: recomputing the `public` relation and function fingerprints with only the intended objects' pre-change ACLs substituted back reproduced `eb5f241e…` and `b573f7fd…` exactly — so among 18 relations only `users` changed, and among 34 functions only the three. Storage, column and policy fingerprints are unchanged. The Advisor moved **35 → 29** findings, `anon_security_definer_function_executable` **3 → 0**, `authenticated_security_definer_function_executable` **28 → 25**, with **zero new findings**. S-1, S-2 and S-5 all verified still remediated.
+
+**Smoke tests A, B and C all PASS**, including the real collaboration message path — sent, displayed and deleted with no error, through the application UI, after the EXECUTE grants were removed. That is the empirical confirmation of the principle this phase relied on: trigger firing does not require the DML caller to hold EXECUTE. Predicted from the `handle_new_auth_user()` control case, now observed on the changed functions themselves. `validation.md` §5.1 states precisely what the user reported and what is inferred from it.
+
+### 15.5 What remains open
+
+**S-3 and S-4 are untouched and remain OPEN.** Nothing in this phase addresses them. Also unchanged, and outside this project's control: the platform-owned `storage` MAINTAIN grants, the three `storage` SECURITY INVOKER trigger functions, and the `supabase_admin`/`public` TABLES default ACL carried forward from Phase 21.6.
+
+---
+
+## 16. Summary
+
+Two residual grants, both found during the Phase 21.6 analysis and neither caused by it. `anon` and `authenticated` held `MAINTAIN` on `public.users` — the remainder of five enumerated revokes written before PostgreSQL 17 gave that privilege a name. Three trigger functions were executable by `PUBLIC`, and explicitly by `authenticated`, from PostgreSQL's built-in default for new functions.
+
+Neither was reachable in any useful way: `MAINTAIN` grants no row access and no HTTP verb maps to a maintenance command, and a direct call to a trigger function raises `0A000` before its body runs. Both were removed because they were never intended, not because they were exploitable.
+
+Seven statements, applied in one atomic call. No existing object's definition, policy, trigger or data changed. The seven column grants that profile editing depends on were provably untouchable by the form of revoke chosen — and were verified byte-identical afterwards. The three functions now sit in exactly the posture `handle_new_auth_user()` already had, and a real message sent through the production UI confirmed their triggers still fire.
+
+**S-6 REMEDIATED. S-7 REMEDIATED. S-3 and S-4 remain OPEN.** PR and merge pending.
