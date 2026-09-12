@@ -1,0 +1,251 @@
+-- =====================================================================
+-- STAGERZ - Phase 21.7 - S-6 and S-7 remediation
+-- =====================================================================
+--  ####  EXECUTABLE MIGRATION - APPLIED.  ####
+--
+-- The seven statements below WERE APPLIED to the live project on
+-- 2026-09-11 (UTC). They ran exactly as written, in a single call:
+-- seven REVOKE statements, nothing else.
+--
+-- This file is NOT a descriptive snapshot. It differs deliberately from
+-- the .sql files in analysis/phase-21.3/, which carry the opposite
+-- header and contain no executable statements.
+--
+-- (The counterpart marker string used by those snapshots is deliberately
+--  not reproduced here, so a grep for it cannot misclassify this file.)
+--
+-- Project ref : kbnmkyvbwkuvcklywdhk  (stagerz-foundation-v2-test)
+-- Server      : PostgreSQL 17.6 (170006) - MAINTAIN exists only in 17+
+-- Prepared    : 2026-09-12
+-- Applied     : 2026-09-11, between 23:40:35+00 (final pre-mutation
+--               re-check) and 23:42:02+00 (post-change validation), UTC
+-- Approved by : user, explicitly, as the ONLY permitted production
+--               mutation of Phase 21.7, naming these seven statements
+-- Checkpoint  : commit 22efa74f72f49befe77d07489df3e703b158efc8, pushed to
+--               origin/phase-21.7-s6-s7-privilege-cleanup before this ran.
+--               migration.sql as committed there has SHA-256
+--               f20123fee73ed6a0c8dce3153869aea88d9600beececa729011dcee89381abd2.
+--               This annotated copy differs from it in comments only; the
+--               seven executable statements are byte-identical.
+-- Executed as : current_user = session_user = postgres, database postgres
+-- Execution   : ATOMIC - all seven statements sent in ONE call
+-- Errors      : NONE
+-- Rollback    : NOT executed
+-- Scope       : no unapproved mutation of any kind was performed
+-- Addresses   : S-6 - anon and authenticated held MAINTAIN on public.users
+--               S-7 - three trigger functions executable by PUBLIC (and,
+--                     by explicit grant, by authenticated)
+-- =====================================================================
+
+-- ---------------------------------------------------------------------
+--  ####  READ BEFORE RE-EXECUTING OR ROLLING BACK - SIX RULES  ####
+--
+--  1. THE EXECUTABLE PORTION IS EXACTLY SEVEN STATEMENTS.
+--     One for S-6, six for S-7. Every other line in this file is a
+--     comment. No GRANT, ALTER, DROP, CREATE or CASCADE appears in any
+--     executable statement.
+--
+--  2. THE S-6 REVOKE IS NARROW ON PURPOSE.
+--     REVOKE MAINTAIN, not REVOKE ALL. MAINTAIN was verified to be the
+--     ONLY table-level privilege anon and authenticated held on
+--     public.users, so both forms reach the same end state - but
+--     MAINTAIN does not exist as a column-level privilege, so this form
+--     provably cannot touch the seven column grants that Edit Profile
+--     depends on. Enumeration here was derived from the live ACL, not
+--     from habit, which is the distinction from the mistake that
+--     created S-6 in the first place.
+--
+--  3. THE SEVEN COLUMN GRANTS ON public.users MUST SURVIVE UNCHANGED.
+--     authenticated holds id=r and username, first_name, last_name,
+--     photo_url, bio, location = rw. These are what make profile
+--     editing work. VERIFIED UNCHANGED after the change.
+--
+--  4. TRIGGER FIRING DOES NOT REQUIRE EXECUTE, SO NO COMPENSATING GRANT
+--     IS NEEDED. PostgreSQL does not check the DML caller's EXECUTE
+--     privilege when firing a trigger. Proven inside this project:
+--     handle_new_auth_user() has proacl {postgres=X,service_role=X} -
+--     no PUBLIC, not executable by anon or authenticated - and its
+--     trigger on auth.users fires on every signup. CONFIRMED IN
+--     PRODUCTION after this change by smoke test C.
+--
+--  5. NOTHING ABOUT THE FUNCTIONS THEMSELVES CHANGED.
+--     Ownership, SECURITY DEFINER, search_path, volatility, bodies and
+--     the three triggers are all untouched. Only EXECUTE grants moved.
+--
+--  6. EXISTING RLS, POLICIES AND ALL OTHER OBJECTS REMAINED UNCHANGED.
+--     public.users keeps RLS enabled with its two policies and zero
+--     triggers. Every other relation, function and column ACL in public
+--     and storage is byte-identical afterwards.
+-- ---------------------------------------------------------------------
+
+-- ---------------------------------------------------------------------
+-- PRE-CHANGE STATE
+--   first captured read-only 2026-09-12
+--   RE-VERIFIED IDENTICAL at final pre-flight and again immediately
+--   before execution, 2026-09-11 23:40:35+00
+-- ---------------------------------------------------------------------
+--   S-6 - public.users
+--     relkind r, owner postgres, RLS enabled=true forced=false,
+--     policies=2 (md5 b784b66a3c906019478dfebccbd3c7b0), triggers=0,
+--     dependent views=1 (public_profiles)
+--     relacl:
+--       {postgres=arwdDxtm/postgres,anon=m/postgres,
+--        authenticated=m/postgres,service_role=arwdDxtm/postgres}
+--     anon          : MAINTAIN only (no r/a/w/d/D/x/t)
+--     authenticated : MAINTAIN only (no r/a/w/d/D/x/t)
+--     column grants : authenticated -> id=r; username, first_name,
+--                     last_name, photo_url, bio, location = rw  (7 rows)
+--     Neither role was a member of any other role, neither was a member
+--     of pg_maintain, and there was no PUBLIC grant on the table, so
+--     MAINTAIN was held directly and nowhere else.
+--
+--   S-7 - the three trigger functions, all identical in posture
+--     public.log_collaboration_asset_activity()    body md5 696efad02b7f725c333f706598306e4c
+--     public.log_collaboration_credit_activity()   body md5 a6b00afd24b4e33f734411baed44f55c
+--     public.log_collaboration_message_activity()  body md5 278d7269e37d2c36c6805f5eec4cd41c
+--       owner postgres, plpgsql, SECURITY DEFINER, VOLATILE,
+--       returns trigger, SET search_path TO ''
+--       proacl: {=X/postgres,postgres=X/postgres,
+--                authenticated=X/postgres,service_role=X/postgres}
+--       PUBLIC        : EXECUTE  (the leading "=X/postgres")
+--       anon          : EXECUTE, inherited via PUBLIC only - no explicit grant
+--       authenticated : EXECUTE, explicit grant
+--       triggers      : trg_log_collaboration_asset_activity   AFTER INSERT ON public.collaboration_assets   md5 c6b6071e15de9b3c329183fd6677877e
+--                       trg_log_collaboration_credit_activity  AFTER INSERT ON public.collaboration_credits  md5 3047edc2f6b24118f9fe96d1ce1f52b5
+--                       trg_log_collaboration_message_activity AFTER INSERT ON public.collaboration_messages md5 96bd81ad49f0b523fc7176faa39cbe60
+--       frontend      : zero references in index.html; no supaRpc call
+--
+--   Control case, deliberately NOT modified:
+--     public.handle_new_auth_user()
+--       proacl {postgres=X/postgres,service_role=X/postgres}
+--       body md5 47c47604d93e67243a38a42c1349a988
+--       trigger on_auth_user_created md5 8173a871f7271c4cb8f87ef2ebf5932f
+--       anon=false, authenticated=false - fires on every signup. This is
+--       the posture the three functions above were moved to.
+--
+--   Pre-mutation fingerprints:
+--     public relations  (18)  eb5f241e4fc2107e9b063e0d105f9080
+--     public functions  (34)  b573f7fd22d2ce5a2c810b78318b47a3
+--     storage relations  (8)  219b3af9ad84bd4396b5002d61bff025
+--     storage functions (17)  9004d75ecb8885e8796438e688236ef6
+--     column ACLs       (24)  6f12d81ec431e4b5890b4f23485fb17e
+-- ---------------------------------------------------------------------
+
+-- ---------------------------------------------------------------------
+-- MIGRATION - exactly the seven applied statements, nothing else
+-- ---------------------------------------------------------------------
+
+-- --- S-6: remove the MAINTAIN residue from public.users (1 statement) ---
+
+REVOKE MAINTAIN ON TABLE public.users FROM anon, authenticated;
+
+-- --- S-7: reduce the three trigger functions to postgres/service_role
+-- --- EXECUTE only (6 statements) ---
+
+REVOKE EXECUTE ON FUNCTION public.log_collaboration_asset_activity() FROM PUBLIC;
+
+REVOKE EXECUTE ON FUNCTION public.log_collaboration_asset_activity() FROM authenticated;
+
+REVOKE EXECUTE ON FUNCTION public.log_collaboration_credit_activity() FROM PUBLIC;
+
+REVOKE EXECUTE ON FUNCTION public.log_collaboration_credit_activity() FROM authenticated;
+
+REVOKE EXECUTE ON FUNCTION public.log_collaboration_message_activity() FROM PUBLIC;
+
+REVOKE EXECUTE ON FUNCTION public.log_collaboration_message_activity() FROM authenticated;
+
+-- ---------------------------------------------------------------------
+-- POST-CHANGE STATE (verified 2026-09-11 23:42:02+00)
+-- ---------------------------------------------------------------------
+--   All seven statements returned success. No SQL error of any kind.
+--
+--   S-6 - public.users
+--     relacl AFTER:
+--       {postgres=arwdDxtm/postgres,service_role=arwdDxtm/postgres}
+--     The anon and authenticated entries disappeared entirely, because
+--     MAINTAIN was their only table-level privilege. Expected, not
+--     over-revocation.
+--     anon MAINTAIN=false, authenticated MAINTAIN=false.
+--     Neither role holds ANY of the eight table-level privileges.
+--     service_role and postgres retain full arwdDxtm.
+--     UNCHANGED: RLS true/false; 2 policies (md5 b784b66a...); 0 triggers;
+--     1 dependent view; all SEVEN column grants byte-identical -
+--       id:SELECT | username, first_name, last_name, photo_url, bio,
+--       location: SELECT+UPDATE
+--
+--   S-7 - all three functions
+--     proacl AFTER: {postgres=X/postgres,service_role=X/postgres}
+--     postgres=true  service_role=true
+--     PUBLIC=false   anon=false   authenticated=false
+--     UNCHANGED: owner, language, SECURITY DEFINER, volatility, return
+--     type, search_path, body md5 (696efad0.../a6b00afd.../278d7269...),
+--     trigger definitions (c6b6071e.../3047edc2.../96bd81ad...) and
+--     trigger target tables/events.
+--     The three functions now match handle_new_auth_user() exactly in
+--     ACL shape.
+--
+--   Control case UNCHANGED: handle_new_auth_user() proacl, body md5
+--   47c47604..., trigger md5 8173a871..., trigger still present.
+--
+--   BLAST RADIUS - proof that ONLY the four intended objects changed:
+--     public relation fingerprint recomputed with users' pre-change ACL
+--       substituted back  = eb5f241e4fc2107e9b063e0d105f9080  (= pre)
+--     public function fingerprint recomputed with the three functions'
+--       pre-change ACLs substituted back
+--                         = b573f7fd22d2ce5a2c810b78318b47a3  (= pre)
+--     storage relations  = 219b3af9ad84bd4396b5002d61bff025  UNCHANGED
+--     storage functions  = 9004d75ecb8885e8796438e688236ef6  UNCHANGED
+--     column ACLs  (24)  = 6f12d81ec431e4b5890b4f23485fb17e  UNCHANGED
+--     users policies     = b784b66a3c906019478dfebccbd3c7b0  UNCHANGED
+--   Among 18 public relations only users changed; among 34 public
+--   functions only the three changed.
+--
+--   Security Advisor: 5 lints/35 findings -> 4 lints/29 findings.
+--     anon_security_definer_function_executable          3 -> 0 (lint gone)
+--     authenticated_security_definer_function_executable 28 -> 25
+--     ERROR/WARN/INFO 1/32/2 -> 1/26/2. Zero new findings.
+--
+--   Regression guards: S-1, S-2 and S-5 all remain remediated.
+--
+--   Production smoke tests: A PASS, B PASS, C PASS.
+--     C exercised the real collaboration message path after the EXECUTE
+--     grants were removed - see validation.md section 5.
+-- ---------------------------------------------------------------------
+
+-- ---------------------------------------------------------------------
+-- ROLLBACK - restores the exact prior privileges for all seven
+--            statements. COMMENTED OUT. NOT EXECUTED.
+-- ---------------------------------------------------------------------
+--   GRANT MAINTAIN ON TABLE public.users TO anon, authenticated;
+--
+--   GRANT EXECUTE ON FUNCTION public.log_collaboration_asset_activity() TO PUBLIC;
+--   GRANT EXECUTE ON FUNCTION public.log_collaboration_asset_activity() TO authenticated;
+--   GRANT EXECUTE ON FUNCTION public.log_collaboration_credit_activity() TO PUBLIC;
+--   GRANT EXECUTE ON FUNCTION public.log_collaboration_credit_activity() TO authenticated;
+--   GRANT EXECUTE ON FUNCTION public.log_collaboration_message_activity() TO PUBLIC;
+--   GRANT EXECUTE ON FUNCTION public.log_collaboration_message_activity() TO authenticated;
+--
+--   Rollback RE-OPENS S-6 and S-7 and must not be run except to recover
+--   from a confirmed regression, under the same approval as any
+--   production change. It touches only grants, never data or definitions.
+-- ---------------------------------------------------------------------
+
+-- ---------------------------------------------------------------------
+-- DELIBERATELY NOT CHANGED
+-- ---------------------------------------------------------------------
+--   * public.handle_new_auth_user() - the control case
+--   * Function ownership, SECURITY DEFINER, search_path, bodies
+--   * The three triggers and their tables
+--   * public.users RLS, its two policies, its seven column grants
+--   * service_role and postgres privileges everywhere
+--   * pg_default_acl - S-5 was closed in Phase 21.6; untouched here
+--   * Platform-owned siblings, out of scope and not alterable:
+--       storage.buckets / buckets_analytics / objects - anon and
+--       authenticated hold arwdDxtm (including m) granted by
+--       supabase_storage_admin, RLS-gated, storage not PostgREST-exposed
+--       storage.enforce_bucket_name_length(), storage.protect_delete(),
+--       storage.update_updated_at_column() - PUBLIC-executable trigger
+--       functions owned by supabase_storage_admin, SECURITY INVOKER
+--   * S-3 storage DELETE policy, S-4 SQLSTATE handling - both still OPEN
+--   * index.html and all application source
+-- ---------------------------------------------------------------------
