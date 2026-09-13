@@ -40,27 +40,36 @@ The client half is not a placeholder either. It is the **demand side of the cont
 >
 > The 28 rows those tables held are preserved in `analysis/phase-21.5/pre-drop-snapshot.sql`, committed before the drop. Their content is summarised in `analysis/phase-21.5/phase-definition.md` §3.
 
-**Three evidence epochs are used throughout this document:**
+> **A third remediation has since landed. S-3's §11.2 evidence is HISTORICAL in consequence, not in fact.**
+>
+> **S-3 is REMEDIATED.** Phase 21.8B (implementation merged as PR #18, merge `4bdb426`) deployed a dedicated server-side orphan reaper, `reap-orphaned-collaboration-assets`. On **2026-09-13** one production dry-run and one controlled delete run reclaimed all **15** orphaned objects: `storage.objects` **28 → 13**, orphans **15 → 0**, with every referenced object and every `collaboration_assets` row verified unchanged. Delete capability was disabled again immediately afterwards.
+>
+> §11.2's facts are **still true**: `storage.objects` still has only SELECT + INSERT policies, and the frontend's best-effort `remove()` is still denied. That absence is deliberate and fail-closed; what S-3 recorded as the defect — orphans that could never be reclaimed — is what Phase 21.8B closed. §11.2 is preserved unedited and carries its own banner. Detail: `analysis/phase-21.8b/`.
+
+**Four evidence epochs are used throughout this document:**
 
 | Label | Meaning |
 |---|---|
 | **HISTORICAL (pre-21.4)** | Captured 2026-08-22/23, before the ACL was fixed. §11.0, §11.4's first paragraph, all of §12 |
 | **HISTORICAL (pre-21.5)** | Captured 2026-08-22/23 and re-confirmed 2026-08-31, before the test tables were dropped. §11.1 |
 | **CURRENT (post-21.5)** | Re-verified live 2026-09-08 against `kbnmkyvbwkuvcklywdhk`. §0.2. The post-21.4 re-verification of 2026-08-31 stands for §11.4's current-state block and §12.7, neither of which Phase 21.5 touched |
+| **CURRENT (post-21.8B)** | Re-verified live 2026-09-13 against `kbnmkyvbwkuvcklywdhk`, after the Phase 21.8B delete run and delete disablement. The S-3 row of §0.2 and the banner on §11.2 |
 
-### 0.2 Current status of all findings — S-6 and S-7 rows live-verified 2026-09-11 (post-remediation); S-5 row 2026-09-11; S-2 row 2026-09-08; all others 2026-08-31
+### 0.2 Current status of all findings — S-3 row live-verified 2026-09-13 (post-remediation); S-6 and S-7 rows 2026-09-11 (post-remediation); S-5 row 2026-09-11; S-2 row 2026-09-08; all others 2026-08-31
 
 | ID | Finding | Status |
 |---|---|---|
 | **S-1** | `anon` write path to `public.users` via `public_profiles` | ✅ **REMEDIATED — Phase 21.4 / PR #11.** ACL now `anon=r`, `authenticated=r` |
 | **S-2** | `_test_results` / `_test_run_log` world-writable by `anon` | ✅ **REMEDIATED — Phase 21.5.** Both tables dropped 2026-09-08. `public` table count 19 → 17; both owned sequences gone; both Advisor ERRORs cleared; the REST endpoints now return 404. 28 rows preserved in `analysis/phase-21.5/pre-drop-snapshot.sql` |
-| **S-3** | No DELETE policy on `storage.objects` | ⚠️ **OPEN** — still only SELECT + INSERT policies |
+| **S-3** | No DELETE policy on `storage.objects` — orphaned objects in `collaboration-assets` were never reclaimed (reclassified 2026-09-12 as storage-lifecycle / cleanup, not security) | ✅ **REMEDIATED — Phase 21.8B / PR #18.** 2026-09-13: no client DELETE capability was added — `storage.objects` still has only SELECT + INSERT policies, deliberately. Orphans are reclaimed server-side by `reap-orphaned-collaboration-assets` (service role, maintenance-secret gated): **dry-run by default**; deletes only objects referenced by **no** live or soft-deleted `collaboration_assets` row and not queued; **48 h** grace period; batch ≤ **25**; exact-match re-check of both tables immediately before each removal; delete mode needs the explicit confirmation token **and** the separately set `STAGERZ_ORPHAN_REAPER_DELETE_ENABLED` flag. Production dry-run and **one** controlled delete run validated: `storage.objects` 28 → **13**, orphans **15 → 0**, referenced objects and all 15 `collaboration_assets` rows fingerprint-identical before and after. **Delete flag removed afterwards** — the reaper is back to dry-run only. Runs are operator-initiated; nothing schedules them |
 | **S-4** | Unhandled backend SQLSTATEs | ⚠️ **OPEN** — 58 backend-raised, **55 unhandled** (see §11.3 correction) |
 | **S-5** | Default privileges grant ALL on new objects to `anon` | ✅ **REMEDIATED — Phase 21.6.** 2026-09-11: `anon` and `authenticated` removed from the `postgres` TABLES and SEQUENCES defaults in `public` and `storage`; `postgres` and `service_role` retained. Every existing object ACL byte-identical. FUNCTIONS and `supabase_admin` defaults deliberately unchanged |
 | **S-6** | `anon` / `authenticated` hold `MAINTAIN` on `public.users` | ✅ **REMEDIATED — Phase 21.7.** 2026-09-11: `REVOKE MAINTAIN … FROM anon, authenticated`. `public.users` now grants table-level privileges to `postgres` and `service_role` only; neither app role holds any of the eight. **All seven column grants, RLS, both policies and zero triggers verified byte-identical.** Root cause was five enumerated revokes on 2026-07-12 written before PostgreSQL 17 named the privilege |
 | **S-7** | Three `log_collaboration_*_activity` trigger functions executable by `PUBLIC`, and so by `anon` | ✅ **REMEDIATED — Phase 21.7.** 2026-09-11: `EXECUTE` revoked from `PUBLIC` and from `authenticated` on all three. Now `{postgres=X/postgres,service_role=X/postgres}` — `PUBLIC`, `anon` and `authenticated` all false — matching the `handle_new_auth_user()` posture. Bodies, security attributes and trigger definitions unchanged; Advisor lint `anon_security_definer_function_executable` 3 → 0 |
 
-**S-1, S-2, S-5, S-6 and S-7 are now remediated, each by its own approved phase — S-1 by Phase 21.4, S-2 by Phase 21.5, S-5 by Phase 21.6, S-6 and S-7 by Phase 21.7. S-3 and S-4 remain OPEN and are remediated by nothing in this document.**
+**S-1, S-2, S-3, S-5, S-6 and S-7 are now remediated, each by its own approved phase — S-1 by Phase 21.4, S-2 by Phase 21.5, S-5 by Phase 21.6, S-6 and S-7 by Phase 21.7, S-3 by Phase 21.8B. S-4 remains OPEN and is remediated by nothing in this document.**
+
+**S-3's remediation is a reclaim path, not a permission change.** It removed the existing orphans and provides a validated, bounded way to remove future ones. It does **not** stop new orphans from being created — the upload-then-insert failure path still leaves one behind — and it does **not** address the separate observation of live `collaboration_assets` rows whose Storage objects are missing (2 at 2026-09-13), which the reaper by design never touches. Detail: `analysis/phase-21.8b/`.
 
 **S-5 was the root cause of S-1 and S-2, and it is now closed for future objects.** Until 2026-09-11, the `postgres` default privileges in `public` and `storage` granted ALL — including TRUNCATE — to `anon` and `authenticated` on every new table, view and sequence. Phase 21.6 removed both roles from those four entries, keeping `postgres` and `service_role`. That fix was deliberately not retroactive: no existing object's ACL changed, which is why two residues on existing objects survived it — **S-6** on `public.users` and **S-7** on the three trigger functions. **Phase 21.7 closed both**, on 2026-09-11, with seven `REVOKE` statements applied in a single atomic call; every other permission in `public` and `storage` was verified byte-identical afterwards. Latent twins outside this project's control remain: the `supabase_admin` / `public` TABLES default, which applies only to objects created *as* `supabase_admin`; the platform `storage` MAINTAIN grants; and three `storage` SECURITY INVOKER trigger functions. Detail: `analysis/phase-21.6/` and `analysis/phase-21.7/`.
 
@@ -315,6 +324,8 @@ This was not previously known and is the most serious result of the phase.
 Unauthenticated callers can read, write and **truncate** both. They are evidently test scaffolding, and neither is referenced by `index.html`. Combined with the project being named `stagerz-foundation-v2-test`, this is direct evidence for the long-open **Q-2**.
 
 ### 11.2 FINDING S-3 — the frontend's Storage `remove()` cannot succeed
+
+> **HISTORICAL (pre-21.8B) in consequence — the facts below are still true.** `storage.objects` still has exactly these two policies and no DELETE policy, and the frontend's `remove()` is still denied; that is deliberate and fail-closed. What changed is the consequence: orphaned objects are now reclaimable server-side. Phase 21.8B reclaimed all 15 on 2026-09-13 and S-3 is **REMEDIATED** (§0.2). This section is preserved unedited as the evidence that found the finding.
 
 `storage.objects` has RLS **enabled** with exactly **two** policies — `SELECT` and `INSERT`, both `authenticated`, both scoped by path prefix:
 

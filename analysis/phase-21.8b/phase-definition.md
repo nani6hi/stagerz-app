@@ -5,8 +5,11 @@
 **Precondition:** **G-7 PASS** (2026-09-13) — all seven deployed Edge Function source files are byte-identical to `main`, proven by Supabase CLI download and raw byte comparison
 **Addresses:** finding **S-3** — objects in `collaboration-assets` with no metadata row are never removed
 **Classification:** **storage-lifecycle / cleanup defect — NOT a security vulnerability** (reclassified 2026-09-12)
-**Status:** **IMPLEMENTED ON BRANCH, NOT DEPLOYED.** No Edge Function deployed or invoked, no secret or environment variable changed, no database, policy or Storage change
+**Implementation merged:** PR #18, merge commit `4bdb426028e68f58e2b67480a38a74d0c35fa89f`
+**Status:** **COMPLETE — S-3 REMEDIATED.** Deployed and operated in production 2026-09-13 (UTC), each step under its own explicit approval: one dry-run, one private pre-deletion backup, one controlled delete run, then delete capability disabled again. `storage.objects` 28 → **13**, orphans 15 → **0**, referenced objects and `collaboration_assets` fingerprint-identical before and after. See §12.
 **Validation level:** **Level 1 + offline tests** — new Edge Function source with 31 offline tests; `index.html` is not touched (`.apos/VALIDATION_STANDARD.md` §2)
+
+Sections 1–11 are the implementation record as written before deployment and are preserved unchanged in substance; §2's live facts describe the state **before** the delete run. §12 records what happened in production.
 
 ---
 
@@ -150,7 +153,9 @@ An object is removed **only if every rule holds**. Rules are evaluated per objec
 
 ---
 
-## 8. Deployment procedure — NOT performed; each step needs its own approval
+## 8. Deployment procedure — PERFORMED 2026-09-13; each step had its own approval
+
+> Performed as planned, with step 5 strengthened from "optionally download" to a mandatory, hash-verified private backup before the delete flag was set. Step 8 was **not** taken: no scheduled caller exists. Outcomes in §12.
 
 1. Review and merge the PR.
 2. **Deploy** `reap-orphaned-collaboration-assets` with `verify_jwt = false`. **Do not set** the delete flag.
@@ -163,7 +168,9 @@ An object is removed **only if every rule holds**. Rules are evaluated per objec
 
 ---
 
-## 9. Explicit mutation boundary
+## 9. Explicit mutation boundary — implementation branch
+
+> This table describes the implementation branch only, and remains true of it. The production operation that followed made a deliberate, separately approved set of mutations, listed exhaustively in §12.8.
 
 | Action | Status |
 |---|---|
@@ -187,8 +194,113 @@ Every Supabase interaction in this phase was a `SELECT` or catalog read.
 
 ---
 
-## 11. Summary
+## 11. Summary — as written before deployment
 
 S-3 leaves unreferenced files in Storage forever, because the only party that tries to clean them up — the browser — has, correctly, no permission to delete. This phase adds the smallest server-side counterpart: a separate, maintenance-secret-gated function that is **dry-run by default**, can only delete when both the request and the deployment environment say so, never removes more than 25 objects per run, and never removes anything a live **or soft-deleted** row or a queued deletion still refers to.
 
-**Nothing has been deployed, invoked or mutated. S-3 remains OPEN until the §8 procedure is completed and validated.**
+*At the time of writing:* nothing had been deployed, invoked or mutated, and S-3 was to remain OPEN until the §8 procedure was completed and validated. **It now has been — see §12 and §13.**
+
+---
+
+## 12. Production result — 2026-09-13 (UTC)
+
+**S-3 is REMEDIATED.** Full evidence, check by check, is in `validation.md` §9. No orphan path, file name, user identifier, secret value or backup content is recorded anywhere in this repository.
+
+### 12.1 Deployment
+
+| Property | Value |
+|---|---|
+| Deployed from | `main` @ `4bdb426028e68f58e2b67480a38a74d0c35fa89f`, exported with line-ending conversion disabled so the uploaded bytes equal the committed blobs |
+| Files deployed | `index.ts`, `reaper.ts`, `maintenance-auth.ts` — `reaper.test.ts` is not imported and was not bundled |
+| `verify_jwt` | **false** |
+| Source fidelity | Deployed source downloaded with the Supabase CLI and compared **byte-for-byte** against `main`: **3/3 MATCH** — at deployment, after enabling delete, and after disabling it |
+| Bundle hash | `b0663090cefb06aad9d062d1d9c2cc30b6a14fee5a3cf7ce686842162c559397`, unchanged from deployment to phase close |
+| Version at phase close | **v4** — v1 at deployment; v2, v3 and v4 are platform-side secret reloads (§12.7), not deployments |
+| Existing three functions | G-7 re-run after deployment: all 7 captured files still byte-identical; versions, hashes and `updated_at` unchanged by the deployment |
+
+### 12.2 Dry-run
+
+One dry-run request, default body. **HTTP 200**, `mode: dry-run`, **28** objects scanned, `scan.complete: true`, **13** `kept_referenced`, **15** `eligible`, **15** in the batch, all **15** `would_delete`, **0** remaining after the batch, every other classification 0.
+
+The batch's sorted-path SHA-256 was `1415420641f550b39860f0e51f706d5647cafe889dbf2595ba37271c09863632`, and an **independent** computation over the database-derived orphan set produced the same value — proving the batch was exactly the 15 orphans without either side revealing a path. No mutation occurred.
+
+**Logging gap, recorded honestly:** the gateway row for the inbound function request never appeared in `function_edge_logs`. One complete dry-run is nonetheless established by the function runtime log (one boot) and the downstream gateway call pattern, which matches a single run exactly: 5 Storage listings, 16 + 16 exact-count reads, 1 + 1 reference pages, **zero** removals.
+
+### 12.3 Backup — before any deletion
+
+A **private local backup** was taken and its durable copy validated **before** the delete flag was set:
+
+| Property | Value |
+|---|---|
+| Stored objects recovered | **13** of 15 |
+| Bytes | **260** — every byte the 15 orphans were known to hold |
+| Integrity | **13/13** files re-hashed against the manifest; durable copy byte-identical to the working copy |
+| Manifest SHA-256 | `7ad89c2ab8611f00204e23cd5964a14755fb4de347ad8ff750b25da4d430e128` |
+| Method | One authenticated `GET` per object; no Storage write |
+
+**The backup and its manifest live outside this repository and must never be committed.** They contain object paths and file names. Their location is deliberately not recorded here.
+
+### 12.4 The two fixture rows
+
+2 of the 15 orphan `storage.objects` rows could not be downloaded. Both had `metadata = NULL`, `version = NULL` and no size metadata, consistent with synthetic fixture rows not backed by an uploaded Storage object. Both sat under synthetic fixture collaboration identifiers created in the same instant, before the first real upload, and no migration inserts into `storage.objects`. The exact mechanism that originally created the rows was not conclusively established.
+
+A separate authenticated diagnostic `GET` for each returned **HTTP 400**, `statusCode 404`, `code NoSuchKey`, `error Not found`, `message The resource was not found`, with **no ETag and no Last-Modified**. **No underlying stored file existed, so there was nothing to recover.** Their paths and file names are not recorded.
+
+### 12.5 Delete run
+
+Delete flag set; pre-delete check passed (flag present by name, fingerprint and count unchanged, reaper source byte-identical to `main`). Then **exactly one** authorized request with body `{"mode":"delete","confirm":"DELETE_ORPHANED_OBJECTS"}`:
+
+**HTTP 200**, `mode: delete`, **28** scanned, `scan.complete: true`, **15** eligible, batch **15**, **15** `deleted`, **0** remaining. The batch fingerprint matched the validated target fingerprint exactly. The 13 real objects accounted for all **260** known bytes; the 2 NoSuchKey fixture rows were removed from `storage.objects` as well, each reported `deleted`.
+
+The gateway and Storage logs show exactly one run's calls: 5 listings, 16 + 16 count reads, 1 + 1 pages, **15** `DELETE` calls answered 200, 15 `storage.object.delete_many` and 15 `ObjectRemoved:Delete` lifecycle events, and nothing else. As in the dry-run, the inbound request row itself did not appear in `function_edge_logs`.
+
+### 12.6 Post-delete validation and final safety state
+
+| Check | Before | After |
+|---|---|---|
+| `storage.objects` | 28 | **13** |
+| `collaboration_assets` | 15 / 15 live | **15 / 15 live** |
+| `pending_asset_deletions` | 0 | **0** |
+| Orphans / orphan bytes | 15 / 260 | **0 / 0** |
+| The 15 target paths in Storage metadata | 15 | **0** — compared by per-path SHA-256 |
+| Referenced-object snapshot (13 objects: path, created, updated, version, ETag) | `dc4c75460a285b899be44b07e67fbf0b4f78ffd0ebe9c6484df9d33caa4bdb98` | **identical** |
+| `collaboration_assets` snapshot (15 rows: id, storage path, deleted_at) | `a910b6eee3c9c637ca93048b7896dd2facc33e3a5b5287c684163a07ef07f567` | **identical** |
+| Objects created or updated during the run | — | **0** |
+
+**No referenced object was changed or removed.** After validation, `STAGERZ_ORPHAN_REAPER_DELETE_ENABLED` was **removed** and confirmed absent by name. At phase close the reaper is **ACTIVE, v4**, bundle and source unchanged and byte-identical to `main` — back in its fail-closed, default-disabled state. With the flag absent, a delete request is refused with 403 before any Storage call — guard G-B, proven by the offline tests. That refusal was deliberately **not** re-exercised in production.
+
+### 12.7 Platform and tooling observations
+
+- **Secret changes reload every function.** Each project-secret change — the operator's rotation of `STAGERZ_MAINTENANCE_SECRET` before the dry-run, setting the delete flag, and removing it — incremented the version of **all four** deployed functions together, while every bundle hash and `updated_at` stayed identical and downloaded source stayed byte-identical. This was treated as a platform-side secret reload, not a source deployment. It matches the v7 → v8 bump observed in Phase 21.8A.
+- **`supabase db query` has a database side effect.** One harmless `SELECT 1` run through it caused the CLI to create or renew the CLI-managed role `cli_login_postgres` with a short validity window. The role had **zero sessions**, was not dropped or altered, and **no application data was changed**. All later work avoided that command; read-only SQL went through the established read-only tool, and the role's expiry was verified unchanged afterwards.
+- **A first backup attempt aborted before any request** because of a PowerShell 5.1 argument-parsing defect in the local script. The failing line runs before the only network call, so — by script-flow analysis, confirmed by an empty object directory and no manifest — no request was sent and no file was written. The corrected script was validated offline before use.
+
+### 12.8 Production mutation boundary
+
+Exhaustive. Every other interaction was a read.
+
+| Mutation | Approval | Outcome |
+|---|---|---|
+| Deploy `reap-orphaned-collaboration-assets` (`verify_jwt=false`) | Deployment step | v1, source byte-identical to `main` |
+| Rotate `STAGERZ_MAINTENANCE_SECRET` in Supabase and GitHub | Operator | Reload only (§12.7) |
+| Set `STAGERZ_ORPHAN_REAPER_DELETE_ENABLED=true` | Delete enablement | Reload only |
+| One delete-mode invocation | Single delete run | 15 `storage.objects` rows and their stored objects removed |
+| Remove `STAGERZ_ORPHAN_REAPER_DELETE_ENABLED` | Disablement | Reload only; delete capability off |
+| `cli_login_postgres` created or renewed by the CLI | Unintended tooling side effect, accepted and documented | No application data changed |
+
+**Not changed at any point:** any database schema, policy, grant, function or application row; `index.html`; any workflow; the three pre-existing Edge Functions' source.
+
+### 12.9 What remains open or out of scope
+
+- **S-4** remains OPEN.
+- **Live rows with missing objects** — 2 live `collaboration_assets` rows reference Storage objects that do not exist. Pre-existing, unaffected by the reaper by design, and a separate issue.
+- **New orphans can still arise** from the upload-then-insert failure path. Reclaiming them requires a future operator-initiated run under the same procedure; **no schedule exists**, and adding one would be its own reviewed change that prints counts only.
+- **The inbound function-request log row** was missing for both production invocations. The downstream evidence was conclusive both times; the gap itself is a platform logging observation.
+
+---
+
+## 13. Summary
+
+S-3 was never a leak: the browser correctly cannot delete from Storage. The defect was that nothing else could either, so every orphan stayed forever. Phase 21.8B added a separate, service-role, maintenance-secret-gated reaper that is dry-run by default and needs two independent keys to delete, and then used it exactly once, after a fingerprint-matched dry-run and a verified private backup.
+
+**All 15 orphans are gone, nothing referenced was touched, and delete capability is off again. S-3 is REMEDIATED.**
