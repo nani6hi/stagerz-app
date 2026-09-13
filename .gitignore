@@ -1,0 +1,27 @@
+# STAGERZ — repository ignore rules
+#
+# Added in Phase 21.8A alongside the first capture of Supabase Edge
+# Function source. The repository had no .gitignore before this point.
+#
+# The captured Edge Function sources under supabase/functions/ ARE
+# tracked deliberately — they are the forensic record of what is
+# deployed. What must never be tracked is anything carrying a secret
+# value or anything the tooling generates.
+
+# --- Secrets: never commit values ---------------------------------
+# Environment-variable NAMES appear in the captured source and in the
+# phase documentation, which is fine. Their VALUES must never be here.
+.env
+.env.*
+!.env.example
+
+# --- Supabase CLI local state -------------------------------------
+supabase/.temp/
+supabase/.branches/
+
+# --- Dependencies and build output --------------------------------
+node_modules/
+
+# --- OS / editor noise --------------------------------------------
+.DS_Store
+Thumbs.db
