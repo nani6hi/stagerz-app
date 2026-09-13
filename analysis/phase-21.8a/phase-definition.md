@@ -1,25 +1,27 @@
-# Phase 21.8A — Capture the deletion pipeline and prepare its scheduler (S-8)
+# Phase 21.8A — Capture the deletion pipeline and prepare its drainer (S-8)
 
 **Branch:** `phase-21.8a-s8-deletion-drainer`
 **Base commit:** `abefeb0` (`main`, merge of PR #15 — Phase 21.7 / S-6, S-7)
+**Source-capture checkpoint:** `3fb81ae` — pushed; **PR #16** open, not merged
 **Addresses:** finding **S-8** — the pending asset-deletion pipeline has no active automatic drainer
 **Classification:** **reliability / data-lifecycle defect — NOT a security vulnerability**
 **Severity:** **MEDIUM**
-**Status:** **PREPARATION ONLY. Nothing deployed, nothing scheduled, nothing invoked, no database change.**
-**Validation level:** **Level 1** — documentation and forensic source capture; `index.html` is not touched (`.apos/VALIDATION_STANDARD.md` §2)
+**Status:** **PREPARATION ONLY.** A manual-only (`workflow_dispatch`) workflow has been prepared in the working tree but **not committed and never run**. **No schedule, no GitHub secret, no Edge Function invocation or deployment, no Supabase mutation.**
+**Validation level:** **Level 1** — documentation, forensic source capture and an unexecuted workflow definition; `index.html` is not touched (`.apos/VALIDATION_STANDARD.md` §2)
 
 ---
 
 ## 1. Objective
 
-Two things, in this order:
+Three things, in this order:
 
-1. **Capture the deployed Edge Function source in version control** — it currently exists *only* inside the Supabase project, so the code that holds privileged deletion authority is unreviewable from this repository. This is the Phase 20.7 **C-3** problem applied to Edge Functions.
-2. **Prepare** (not create) a GitHub Actions scheduler for the existing drainer.
+1. **Capture the deployed Edge Function source in version control** — it previously existed *only* inside the Supabase project, so the code holding privileged deletion authority was unreviewable from this repository. This is the Phase 20.7 **C-3** problem applied to Edge Functions. *(Done — checkpoint `3fb81ae`.)*
+2. **Prepare a manual-only GitHub Actions workflow** that can call the existing drainer when, and only when, someone deliberately dispatches it. *(Prepared — not committed, never run.)*
+3. **Defer automatic scheduling** to a later, separately approved change.
 
 **Phase 21.8A contains no orphan reaper.** S-3 is handled separately in Phase 21.8B, and only after this phase is validated.
 
-**Pattern decision (`.apos/WORKFLOW.md`): Extend**, with one new artifact class — captured third-party-hosted source, mirroring how Phase 21.3 introduced descriptive SQL snapshots.
+**Pattern decision (`.apos/WORKFLOW.md`): Extend**, with two new artifact classes — captured third-party-hosted source (mirroring how Phase 21.3 introduced descriptive SQL snapshots) and the repository's first CI workflow.
 
 ---
 
@@ -40,7 +42,7 @@ The asset-deletion architecture is sound in design and incomplete in operation:
 - `pg_cron` — **not installed** (available, 1.6.4)
 - `pg_net` — **not installed** (available, 0.20.3)
 - `supabase_functions.hooks` (database webhooks) — **absent**
-- Repository CI — **none**; no `.github`, no `netlify.toml`, no `supabase/` directory before this phase
+- Repository CI on `main` — **none**
 - Frontend — **zero** `functions.invoke` calls
 
 **Why this went unnoticed:** the sibling `delete-account` function processes deletions **inline** and only uses its queue as a retry fallback, so account deletion works without a scheduler. `delete_collaboration_asset` has no inline processing at all — it enqueues and returns. Asset deletion is the one flow that depends entirely on an external drainer that was never wired up.
@@ -62,7 +64,7 @@ No file names, storage paths or user identifiers are recorded here.
 | Corresponding Storage object | **already absent** | **already absent** |
 | Structurally valid | yes — non-null path, collaboration exists, first path segment matches `collaboration_id` | yes |
 
-Both objects being already absent means they were removed out-of-band; the queue was never processed. This is what makes the first activation exceptionally low-risk (§7).
+Both objects being already absent means they were removed out-of-band; the queue was never processed. This is what makes the first run exceptionally low-risk (§8).
 
 ---
 
@@ -84,7 +86,7 @@ Both objects being already absent means they were removed out-of-band; the queue
 
 ## 5. Source capture
 
-Captured verbatim, with **no refactoring, no dependency pinning, no improvement of any kind** — this is a forensic record of what is deployed, not a cleanup.
+Captured verbatim in checkpoint `3fb81ae`, with **no refactoring, no dependency pinning, no improvement of any kind** — this is a forensic record of what is deployed, not a cleanup.
 
 | Path | SHA-256 | Bytes |
 |---|---|---|
@@ -98,12 +100,14 @@ Captured verbatim, with **no refactoring, no dependency pinning, no improvement 
 
 **Layout rationale.** The paths are not invented — every captured file's own first line already declares them (`// supabase/functions/…`). The deployed `delete-account` bundle exposes its files under platform paths (`user_fn_…/source/index.ts` and `user_fn_…/_shared/delete-auth-account.ts`), which map to `delete-account/index.ts` and `_shared/delete-auth-account.ts` respectively — consistent with its own `../_shared/…` import.
 
-**`supabase init` was deliberately not run.** No `config.toml`, no seed files, no CLI scaffolding. Capturing source alone satisfies "capture before modify" with the least new surface; CLI scaffolding can be added deliberately later if CLI-based deploys are ever wanted.
+**`supabase init` was deliberately not run.** No `config.toml`, no seed files, no CLI scaffolding.
 
 **Two duplication facts preserved as-is**, because they are properties of the deployed system:
 
 - `maintenance-auth.ts` exists **twice**, once per `process-*` function, and each copy's header says the duplication is deliberate (Edge Function bundling constraints) and that both copies must be kept in sync.
 - `delete-auth-account.ts` exists **twice**: `_shared/` (used by `delete-account`) and a private copy inside `process-pending-deletions/`. The two differ **only** in their first-line path comment.
+
+**Fidelity limitation — accepted for the checkpoint.** Fidelity was verified by inspection and mechanical cross-checks, **not** by a byte-level diff. A Supabase CLI download-and-diff (**gate G-7**) remains mandatory before Phase 21.8B modifies any captured function.
 
 ---
 
@@ -118,88 +122,122 @@ Captured verbatim, with **no refactoring, no dependency pinning, no improvement 
 | **Database webhooks** | Event-driven, not periodic; cannot retry failures and cannot drive a future periodic scan |
 | **External scheduler** | Hands the maintenance secret to a third party; worst on custody and reviewability |
 
-**Why GitHub Actions wins:** the schedule becomes a **diffable file in this repository**, reviewable under the same process as every other change. It adds no database extensions, keeps the secret out of the database, needs no new deployment surface, and gives run history and failure notifications for free. Its one weakness — GitHub cron is best-effort and can be delayed or skipped — is irrelevant for an idempotent deferred-cleanup queue.
+**Why GitHub Actions wins:** the workflow is a **diffable file in this repository**, reviewable under the same process as every other change. It adds no database extensions, keeps the secret out of the database, needs no new deployment surface, and gives run history and failure notifications for free. Its one weakness — GitHub cron is best-effort — is irrelevant for an idempotent deferred-cleanup queue, and does not arise at all while the workflow is manual-only.
 
-**One important technical finding that removes the main argument for `pg_cron`:** deleting a row from `storage.objects` does **not** remove the underlying file from the storage backend. Only the Storage API does. A SQL-only scheduler could therefore never complete the job; it would still have to make an HTTP call out to the Edge Function.
+**A SQL-only scheduler could never do this job anyway.** Deleting a row from `storage.objects` does **not** remove the underlying file from the storage backend; only the Storage API does. Any database-native scheduler would still have to make an HTTP call out to the Edge Function.
 
-**Supabase Pro is NOT required.** The organization is on **Free**, and everything here fits: `pg_cron`/`pg_net` are available but unused under this decision, Edge Function invocations run about 30/month against a 500K allowance, and Storage volumes are trivial. **This is not the point at which Pro becomes necessary, and it should not be purchased for this.**
+**Supabase Pro is NOT required.** The organization is on **Free**, and everything here fits. This is not the point at which Pro becomes necessary, and it should not be purchased for this.
 
 ---
 
-## 7. Intended first-activation procedure — NOT performed in this phase
+## 7. The prepared workflow
 
-Ordered for the smallest possible blast radius:
+**File:** `.github/workflows/process-pending-asset-deletions.yml` — **prepared, not committed, never run.**
 
-1. Commit and push this capture; review.
-2. **Manual** configuration of the GitHub repository secret `STAGERZ_MAINTENANCE_SECRET`, reusing the value already set in the Edge Function environment. **No new secret is created.**
-3. **One manual invocation, under explicit approval**, before any schedule exists.
-4. Validate against the predicted end state below.
-5. Only then add the workflow, initially with `workflow_dispatch` **only**.
-6. Only after a successful dispatch run, add the `schedule:` trigger as its own change.
+| Property | Setting | Why |
+|---|---|---|
+| Trigger | **`workflow_dispatch` only** | Nothing runs unless a person with write access deliberately starts it. No `schedule`, `push` or `pull_request` |
+| Inputs | **None** | Nothing a dispatcher can type changes what the function does — including any future dry-run/delete switch in 21.8B |
+| Permissions | **`permissions: {}`** | No `GITHUB_TOKEN` scopes at all |
+| Checkout | **None** | The job never reads repository contents |
+| Concurrency | group `process-pending-asset-deletions`, `cancel-in-progress: false` | Two drains can never overlap, and a running drain is never killed mid-batch |
+| Timeout | job `5 min`; `curl --max-time 60` | Bounded; a hung call cannot consume runner minutes |
+| Retries | **None** | A failed run is investigated, never repeated automatically |
+| Secret source | `env:` from `secrets.STAGERZ_MAINTENANCE_SECRET` | Never a literal in the YAML |
+| Missing/empty secret | **Fails before any HTTP request** | A misconfigured repository cannot send an unauthenticated call |
+| Secret transmission | `printf` (shell builtin) → curl stdin via `--header @-` | The `Authorization: Bearer …` header on the wire is exactly as specified, but the secret **never appears in a process argument list or the log** |
+| Transport | `--proto '=https'`, redirects not followed | Cannot be downgraded or bounced elsewhere |
+| Success rule | **HTTP 200 only** | Any other status fails the job and logs **only the HTTP status** |
+| Failure output | HTTP status only — **response body never printed** | Workflow logs may be public; arbitrary server responses do not belong in them, even though the deployed function's errors are currently generic |
+| Output | `processed` count and a tally by status | **Never per-asset identifiers** — workflow logs may be publicly visible |
+| Unexpected 200 body | Fails the job without printing the body | Strict: a malformed success is not treated as success |
+| `retry_recorded` result | Emits a `::warning::` | Surfaces a partial failure without silently re-running |
 
-**Predicted end state of the single first invocation:**
+**The first actual invocation of the drainer will be the first explicitly approved `workflow_dispatch` run of this workflow. No separate local or manual `curl` invocation is planned before it.** Earlier planning placed a separate manual call before any workflow existed; that step has been removed. Using the dispatch-only workflow for the first call is strictly better: the exact request is reviewed in advance as a file, the run is logged, and the secret never has to be handled on a workstation. The approval gate is unchanged — **the first dispatch still requires explicit approval.**
+
+**Current state:** the workflow has **never run**, the secret it needs is **not configured**, **no schedule exists**, and **no Supabase mutation has occurred**.
+
+---
+
+## 8. Intended first-run procedure — NOT performed
+
+1. ~~Commit and push the source capture.~~ **Done** — `3fb81ae`, PR #16 open.
+2. Commit the workflow on this branch; review it in PR #16.
+3. **Manual:** configure the GitHub repository secret `STAGERZ_MAINTENANCE_SECRET`, reusing the value already set in the Edge Function environment. **No new secret value is created.**
+4. Snapshot both queue rows into the phase record — the metadata hard-delete in step 5 is irreversible.
+5. **Explicit approval**, then **one** `workflow_dispatch` run.
+6. Validate against the predicted end state below.
+7. Only after a validated run: propose adding a `schedule:` trigger, as its own separately approved change.
+
+**Predicted end state of the first run:**
 
 | | Before | After |
 |---|---|---|
-| HTTP response | — | `200`, `{processed: 2, results: [already_deleted, already_deleted]}` |
-| `pending_asset_deletions` | 2 rows | **0 rows** |
-| `collaboration_assets` | 17 (15 live + 2 soft-deleted) | **15** — the two soft-deleted rows hard-deleted |
-| `storage.objects` | 28 | **28 — unchanged** |
-| Orphan objects | 15 | **15 — unchanged** |
-| Live assets | 15 | **15 — untouched** |
+| Job result | — | success, `HTTP status: 200` |
+| Logged summary | — | `Processed: 2`; `already_deleted: 2` |
+| `pending_asset_deletions` | **2** rows | **0** rows |
+| `collaboration_assets` | **17** (15 live + 2 soft-deleted) | **15** — the two soft-deleted rows hard-deleted |
+| `storage.objects` | **28** | **28 — unchanged** |
+| Orphan objects | **15** | **15 — unchanged** |
+| Live assets | **15** | **15 — untouched** |
 
-Two notes for whoever approves it. The metadata hard-delete is **irreversible**, so both queue rows should be snapshotted into the phase record first. And `already_deleted` is the *expected* status — seeing `deleted` would mean an object existed that this analysis says does not, and must stop the phase.
-
----
-
-## 8. Rollback concept
-
-**For this phase: `git revert`.** It adds documentation, a `.gitignore` and captured source. It changes no production system, so there is nothing to roll back outside the repository.
-
-**For the later steps** (not in this phase): deleting the workflow file disables the schedule; removing the GitHub secret revokes CI's ability to call the function; neither touches Supabase. The Edge Function itself is not modified in 21.8A, so its deployed version remains **7** throughout.
+**`already_deleted` is the expected status for both rows.** A result of `deleted` would mean a Storage object existed that this analysis concluded was absent, and must stop the phase for re-investigation. Any `retry_recorded` result likewise stops the phase.
 
 ---
 
-## 9. Explicit mutation boundary
+## 9. Rollback concept
 
-**Nothing in this phase mutates anything outside the repository working tree.**
+**For this phase: `git revert`** of the relevant commits. The phase adds documentation, a `.gitignore`, captured source and a workflow definition. It changes no production system.
 
-| Not done | Confirmed |
+**For the workflow specifically:** deleting the file removes the ability to dispatch it; removing the GitHub secret revokes it independently even if the file remains. Neither touches Supabase.
+
+**For the first run** (later, not in this phase): the queue-row and metadata-row hard-deletes are irreversible, which is why step 4 snapshots both rows first. The Storage side is a no-op, since both objects are already absent.
+
+**The Edge Function is not modified in 21.8A**; its deployed version remains **7** throughout.
+
+---
+
+## 10. Explicit mutation boundary
+
+**Nothing in this phase mutates anything outside the repository.**
+
+| Action | Status |
 |---|---|
-| Edge Function invoked | No |
-| Edge Function deployed or modified | No — still version 7 / 5 / 4 |
-| Queue row, metadata row or Storage object deleted | No |
-| Database policy, schema, function or grant changed | No |
-| GitHub Actions workflow created | **No — deliberately deferred** |
+| Edge Function invoked | **No** |
+| Edge Function deployed or modified | **No** — still version 7 / 5 / 4 |
+| Queue row, metadata row or Storage object deleted | **No** |
+| Database policy, schema, function or grant changed | **No** |
+| GitHub Actions workflow file | **Prepared in the working tree — not committed, never run** |
+| Automatic schedule | **None** |
 | GitHub secret created or changed | **No** |
-| Committed or pushed | No |
+| PR #16 merged | **No** |
 
 Every Supabase interaction in this phase was a `SELECT`, a catalog read, or an Edge Function **metadata/source read**.
 
 ---
 
-## 10. Validation gates
+## 11. Validation gates
 
-Full detail in `validation.md`. Gates for this phase: all seven captured files match the deployed source; no secret value appears in any tracked file; no application source changed; no workflow exists; no SQL migration exists; Supabase unmutated.
+Full detail in `validation.md`. For this phase: the seven captured files match the deployed source; no secret value appears in any file; no application source changed; no SQL migration exists; the workflow is dispatch-only with no schedule, no push/PR trigger, no checkout, no permissions and no secret literal; Supabase unmutated.
 
-Gates for the *next* steps, recorded here so the ordering is not lost: the manual invocation must produce exactly the §7 end state before any workflow is added, and the workflow must run successfully via `workflow_dispatch` before any `schedule:` trigger is introduced.
-
----
-
-## 11. Scope boundary
-
-**In scope:** source capture, `.gitignore`, documentation, scheduler decision.
-
-**Explicitly out of scope:** the orphan reaper (S-3 → Phase 21.8B); any change to the Edge Functions, including pinning the floating `@supabase/supabase-js@2` import; any database change; the workflow file; the secret; S-4.
-
-**One observation deliberately left unactioned:** all three functions import `https://esm.sh/@supabase/supabase-js@2` — a **floating major version**, so any redeploy may resolve a different minor or patch. The frontend was pinned to exactly `2.112.1` with SRI in Phase 21.2; the Edge Functions have no equivalent. Pin it when the function is next modified in 21.8B — **not** as a drive-by change to a forensic capture.
+For the next steps, recorded so the ordering is not lost: the secret must exist before any dispatch; the first dispatch requires explicit approval and must produce exactly the §8 end state; no `schedule:` trigger may be added until that run is validated; and G-7 must pass before 21.8B modifies any function.
 
 ---
 
-## 12. Summary
+## 12. Scope boundary
+
+**In scope:** source capture, `.gitignore`, documentation, scheduler decision, and a **manual-only** workflow definition.
+
+**Explicitly out of scope:** any `schedule:` trigger; configuring the secret; running the workflow; the orphan reaper (S-3 → Phase 21.8B); any change to the Edge Functions, including pinning the floating `@supabase/supabase-js@2` import; any database change; S-4.
+
+**One observation deliberately left unactioned:** all three functions import `https://esm.sh/@supabase/supabase-js@2` — a **floating major version**, so any redeploy may resolve a different minor or patch. The frontend was pinned to exactly `2.112.1` with SRI in Phase 21.2; the Edge Functions have no equivalent. Pin it when the function is next modified in 21.8B — not as a drive-by change to a forensic capture.
+
+---
+
+## 13. Summary
 
 The asset-deletion pipeline is well designed and never finished: a soft delete, a queue, an activity record and a privileged service-role drainer all exist, but nothing has ever called the drainer. Two deletion requests have sat unprocessed since 2026-07-20.
 
-Before changing any of it, this phase does the thing that should have happened first — **puts the deployed source under version control**, all seven files, fidelity-checked, with no improvements folded in. It then records the scheduler decision (GitHub Actions, on reviewability grounds) and the first-activation procedure, without creating either.
+This phase first put the deployed source under version control — all seven files, with no improvements folded in — and now prepares the smallest possible caller: a workflow that runs **only** when a person deliberately dispatches it, holds no permissions, checks out nothing, retries nothing, and refuses to make a request without its secret.
 
-**Nothing has been deployed, scheduled, invoked or mutated.** S-3 remains open and belongs to Phase 21.8B.
+**Nothing has been deployed, scheduled, invoked or mutated. The workflow has never run, and the secret it needs does not exist yet.** S-3 remains open and belongs to Phase 21.8B.

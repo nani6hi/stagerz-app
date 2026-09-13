@@ -1,0 +1,104 @@
+# .github/workflows/process-pending-asset-deletions.yml
+#
+# Phase 21.8A - S-8. MANUAL DRAIN ONLY.
+#
+# Calls the existing process-pending-asset-deletions Edge Function once.
+# One call drains at most one batch (25 rows) of pending_asset_deletions.
+#
+# Deliberate constraints - do not relax without a reviewed phase:
+#   * workflow_dispatch ONLY. No schedule, no push, no pull_request.
+#     Automatic scheduling is a separate, later, explicitly approved change.
+#   * permissions: {} - no GITHUB_TOKEN scopes; no repository checkout.
+#   * No inputs - nothing a dispatcher can type changes what the function does.
+#   * No retries - a failed run is investigated, never repeated automatically.
+#   * The secret never appears in this file, in the log, or in any process
+#     argument list.
+#
+# Requires the repository secret STAGERZ_MAINTENANCE_SECRET. If it is
+# missing or empty the job fails BEFORE any network request is made.
+
+name: Process pending asset deletions
+
+on:
+  workflow_dispatch:
+
+permissions: {}
+
+concurrency:
+  group: process-pending-asset-deletions
+  cancel-in-progress: false
+
+jobs:
+  drain:
+    name: Drain pending asset deletions (one batch)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Call process-pending-asset-deletions
+        shell: bash
+        env:
+          STAGERZ_MAINTENANCE_SECRET: ${{ secrets.STAGERZ_MAINTENANCE_SECRET }}
+          FUNCTION_URL: https://kbnmkyvbwkuvcklywdhk.supabase.co/functions/v1/process-pending-asset-deletions
+        run: |
+          set -euo pipefail
+
+          # 1. Refuse to proceed without the secret - before any network call.
+          if [ -z "${STAGERZ_MAINTENANCE_SECRET:-}" ]; then
+            echo "::error::STAGERZ_MAINTENANCE_SECRET is missing or empty. No request was made."
+            exit 1
+          fi
+
+          response_file="$(mktemp)"
+          trap 'rm -f "$response_file"' EXIT
+
+          # 2. Exactly one POST. No --retry. Redirects are not followed.
+          #    The Authorization header is written to curl's stdin by the shell
+          #    builtin printf and read with --header @-, so the secret is never
+          #    passed as a command-line argument and never printed.
+          curl_exit=0
+          http_status="$(
+            printf 'Authorization: Bearer %s\n' "$STAGERZ_MAINTENANCE_SECRET" |
+              curl --silent --show-error \
+                --proto '=https' \
+                --max-time 60 \
+                --request POST \
+                --header @- \
+                --header 'Content-Type: application/json' \
+                --data '{}' \
+                --output "$response_file" \
+                --write-out '%{http_code}' \
+                "$FUNCTION_URL"
+          )" || curl_exit=$?
+
+          if [ "$curl_exit" -ne 0 ]; then
+            echo "::error::curl failed with exit code ${curl_exit} (network error or timeout). The outcome is unknown; do not re-run without checking the queue first."
+            exit 1
+          fi
+
+          echo "HTTP status: ${http_status}"
+
+          # 3. Anything other than 200 fails the job. The response body is
+          #    deliberately NOT printed: workflow logs may be public, and
+          #    arbitrary server responses do not belong in them.
+          if [ "$http_status" != "200" ]; then
+            echo "::error::process-pending-asset-deletions returned HTTP ${http_status}."
+            exit 1
+          fi
+
+          # 4. Success. Print aggregate results only - never per-asset
+          #    identifiers, because workflow logs may be publicly visible.
+          if ! jq -e 'has("processed") and has("results")' "$response_file" > /dev/null; then
+            echo "::error::HTTP 200 but the response was not the expected shape. Body not printed."
+            exit 1
+          fi
+
+          echo "Processed: $(jq -r '.processed' "$response_file")"
+          echo "Results by status:"
+          jq -r '.results
+                 | if length == 0 then "  (none)"
+                   else (group_by(.status) | map("  \(.[0].status): \(length)") | .[])
+                   end' "$response_file"
+
+          if jq -e '[.results[] | select(.status == "retry_recorded")] | length > 0' "$response_file" > /dev/null; then
+            echo "::warning::One or more deletions failed and were recorded for retry. Investigate before any further run."
+          fi
