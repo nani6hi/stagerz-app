@@ -1,13 +1,13 @@
 # .github/workflows/process-pending-asset-deletions.yml
 #
-# Phase 21.8A - S-8. MANUAL DRAIN ONLY.
+# Phase 21.8A - S-8. DAILY SCHEDULED DRAIN, MANUAL RECOVERY RETAINED.
 #
 # Calls the existing process-pending-asset-deletions Edge Function once.
 # One call drains at most one batch (25 rows) of pending_asset_deletions.
 #
 # Deliberate constraints - do not relax without a reviewed phase:
-#   * workflow_dispatch ONLY. No schedule, no push, no pull_request.
-#     Automatic scheduling is a separate, later, explicitly approved change.
+#   * Triggers: schedule (daily at 03:17 UTC) and workflow_dispatch (manual
+#     recovery). No push, no pull_request.
 #   * permissions: {} - no GITHUB_TOKEN scopes; no repository checkout.
 #   * No inputs - nothing a dispatcher can type changes what the function does.
 #   * No retries - a failed run is investigated, never repeated automatically.
@@ -21,6 +21,8 @@ name: Process pending asset deletions
 
 on:
   workflow_dispatch:
+  schedule:
+    - cron: '17 3 * * *'
 
 permissions: {}
 
