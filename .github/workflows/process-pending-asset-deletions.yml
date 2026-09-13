@@ -10,7 +10,8 @@
 #     recovery). No push, no pull_request.
 #   * permissions: {} - no GITHUB_TOKEN scopes; no repository checkout.
 #   * No inputs - nothing a dispatcher can type changes what the function does.
-#   * No retries - a failed run is investigated, never repeated automatically.
+#   * No in-run retries. A failed scheduled run is investigated; the next
+#     scheduled run occurs normally on the following day.
 #   * The secret never appears in this file, in the log, or in any process
 #     argument list.
 #
