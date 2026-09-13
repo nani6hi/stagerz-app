@@ -123,7 +123,7 @@ No deployment, invocation, secret or environment change, Storage removal, databa
 
 ## 9. Production validation — 2026-09-13 (UTC)
 
-Every check below was read-only unless marked as the approved mutation. No orphan path, file name, user identifier, secret value, digest or backup content is recorded here.
+Every check below was read-only unless marked as the approved mutation. No orphan path, file name, user identifier, secret value or backup content is recorded here.
 
 ### 9.1 Deployment and source fidelity
 

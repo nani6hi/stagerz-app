@@ -242,7 +242,7 @@ A **private local backup** was taken and its durable copy validated **before** t
 
 ### 12.4 The two fixture rows
 
-2 of the 15 orphan `storage.objects` rows could not be downloaded. Both had `metadata = NULL`, `version = NULL` and no size metadata — the signature of rows inserted directly by SQL rather than uploaded through the Storage API — and both sat under synthetic fixture collaboration identifiers created in the same instant, before the first real upload.
+2 of the 15 orphan `storage.objects` rows could not be downloaded. Both had `metadata = NULL`, `version = NULL` and no size metadata, consistent with synthetic fixture rows not backed by an uploaded Storage object. Both sat under synthetic fixture collaboration identifiers created in the same instant, before the first real upload, and no migration inserts into `storage.objects`. The exact mechanism that originally created the rows was not conclusively established.
 
 A separate authenticated diagnostic `GET` for each returned **HTTP 400**, `statusCode 404`, `code NoSuchKey`, `error Not found`, `message The resource was not found`, with **no ETag and no Last-Modified**. **No underlying stored file existed, so there was nothing to recover.** Their paths and file names are not recorded.
 
