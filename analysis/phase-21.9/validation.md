@@ -3,14 +3,16 @@
 **Branch:** `phase-21.9-s4-error-contract`
 **Base commit:** `b1582a92c3dc9190614403434ff7688b66c4267b`
 **Validation level required:** **3** (`index.html` behaviour changes)
-**Status:** **IMPLEMENTED, REVIEWED, LOCALLY VALIDATED (LEVEL 3) AND COMMITTED LOCALLY — NOT PUSHED, NOT MERGED, NOT PRODUCTION VALIDATED. S-4 is NOT REMEDIATED.**
+**Status:** **IMPLEMENTED, REVIEWED, LOCALLY VALIDATED (LEVEL 3), PUSHED — PR #20 OPEN, NOT MERGED, NOT PRODUCTION VALIDATED. S-4 is NOT REMEDIATED.**
 - **Done:**
   - implementation, committed locally as `ab3a46df3790d33d794435eab241e3da1524f67f` (parent `b1582a9`);
   - independent pre-commit review, approved subject to two corrections, both applied (§9);
   - Level 1 static review and static invariants (**41/41**);
   - offline browser harness (**55/55**, headless Edge);
-  - real-application Level 3 local browser validation (**50/50**, network-isolated; **0** successful external requests, **0** Supabase requests) (§10).
-- **Outstanding:** push the branch, PR and GitHub checks, merge, any specifically approved test-project or production validation, final S-4 closure (§11).
+  - real-application Level 3 local browser validation (**50/50**, network-isolated; **0** successful external requests, **0** Supabase requests) (§10);
+  - branch pushed and **PR #20** opened against `main` (§7).
+- **In progress:** GitHub PR review and checks on PR #20.
+- **Outstanding:** complete the PR review and checks, merge PR #20 if approved, any specifically approved release or test-project validation, final S-4 closure (§11).
 
 **S-4 remains OPEN.**
 
@@ -32,7 +34,7 @@
 - Anything about backend behaviour: no RPC, Storage or Auth request was made to Supabase.
 - That the inventory stays current. It is a 2026-09-14 snapshot; the static check fails if the translator and the snapshot drift apart.
 
-> **Finding-status note.** Finding status lives in `analysis/phase-21.3/backend-contract.md` §0.2. S-4 is recorded there as **OPEN**: remediation implemented, independently reviewed, locally validated and committed locally, but not pushed, merged or production-validated.
+> **Finding-status note.** Finding status lives in `analysis/phase-21.3/backend-contract.md` §0.2. S-4 is recorded there as **OPEN**: remediation implemented, independently reviewed, locally validated, committed and pushed with PR #20 open, but not merged or production-validated.
 
 ---
 
@@ -146,8 +148,14 @@ A scratch copy of `index.html` (outside the repository) was given three faults:
 
 - **Branch:** `phase-21.9-s4-error-contract`, created from `main` at `b1582a9`.
 - **Product commit:** `ab3a46df3790d33d794435eab241e3da1524f67f` "feat(phase-21.9): add safe frontend error contract". Parent `b1582a92c3dc9190614403434ff7688b66c4267b`; 7 files: `index.html`, `analysis/phase-21.3/backend-contract.md` and the five `analysis/phase-21.9/` files.
-- **Documentation commit:** a separate documentation-only commit on top records the completed local validation. It changes only `phase-definition.md`, `validation.md` and `backend-contract.md`; `index.html` is unchanged.
-- **Not pushed, no PR.**
+- **Documentation commit:** `3040fdfb3d459b56a8675adaaa5b705f4521d1bf` "docs(phase-21.9): record local validation" records the completed local validation. It changes only `phase-definition.md`, `validation.md` and `backend-contract.md`; `index.html` is unchanged.
+- **Push:** branch `phase-21.9-s4-error-contract` pushed to `origin` with explicit approval (normal push, no force). A later documentation-only commit records the PR status below.
+- **PR #20:** open against `main` (base `b1582a9`, which `main` remains at); not a draft; GitHub reports it mergeable; **not merged**.
+- **Checks observed on PR head `3040fdf`, at the time of writing:**
+  - the Netlify deploy-preview commit status reported `success`;
+  - three Netlify check runs (redirect rules, header rules, pages changed) completed with conclusion `neutral`;
+  - no GitHub Actions workflow runs exist for this branch.
+  - Checks re-run on each new head commit. The Netlify deploy preview is an automatic, non-production preview build.
 - **Scratch-only artefacts** (the local server script, headless profile, mutant copy, DOM dumps) live in the session scratchpad, not the repository.
 - **Review bundle:** the independent review used a plain-text bundle generated outside the repository. It is not part of the repository.
 
@@ -248,10 +256,9 @@ The workstation's **Kaspersky** antivirus intercepts local HTTP traffic. It inse
 
 Each step requires its own explicit approval:
 
-1. **Push** `phase-21.9-s4-error-contract`. Not pushed yet.
-2. **PR and GitHub checks.** No PR exists.
-3. **Merge** to `main`. Under `.apos/VALIDATION_STANDARD.md` §8 this is a production release and needs Level 4 release validation.
-4. **Test-project or production validation**, if specifically approved. None has occurred.
-5. **Final S-4 closure** in `analysis/phase-21.3/backend-contract.md` §0.2, only once the steps above are complete.
+1. **Complete the GitHub PR review and checks on PR #20.** The branch is pushed and PR #20 is open (§7). This stage is in progress.
+2. **Merge PR #20**, if approved. Under `.apos/VALIDATION_STANDARD.md` §8 a merge to `main` is a production release and needs Level 4 release validation. Not merged.
+3. **Release or test-project validation**, if specifically approved. None has occurred.
+4. **Final S-4 closure** in `analysis/phase-21.3/backend-contract.md` §0.2, only once the steps above are complete.
 
 **Until then, S-4 remains OPEN and is not REMEDIATED.**
