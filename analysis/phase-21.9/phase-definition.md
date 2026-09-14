@@ -4,10 +4,14 @@
 **Base commit:** `b1582a9` (`main`, merge of PR #19 — Phase 21.8B closure)
 **Addresses:** finding **S-4** — backend error codes reach the user as raw tokens
 **Classification:** **UX / error-contract defect with a LOW information-disclosure component** — not a data-exposure vulnerability
-**Status:** **IMPLEMENTED LOCALLY, INDEPENDENTLY REVIEWED — NOT YET PRODUCTION VALIDATED.**
-- **Done:** implementation on the branch; independent pre-commit review (approved subject to two corrections, both applied); static check (41/41) and offline browser harness (55/55).
-- **Outstanding:** real-application Level 3 browser validation, approval to commit, commit, push, PR, production confirmation.
-- **Not committed, not pushed, no PR. S-4 remains OPEN — not REMEDIATED.**
+**Status:** **IMPLEMENTED, REVIEWED, LOCALLY VALIDATED AND COMMITTED LOCALLY — NOT PUSHED, NOT MERGED, NOT PRODUCTION VALIDATED.**
+- **Done:**
+  - implementation, committed locally as `ab3a46df3790d33d794435eab241e3da1524f67f`;
+  - independent pre-commit review (approved subject to two corrections, both applied);
+  - static check **41/41**, offline browser harness **55/55**;
+  - real-application Level 3 local browser validation **50/50**, network-isolated: 0 successful external requests, 0 Supabase requests.
+- **Outstanding:** push the branch, PR and GitHub checks, merge, any separately approved test-project or production validation, and final S-4 closure.
+- **Not pushed, no PR. S-4 remains OPEN — not REMEDIATED.**
 **Validation level required:** **Level 3** — `index.html` behaviour changes (`.apos/VALIDATION_STANDARD.md` §2)
 
 ---
@@ -168,11 +172,20 @@ Details in `validation.md`.
 - **Browser harness** (`error-contract-harness.html`): the translator, the real `uploadCollaborationAsset`, `applyToWanted`, `createCollaborationCredit` and `closeWantedPost`, extracted at run time and run against stubs with no outbound requests; plus a syntax compile of every inline script and a leak scan of every output.
 - **Regression:** the existing Phase 21.2 static check.
 - **Independent pre-commit review:** complete; approved subject to two corrections, both applied (`validation.md` §9).
+- **Real-application Level 3 local browser validation:** complete, **50/50**, network-isolated (`validation.md` §10). It covered:
+  - the real `index.html` boot;
+  - the zero-byte upload guard in the real page;
+  - the 5001/5000 message-edit and 301/300 task-title boundaries;
+  - a translator smoke test in the real page context;
+  - console review and a full network audit.
+- **Local commit:** `ab3a46df3790d33d794435eab241e3da1524f67f`, created with explicit approval.
 
-**Outstanding before S-4 can be marked REMEDIATED:**
-1. Real-application Level 3 browser validation on the branch (console, UI copy, upload guard in the real page, edit checks).
-2. Explicit user approval to commit, then a PR.
-3. Post-merge confirmation, with each step approved separately.
+**Outstanding before S-4 can be marked REMEDIATED** (each step approved separately):
+1. Push the branch.
+2. PR and GitHub checks.
+3. Merge.
+4. Any specifically approved test-project or production validation.
+5. Final S-4 closure in `backend-contract.md` §0.2.
 
 ---
 
