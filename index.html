@@ -1136,8 +1136,7 @@ async function supaInsert(table,data){
         url: url,
         status: r.status,
         statusText: r.statusText,
-        body: parsed || bodyText,
-        requestPayload: data
+        body: parsed || bodyText
       });
       return { ok:false, status:r.status, data:null, error: parsed || bodyText };
     }
@@ -1156,7 +1155,7 @@ async function supaUpsert(table,data,conflictCol){
     var parsed = null;
     try{ parsed = bodyText ? JSON.parse(bodyText) : null; }catch(parseErr){ /* body wasn't JSON */ }
     if(!r.ok){
-      console.error('supaUpsert FAILED', { table: table, url: url, status: r.status, statusText: r.statusText, body: parsed || bodyText, requestPayload: data });
+      console.error('supaUpsert FAILED', { table: table, url: url, status: r.status, statusText: r.statusText, body: parsed || bodyText });
       return { ok:false, status:r.status, error: parsed || bodyText };
     }
     console.log('supaUpsert OK', { table: table, url: url, status: r.status, body: parsed });
@@ -1198,8 +1197,7 @@ async function supaUpdate(table, filters, data){
         url: url,
         status: r.status,
         statusText: r.statusText,
-        body: parsed || bodyText,
-        requestPayload: data
+        body: parsed || bodyText
       });
 
       return {
@@ -1255,8 +1253,7 @@ async function supaUpdateMinimal(table, filters, data){
         url: url,
         status: r.status,
         statusText: r.statusText,
-        body: parsed || bodyText,
-        requestPayload: data
+        body: parsed || bodyText
       });
       return {
         ok: false,
@@ -1296,7 +1293,7 @@ async function supaRpc(fnName, params){
     var parsed = null;
     try{ parsed = bodyText ? JSON.parse(bodyText) : null; }catch(parseErr){}
     if(!r.ok){
-      console.error('supaRpc FAILED', { fnName: fnName, url: url, status: r.status, statusText: r.statusText, body: parsed || bodyText, params: params });
+      console.error('supaRpc FAILED', { fnName: fnName, url: url, status: r.status, statusText: r.statusText, body: parsed || bodyText });
       return { ok:false, status:r.status, error: parsed || bodyText };
     }
     return { ok:true, status:r.status, data: parsed };
@@ -1305,6 +1302,103 @@ async function supaRpc(fnName, params){
     return { ok:false, status:0, error: { message: 'Network error' } };
   }
 }
+
+// --- BACKEND ERROR CONTRACT (Phase 21.9 / S-4) ---
+// Every backend failure shown to the user goes through
+// backendErrorMessage(). Raw backend text -- PostgREST messages,
+// SQLSTATE tokens, constraint or table names, details, hints, JSON --
+// is never displayed; callers keep logging the raw error to the console.
+//
+// Codes are matched BEFORE HTTP status: PostgREST returns every custom
+// P0002-P0059 domain error as HTTP 500, so a status-first rule would
+// misreport them as infrastructure failures.
+//
+// The admin-only codes P0003-P0007 are raised only by service-role
+// functions the browser cannot call, so they are deliberately absent and
+// fall through to the generic message like any other unknown code.
+
+var BACKEND_ERROR_COPY = {
+  AUTH_REQUIRED: 'Your session has ended. Please sign in again.',
+  VALIDATION_FAILED: 'Please check your input and try again.',
+  READ_ONLY: 'This collaboration is no longer active, so it cannot be changed.',
+  TRANSFER_REQUIRED: 'Transfer ownership to another participant before leaving.',
+  TARGET_UNAVAILABLE: 'This user cannot be added to the collaboration.',
+  ALREADY_EXISTS: 'This user is already a participant in this collaboration.',
+  NOT_FOUND_OR_CHANGED: 'This item has changed or no longer exists. Please refresh and try again.',
+  FORBIDDEN: 'You no longer have permission to do this. Please refresh and try again.',
+  CONFLICT_RETRY: 'Something changed at the same time. Please refresh and try again.',
+  RATE_LIMITED: 'Too many attempts. Please wait a moment and try again.',
+  NETWORK_ERROR: 'Connection problem. Please check your connection and try again.',
+  INTERNAL_ERROR: 'Something went wrong. Please try again.'
+};
+
+// Codes whose condition needs its own copy. P0032 (target missing) and
+// P0033 (target blocked or anonymized) deliberately share one message so
+// an owner cannot tell which applies.
+var BACKEND_ERROR_SPECIFIC = {
+  P0001: { category: 'AUTH_REQUIRED' },
+  P0012: { category: 'NOT_FOUND_OR_CHANGED', message: 'This Wanted is no longer open.' },
+  P0013: { category: 'FORBIDDEN', message: 'You cannot apply to your own Wanted.' },
+  P0014: { category: 'READ_ONLY' },
+  P0018: { category: 'VALIDATION_FAILED', message: 'Title is too long (max 300 characters).' },
+  P0032: { category: 'TARGET_UNAVAILABLE' },
+  P0033: { category: 'TARGET_UNAVAILABLE' },
+  P0034: { category: 'ALREADY_EXISTS' },
+  P0040: { category: 'TRANSFER_REQUIRED' },
+  P0053: { category: 'ALREADY_EXISTS', message: 'This participant already has a credit for this collaboration.' },
+  P0057: { category: 'VALIDATION_FAILED', message: 'Message is too long (max 5000 characters).' }
+};
+
+var BACKEND_ERROR_GROUPS = {
+  // The item was deleted, moved on, or its state changed under the user.
+  NOT_FOUND_OR_CHANGED: ['P0008','P0010','P0011','P0016','P0019','P0020','P0021','P0023','P0026','P0036','P0044','P0045','P0047','P0052','P0054'],
+  // Ownership, authorship or membership no longer permits the action.
+  FORBIDDEN: ['P0015','P0022','P0024','P0030','P0035','P0042','P0046','P0048','P0050','P0055','P0058'],
+  // Defensive, race and invariant checks: never expected from this UI.
+  INTERNAL_ERROR: ['P0009','P0017','P0025','P0027','P0028','P0029','P0031','P0037','P0038','P0039','P0041','P0043','P0049','P0051','P0056','P0059']
+};
+
+function classifyBackendError(failure){
+  var status = null;
+  var err = failure;
+  if(failure && typeof failure === 'object' && Object.prototype.hasOwnProperty.call(failure, 'ok')){
+    status = typeof failure.status === 'number' ? failure.status : null;
+    err = failure.error;
+  }
+  if(err && typeof err === 'object'){
+    if(status === null && typeof err.status === 'number') status = err.status;
+    if(status === null && err.statusCode !== undefined && err.statusCode !== null && !isNaN(Number(err.statusCode))) status = Number(err.statusCode);
+  }
+  var code = (err && typeof err === 'object' && typeof err.code === 'string') ? err.code : null;
+
+  var category = null;
+  var message = null;
+  if(code && Object.prototype.hasOwnProperty.call(BACKEND_ERROR_SPECIFIC, code)){
+    category = BACKEND_ERROR_SPECIFIC[code].category;
+    message = BACKEND_ERROR_SPECIFIC[code].message || null;
+  }else if(code){
+    for(var groupName in BACKEND_ERROR_GROUPS){
+      if(BACKEND_ERROR_GROUPS[groupName].indexOf(code) !== -1){ category = groupName; break; }
+    }
+  }
+  if(!category){
+    if(code === 'PGRST301' || code === 'PGRST302' || code === 'PGRST303' || status === 401) category = 'AUTH_REQUIRED';
+    else if(status === 429) category = 'RATE_LIMITED';
+    else if(status === 0) category = 'NETWORK_ERROR';
+    else if(code && code.indexOf('40') === 0) category = 'CONFLICT_RETRY';
+    else category = 'INTERNAL_ERROR';
+  }
+  return { category: category, message: message || BACKEND_ERROR_COPY[category], code: code, status: status };
+}
+
+// fallbackMessage must be fixed, safe copy for the action. It replaces the
+// generic INTERNAL_ERROR copy so unknown failures keep their action context.
+function backendErrorMessage(failure, fallbackMessage){
+  var classified = classifyBackendError(failure);
+  if(classified.category === 'INTERNAL_ERROR' && fallbackMessage) return fallbackMessage;
+  return classified.message;
+}
+// --- END BACKEND ERROR CONTRACT ---
 
 // --- AUTH: EMAIL MAGIC LINK (TEST ONLY) ---
 // The disposable test project's hosted email template uses
@@ -1328,7 +1422,8 @@ async function sendOtp(isResend){
   try{
     var res = await supabaseClient.auth.signInWithOtp({ email: email, options: { shouldCreateUser: true, emailRedirectTo: 'https://stagerz.app' } });
     if(res.error){
-      showToast(res.error.message || 'Could not send email. Please try again.');
+      console.error('sendOtp FAILED:', res.error);
+      showToast(backendErrorMessage(res.error, 'Could not send email. Please try again.'));
       if(btn){ btn.textContent = 'CONTINUE'; btn.style.opacity = '1'; }
       return;
     }
@@ -2040,8 +2135,7 @@ async function closeWantedPost(id){
     await loadWanted();
   } else {
     console.error('closeWantedPost FAILED -- real Supabase error:', result && result.error);
-    var closeMsg = result && result.error && (result.error.message || result.error.hint || result.error.details || JSON.stringify(result.error));
-    showToast('Could not close post: ' + (closeMsg || 'unknown error'));
+    showToast(backendErrorMessage(result, 'Could not close post.'));
   }
 }
 
@@ -2097,8 +2191,7 @@ async function applyToWanted(postId, ownerId, btnEl){
   }
 
   console.error('applyToWanted FAILED -- real Supabase error:', result && result.error);
-  var realMsg = result && result.error && (result.error.message || result.error.hint || result.error.details || JSON.stringify(result.error));
-  showToast(realMsg || 'Could not send application.');
+  showToast(backendErrorMessage(result, 'Could not send application.'));
 }
 function toggleRemote(){
   pwRemoteOn = !pwRemoteOn;
@@ -2144,8 +2237,7 @@ async function submitWanted(){
       goTo('profile');
     } else {
       console.error('submitWanted (edit) FAILED -- real Supabase error:', editResult && editResult.error);
-      var editMsg = editResult && editResult.error && (editResult.error.message || editResult.error.hint || editResult.error.details || JSON.stringify(editResult.error));
-      showToast('Could not save changes: ' + (editMsg || 'unknown error'));
+      showToast(backendErrorMessage(editResult, 'Could not save changes.'));
     }
     return;
   }
@@ -2158,8 +2250,7 @@ async function submitWanted(){
     goTo('wanted');
   } else {
     console.error('submitWanted FAILED -- real Supabase error:', result && result.error);
-    var realMsg = result && result.error && (result.error.message || result.error.hint || result.error.details || JSON.stringify(result.error));
-    showToast('Could not post WANTED: ' + (realMsg || 'unknown error'));
+    showToast(backendErrorMessage(result, 'Could not post WANTED.'));
   }
 }
 
@@ -2214,7 +2305,7 @@ async function saveProfile(){
   console.log('saveProfile: profiles PATCH result:', profileResult);
   if(!profileResult || !profileResult.ok){
     console.error('saveProfile FAILED (profiles) -- real Supabase error:', profileResult && profileResult.error);
-    showToast('Could not save profile: ' + (profileResult && profileResult.error && (profileResult.error.message || JSON.stringify(profileResult.error)) || 'unknown error'));
+    showToast(backendErrorMessage(profileResult, 'Could not save profile.'));
     return;
   }
 
@@ -2224,7 +2315,9 @@ async function saveProfile(){
   console.log('saveProfile: users PATCH result:', usernameResult);
   if(!usernameResult || !usernameResult.ok){
     console.error('saveProfile FAILED (users/username) -- real Supabase error:', usernameResult && usernameResult.error);
-    showToast('Could not save username: ' + (usernameResult && usernameResult.error && (usernameResult.error.message || JSON.stringify(usernameResult.error)) || 'unknown error'));
+    // 23505 on this request can only be users_username_key: the name is taken.
+    var usernameTaken = usernameResult && usernameResult.error && usernameResult.error.code === '23505';
+    showToast(usernameTaken ? 'That username is already taken.' : backendErrorMessage(usernameResult, 'Could not save username.'));
     return;
   }
 
@@ -2464,8 +2557,7 @@ async function respondToApplication(applicationId, newStatus){
     }
   } else {
     console.error('respondToApplication FAILED -- real Supabase error:', result && result.error);
-    var realMsg = result && result.error && (result.error.message || result.error.hint || result.error.details || JSON.stringify(result.error));
-    showToast(realMsg || 'Could not update application.');
+    showToast(backendErrorMessage(result, 'Could not update application.'));
   }
 }
 
@@ -3216,8 +3308,7 @@ async function changeCollaborationStatus(newStatus){
     await openCollaboration(currentCollaborationId);
   } else {
     console.error('changeCollaborationStatus FAILED -- real Supabase error:', result && result.error);
-    var realMsg = result && result.error && (result.error.message || result.error.hint || result.error.details || JSON.stringify(result.error));
-    showToast(realMsg || 'Could not update collaboration status.');
+    showToast(backendErrorMessage(result, 'Could not update collaboration status.'));
   }
 }
 
@@ -3353,8 +3444,7 @@ async function performCollaborationInvite(userId, displayName){
     await openCollaboration(currentCollaborationId);
   } else {
     console.error('invite_collaboration_participant FAILED:', result && result.error);
-    var realMsg = result && result.error && (result.error.message || result.error.hint || result.error.details || JSON.stringify(result.error));
-    showToast(realMsg || 'Could not invite this user.');
+    showToast(backendErrorMessage(result, 'Could not invite this user.'));
     endCollaborationBusy(btn);
   }
 }
@@ -3372,8 +3462,7 @@ async function removeParticipant(userId, name, btnEl){
     await openCollaboration(currentCollaborationId);
   } else {
     console.error('remove_collaboration_participant FAILED:', result && result.error);
-    var realMsg = result && result.error && (result.error.message || result.error.hint || result.error.details || JSON.stringify(result.error));
-    showToast(realMsg || 'Could not remove this participant.');
+    showToast(backendErrorMessage(result, 'Could not remove this participant.'));
     endCollaborationBusy(btnEl);
   }
 }
@@ -3391,8 +3480,7 @@ async function transferOwnership(userId, name, btnEl){
     await openCollaboration(currentCollaborationId);
   } else {
     console.error('transfer_collaboration_ownership FAILED:', result && result.error);
-    var realMsg = result && result.error && (result.error.message || result.error.hint || result.error.details || JSON.stringify(result.error));
-    showToast(realMsg || 'Could not transfer ownership.');
+    showToast(backendErrorMessage(result, 'Could not transfer ownership.'));
     endCollaborationBusy(btnEl);
   }
 }
@@ -3416,8 +3504,7 @@ async function promptLeaveCollaboration(){
     loadMyCollaborations();
   } else {
     console.error('leave_collaboration FAILED:', result && result.error);
-    var realMsg = result && result.error && (result.error.message || result.error.hint || result.error.details || JSON.stringify(result.error));
-    showToast(realMsg || 'Could not leave this collaboration.');
+    showToast(backendErrorMessage(result, 'Could not leave this collaboration.'));
     endCollaborationBusy(btnEl);
   }
 }
@@ -3667,6 +3754,10 @@ async function saveMessageEdit(messageId){
     showToast('Message cannot be empty.');
     return;
   }
+  if(newBody.length > 5000){
+    showToast('Message is too long (max 5000 characters).');
+    return;
+  }
 
   var saveBtn = document.getElementById('cmEditSaveBtn-'+messageId);
   if(!tryBeginCollaborationBusy(saveBtn)) return;
@@ -3678,8 +3769,7 @@ async function saveMessageEdit(messageId){
     await loadCollaborationMessages(currentCollaborationId, { skipLoadingState: true });
   } else {
     console.error('edit_collaboration_message FAILED:', result && result.error);
-    var realMsg = result && result.error && (result.error.message || result.error.hint || result.error.details || JSON.stringify(result.error));
-    showToast(realMsg || 'Could not update message.');
+    showToast(backendErrorMessage(result, 'Could not update message.'));
     endCollaborationBusy(saveBtn);
   }
 }
@@ -3697,8 +3787,7 @@ async function deleteMessagePrompt(messageId, btnEl){
     await loadCollaborationMessages(currentCollaborationId, { skipLoadingState: true });
   } else {
     console.error('delete_collaboration_message FAILED:', result && result.error);
-    var realMsg = result && result.error && (result.error.message || result.error.hint || result.error.details || JSON.stringify(result.error));
-    showToast(realMsg || 'Could not delete message.');
+    showToast(backendErrorMessage(result, 'Could not delete message.'));
     endCollaborationBusy(btnEl);
   }
 }
@@ -3758,8 +3847,7 @@ async function sendCollaborationMessage(){
     // restored above it and one blank line between the two.
     removeProvisionalCollaborationMessage(provisionalId);
     if(inputEl) inputEl.value = inputEl.value ? (rawBody + '\n\n' + inputEl.value) : rawBody;
-    var realMsg = result && result.error && (result.error.message || result.error.hint || result.error.details || JSON.stringify(result.error));
-    showToast(realMsg || 'Could not send message.');
+    showToast(backendErrorMessage(result, 'Could not send message.'));
     if(inputEl) inputEl.focus();
   }
 
@@ -3925,6 +4013,10 @@ async function saveCollaborationTaskTitle(taskId){
     showToast('Task title cannot be empty.');
     return;
   }
+  if(newTitle.length > 300){
+    showToast('Title is too long (max 300 characters).');
+    return;
+  }
 
   var saveBtn = document.getElementById('ctSaveBtn-'+taskId);
   if(!tryBeginCollaborationBusy(saveBtn)) return;
@@ -3936,8 +4028,7 @@ async function saveCollaborationTaskTitle(taskId){
     await loadCollaborationTasks(currentCollaborationId);
   } else {
     console.error('edit_collaboration_task FAILED:', result && result.error);
-    var realMsg = result && result.error && (result.error.message || result.error.hint || result.error.details || JSON.stringify(result.error));
-    showToast(realMsg || 'Could not update task.');
+    showToast(backendErrorMessage(result, 'Could not update task.'));
     endCollaborationBusy(saveBtn);
   }
 }
@@ -3955,8 +4046,7 @@ async function deleteCollaborationTaskPrompt(taskId, title, btnEl){
     await loadCollaborationTasks(currentCollaborationId);
   } else {
     console.error('delete_collaboration_task FAILED:', result && result.error);
-    var realMsg = result && result.error && (result.error.message || result.error.hint || result.error.details || JSON.stringify(result.error));
-    showToast(realMsg || 'Could not delete task.');
+    showToast(backendErrorMessage(result, 'Could not delete task.'));
     endCollaborationBusy(btnEl);
   }
 }
@@ -3987,8 +4077,7 @@ async function createCollaborationTask(){
     await loadCollaborationTasks(currentCollaborationId);
   } else {
     console.error('createCollaborationTask FAILED -- real Supabase error:', result && result.error);
-    var realMsg = result && result.error && (result.error.message || result.error.hint || result.error.details || JSON.stringify(result.error));
-    showToast(realMsg || 'Could not create task.');
+    showToast(backendErrorMessage(result, 'Could not create task.'));
   }
 
   endCollaborationBusy(createBtn);
@@ -4004,8 +4093,7 @@ async function completeCollaborationTask(taskId, btnEl){
     await loadCollaborationTasks(currentCollaborationId);
   } else {
     console.error('completeCollaborationTask FAILED -- real Supabase error:', result && result.error);
-    var realMsg = result && result.error && (result.error.message || result.error.hint || result.error.details || JSON.stringify(result.error));
-    showToast(realMsg || 'Could not complete task.');
+    showToast(backendErrorMessage(result, 'Could not complete task.'));
     endCollaborationBusy(btnEl);
   }
 }
@@ -4628,8 +4716,7 @@ async function saveCollaborationAssetEdit(assetId){
     await loadCollaborationAssets(currentCollaborationId);
   } else {
     console.error('edit_collaboration_asset FAILED:', result && result.error);
-    var realMsg = result && result.error && (result.error.message || result.error.hint || result.error.details || JSON.stringify(result.error));
-    showToast(realMsg || 'Could not update asset.');
+    showToast(backendErrorMessage(result, 'Could not update asset.'));
     endCollaborationBusy(saveBtn);
   }
 }
@@ -4647,8 +4734,7 @@ async function deleteCollaborationAssetPrompt(assetId, fileName, btnEl){
     await loadCollaborationAssets(currentCollaborationId);
   } else {
     console.error('delete_collaboration_asset FAILED:', result && result.error);
-    var realMsg = result && result.error && (result.error.message || result.error.hint || result.error.details || JSON.stringify(result.error));
-    showToast(realMsg || 'Could not delete asset.');
+    showToast(backendErrorMessage(result, 'Could not delete asset.'));
     endCollaborationBusy(btnEl);
   }
 }
@@ -4692,7 +4778,8 @@ async function toggleCollaborationAssetPreview(assetId, storagePath, assetType, 
   if(!container.isConnected) return; // screen was left mid-download
 
   if(result.error){
-    container.innerHTML = '<div style="font-size:9px;color:rgba(255,100,100,.8);margin-top:8px;">Preview unavailable: '+escapeCollaborationHtml(result.error.message)+'</div>';
+    console.error('toggleCollaborationAssetPreview FAILED:', result.error);
+    container.innerHTML = '<div style="font-size:9px;color:rgba(255,100,100,.8);margin-top:8px;">Preview unavailable. '+escapeCollaborationHtml(backendErrorMessage(result.error, 'Please try again.'))+'</div>';
     collaborationAssetPreviewVisible[assetId] = false;
     btnEl.textContent = 'Load Preview'; // retryable -- not a dead end
     return;
@@ -4783,6 +4870,17 @@ async function uploadCollaborationAsset(file){
   // Guard was already begun by beginCollaborationAssetUploadClick()
   // when the button was first clicked -- this function continues
   // that same span, it does not begin a new one.
+
+  // Phase 21.9: an empty file would upload to Storage and then fail the
+  // collaboration_assets file_size > 0 check, leaving an orphaned object.
+  // Reject it here, before any Storage or database request is made.
+  if(!file || !(file.size > 0)){
+    if(statusEl) statusEl.textContent = 'This file is empty and cannot be uploaded.';
+    showToast('This file is empty and cannot be uploaded.');
+    endCollaborationBusy(uploadBtn);
+    return;
+  }
+
   if(statusEl) statusEl.textContent = 'Uploading...';
 
   var myId = await getMyDomainId();
@@ -4800,7 +4898,7 @@ async function uploadCollaborationAsset(file){
   var uploadRes = await supabaseClient.storage.from('collaboration-assets').upload(storagePath, file, { contentType: mimeType, upsert: false });
   console.log('uploadCollaborationAsset: Storage upload result', uploadRes);
   if(uploadRes.error){
-    if(statusEl) statusEl.textContent = 'Upload failed: '+uploadRes.error.message;
+    if(statusEl) statusEl.textContent = 'Upload failed. ' + backendErrorMessage(uploadRes.error, 'Please try again.');
     console.error('uploadCollaborationAsset: Storage upload FAILED -- no metadata insert attempted', uploadRes.error);
     endCollaborationBusy(uploadBtn);
     return;
@@ -4831,18 +4929,17 @@ async function uploadCollaborationAsset(file){
     // expected to itself fail; both outcomes are reported explicitly,
     // and the upload is never displayed as successful either way.
     console.error('uploadCollaborationAsset: metadata insert FAILED', metaResult && metaResult.error);
-    var metaErrMsg = metaResult && metaResult.error && (metaResult.error.message || metaResult.error.hint || metaResult.error.details || JSON.stringify(metaResult.error));
+    var metaFailureMsg = backendErrorMessage(metaResult, 'Upload could not be saved.');
 
     var cleanupRes = await supabaseClient.storage.from('collaboration-assets').remove([storagePath]);
     console.log('uploadCollaborationAsset: best-effort cleanup result', cleanupRes);
     var cleanupSucceeded = !cleanupRes.error && cleanupRes.data && cleanupRes.data.length > 0;
 
     if(cleanupSucceeded){
-      if(statusEl) statusEl.textContent = 'Upload NOT saved (' + (metaErrMsg || 'metadata error') + '). The uploaded file was removed.';
+      if(statusEl) statusEl.textContent = metaFailureMsg + ' The uploaded file was removed.';
     } else {
-      var cleanupErrMsg = cleanupRes.error ? cleanupRes.error.message : 'no rows removed';
-      if(statusEl) statusEl.textContent = 'Upload NOT saved (' + (metaErrMsg || 'metadata error') + '). Cleanup ALSO failed (' + cleanupErrMsg + ') -- an orphaned file may remain in Storage at: ' + storagePath;
-      console.error('uploadCollaborationAsset: best-effort cleanup ALSO failed', cleanupRes.error || cleanupErrMsg);
+      if(statusEl) statusEl.textContent = metaFailureMsg + ' The uploaded file could not be removed automatically.';
+      console.error('uploadCollaborationAsset: best-effort cleanup ALSO failed -- an orphaned file may remain in Storage', { storagePath: storagePath, error: cleanupRes.error || 'no rows removed' });
     }
     showToast('Upload could not be saved.');
   }
@@ -4855,7 +4952,7 @@ async function downloadCollaborationAsset(storagePath, fileName){
   var result = await supabaseClient.storage.from('collaboration-assets').download(storagePath);
   console.log('downloadCollaborationAsset result for', storagePath, ':', result.error ? result.error : 'ok');
   if(result.error){
-    showToast('Could not download file: '+result.error.message);
+    showToast(backendErrorMessage(result.error, 'Could not download file.'));
     return;
   }
   // Local blob URL only, derived from already-downloaded bytes --
@@ -5015,8 +5112,7 @@ async function saveCollaborationCreditEdit(creditId){
     await loadCollaborationCredits(currentCollaborationId);
   } else {
     console.error('edit_collaboration_credit FAILED:', result && result.error);
-    var realMsg = result && result.error && (result.error.message || result.error.hint || result.error.details || JSON.stringify(result.error));
-    showToast(realMsg || 'Could not update credit.');
+    showToast(backendErrorMessage(result, 'Could not update credit.'));
     endCollaborationBusy(saveBtn);
   }
 }
@@ -5034,8 +5130,7 @@ async function deleteCollaborationCreditPrompt(creditId, roleLabel, btnEl){
     await loadCollaborationCredits(currentCollaborationId);
   } else {
     console.error('delete_collaboration_credit FAILED:', result && result.error);
-    var realMsg = result && result.error && (result.error.message || result.error.hint || result.error.details || JSON.stringify(result.error));
-    showToast(realMsg || 'Could not delete credit.');
+    showToast(backendErrorMessage(result, 'Could not delete credit.'));
     endCollaborationBusy(btnEl);
   }
 }
@@ -5066,10 +5161,8 @@ async function createCollaborationCredit(){
     await loadCollaborationCredits(currentCollaborationId);
   } else {
     console.error('createCollaborationCredit FAILED -- real Supabase error:', result && result.error);
-    var errCode = result && result.error && result.error.code;
-    var friendlyMsg = errCode === 'P0053' ? 'This participant already has a credit for this collaboration.' : null;
-    var realMsg = friendlyMsg || (result && result.error && (result.error.message || result.error.hint || result.error.details || JSON.stringify(result.error)));
-    showToast(realMsg || 'Could not add credit.');
+    // P0053 keeps its established copy through the shared contract map.
+    showToast(backendErrorMessage(result, 'Could not add credit.'));
   }
 
   endCollaborationBusy(saveBtn);
