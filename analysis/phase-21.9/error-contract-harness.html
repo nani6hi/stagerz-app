@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>STAGERZ Phase 21.9 -- S-4 error contract harness</title>
+<!--
+  Drives the backend error contract and the zero-byte upload guard from the
+  live index.html against stubbed globals. It does NOT reimplement them: the
+  source is fetched and extracted at run time, so the harness cannot drift
+  away from the code it claims to verify.
+
+  No request leaves this page. The Supabase SDK is not loaded, and every
+  network-facing dependency (supaRpc, supaInsert, supabaseClient.storage,
+  getMyDomainId) is replaced by a counting stub.
+
+  Run from the repository root with any static file server, for example:
+    deno run --allow-net=127.0.0.1 --allow-read=. <static server>
+    open http://127.0.0.1:<port>/analysis/phase-21.9/error-contract-harness.html
+  The final verdict is also written to document.title as "PASS n/n" or
+  "FAIL f of n", so a headless browser can read it with --dump-dom.
+-->
+<style>
+  body{font-family:ui-monospace,Menlo,Consolas,monospace;background:#08080f;color:#f0f0f5;padding:24px;line-height:1.55;}
+  h1{font-size:16px;margin-bottom:4px;}
+  .grp{margin:18px 0 6px;font-size:12px;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.35);}
+  .t{padding:2px 0;font-size:13px;} .p{color:#5fd38d;} .f{color:#ff6b5e;}
+  .d{color:rgba(255,255,255,.45);padding-left:26px;font-size:12px;}
+  #sum{margin-top:22px;padding:12px 14px;border-radius:8px;font-size:14px;font-weight:700;}
+</style>
+</head>
+<body>
+<h1>Phase 21.9 &mdash; S-4 error contract harness</h1>
+<div id="out"></div>
+<div id="sum"></div>
+<script>
+(async function(){
+  var out = document.getElementById('out');
+  var passCount = 0, failCount = 0;
+  function group(name){ var g = document.createElement('div'); g.className = 'grp'; g.textContent = name; out.appendChild(g); }
+  function check(name, cond, detail){
+    var row = document.createElement('div');
+    row.className = 't ' + (cond ? 'p' : 'f');
+    row.textContent = (cond ? 'PASS  ' : 'FAIL  ') + name;
+    out.appendChild(row);
+    if(!cond && detail !== undefined){ var d = document.createElement('div'); d.className = 'd'; d.textContent = String(detail); out.appendChild(d); }
+    if(cond) passCount++; else failCount++;
+  }
+  function finish(){
+    var sum = document.getElementById('sum');
+    var total = passCount + failCount;
+    sum.textContent = failCount === 0 ? ('ALL ' + total + ' ASSERTIONS PASS') : (failCount + ' OF ' + total + ' ASSERTIONS FAILED');
+    sum.style.background = failCount === 0 ? 'rgba(95,211,141,.12)' : 'rgba(255,107,94,.12)';
+    document.title = failCount === 0 ? ('PASS ' + passCount + '/' + total) : ('FAIL ' + failCount + ' of ' + total);
+  }
+
+  try {
+    var html = (await (await fetch('../../index.html', { cache: 'no-store' })).text()).replace(/\r\n/g, '\n');
+    var tsv = (await (await fetch('error-codes.tsv', { cache: 'no-store' })).text()).replace(/\r\n/g, '\n');
+
+    // ---------------------------------------------------------------
+    group('0. Source extraction and syntax');
+    var inline = [];
+    // HTML comments are removed first: index.html has a comment that
+    // mentions a <script> tag in prose, which is not a script.
+    var htmlNoComments = html.replace(/<!--[\s\S]*?-->/g, '');
+    var scriptRe = /<script(?![^>]*\bsrc=)[^>]*>([\s\S]*?)<\/script>/g, m;
+    while((m = scriptRe.exec(htmlNoComments))){ inline.push(m[1]); }
+    check('index.html has inline application script', inline.length > 0, inline.length);
+    var syntaxErr = null;
+    inline.forEach(function(code){ try { new Function(code); } catch(e){ syntaxErr = syntaxErr || e.message; } });
+    check('every inline script compiles (no syntax errors)', syntaxErr === null, syntaxErr);
+
+    var startMarker = '// --- BACKEND ERROR CONTRACT (Phase 21.9 / S-4) ---';
+    var endMarker = '// --- END BACKEND ERROR CONTRACT ---';
+    var s = html.indexOf(startMarker), e = html.indexOf(endMarker);
+    check('translator block found between markers', s !== -1 && e > s, s + '..' + e);
+    var T = new Function(html.slice(s, e) + '\nreturn { classify: classifyBackendError, message: backendErrorMessage, COPY: BACKEND_ERROR_COPY, SPECIFIC: BACKEND_ERROR_SPECIFIC, GROUPS: BACKEND_ERROR_GROUPS };')();
+
+    function extractFunction(name){
+      var start = html.search(new RegExp('^(async )?function ' + name + '\\(', 'm'));
+      if(start === -1) throw new Error('function not found: ' + name);
+      var end = html.indexOf('\n}\n', start);
+      return html.slice(start, end + 2);
+    }
+    function instantiate(name, env){
+      env.classifyBackendError = T.classify;
+      env.backendErrorMessage = T.message;
+      return new Function('env', 'with(env){ ' + extractFunction(name) + '\n return ' + name + '; }')(env);
+    }
+
+    // Forbidden substrings for any user-visible output.
+    var rows = tsv.split('\n').filter(function(l){ return l && l.charAt(0) !== '#' && l.indexOf('code\t') !== 0; })
+      .map(function(l){ var c = l.split('\t'); return { code: c[0], token: c[1], client: c[2] === 'yes', cls: c[3], cat: c[4] }; });
+    var constraintNames = ['collaboration_activity_actor_user_id_fkey','collaboration_activity_collaboration_id_fkey','collaboration_assets_file_size_check','collaboration_assets_collaboration_id_fkey','collaboration_assets_uploaded_by_fkey','collaboration_assets_storage_path_key','collaboration_credits_collaboration_id_fkey','collaboration_credits_created_by_fkey','collaboration_credits_user_id_fkey','collaboration_messages_body_check','collaboration_messages_collaboration_id_fkey','collaboration_messages_sender_id_fkey','collaboration_participants_participant_type_check','collaboration_participants_collaboration_id_fkey','collaboration_participants_source_application_id_fkey','collaboration_participants_user_id_fkey','collaboration_participants_collaboration_id_user_id_key','collaboration_participants_source_application_id_key','collaboration_tasks_status_check','collaboration_tasks_title_check','done_has_completed_at','todo_has_no_completed_at','collaboration_tasks_assignee_id_fkey','collaboration_tasks_collaboration_id_fkey','collaboration_tasks_creator_id_fkey','collaborations_status_check','collaborations_wanted_post_id_fkey','collaborations_wanted_post_id_key','no_self_follow','follows_follower_id_fkey','follows_following_id_fkey','follows_follower_id_following_id_key','likes_user_id_fkey','likes_user_id_post_id_post_type_key','pending_auth_deletions_public_user_id_fkey','user_auth_accounts_auth_user_id_fkey','user_auth_accounts_public_user_id_fkey','users_username_key','wanted_applications_status_check','wanted_applications_applicant_id_fkey','wanted_applications_wanted_post_id_fkey','wanted_applications_wanted_post_id_applicant_id_key','wanted_posts_status_check','wanted_posts_user_id_fkey'];
+    var tableNames = ['collaboration_activity','collaboration_assets','collaboration_credits','collaboration_messages','collaboration_participants','collaboration_tasks','collaborations','wanted_applications','wanted_posts','pending_asset_deletions','pending_auth_deletions','user_auth_accounts','public_profiles','notifications','storage.objects'];
+    var forbidden = rows.map(function(r){ return r.token; }).concat(constraintNames, tableNames,
+      ['violates','duplicate key','Key (','Failing row','row-level security','relation "','JWT','PGRST','SQLSTATE','null','undefined','[object','{','}','"']);
+    var outputsSeen = [];
+    function leakFree(label, text){
+      outputsSeen.push(text);
+      if(typeof text !== 'string' || text.length === 0) return 'empty output';
+      if(/[a-z0-9]+_[a-z0-9_]+/i.test(text)) return 'snake_case in: ' + text;
+      if(/P0\d{3}|\b(23|42|40)\d{3}\b/.test(text)) return 'code in: ' + text;
+      for(var i = 0; i < forbidden.length; i++){ if(text.indexOf(forbidden[i]) !== -1) return '"' + forbidden[i] + '" in: ' + text; }
+      return null;
+    }
+    function pgrst(code, token, status){ return { ok: false, status: status, error: { code: code, message: token, details: null, hint: null } }; }
+
+    // ---------------------------------------------------------------
+    group('A/B. Coverage of all 58 custom codes');
+    var client = rows.filter(function(r){ return r.client; });
+    var admin = rows.filter(function(r){ return !r.client; });
+    check('inventory: 58 codes = 53 client-facing + 5 admin', rows.length === 58 && client.length === 53 && admin.length === 5, rows.length + '/' + client.length + '/' + admin.length);
+    var catFail = [], statusFail = [], leakFail = [], copyFail = [];
+    var counts = { specific: 0, grouped: 0, defensive: 0 };
+    client.forEach(function(r){
+      counts[r.cls]++;
+      [500, 400, 409].forEach(function(st){
+        var c = T.classify(pgrst(r.code, r.token, st));
+        if(c.category !== r.cat) (st === 500 ? catFail : statusFail).push(r.code + '@' + st + '->' + c.category);
+      });
+      var msg = T.message(pgrst(r.code, r.token, 500), 'Could not complete this action.');
+      var leak = leakFree(r.code, msg); if(leak) leakFail.push(r.code + ': ' + leak);
+      if(r.cls === 'specific' && T.SPECIFIC[r.code].message && msg !== T.SPECIFIC[r.code].message) copyFail.push(r.code);
+      if(r.cls === 'defensive' && msg !== 'Could not complete this action.') copyFail.push(r.code + ' (defensive must use the action fallback)');
+      if(r.cls === 'grouped' && msg !== T.COPY[r.cat]) copyFail.push(r.code + ' (grouped must use shared copy)');
+    });
+    check('all 53 client-facing codes map to the inventory category (HTTP 500)', catFail.length === 0, catFail.join(', '));
+    check('category is independent of HTTP status (400 and 409 too)', statusFail.length === 0, statusFail.join(', '));
+    check('split: 11 specific + 26 grouped + 16 defensive', counts.specific === 11 && counts.grouped === 26 && counts.defensive === 16, JSON.stringify(counts));
+    check('specific / grouped / defensive copy rules hold', copyFail.length === 0, copyFail.join(', '));
+    check('no client-facing code output leaks backend text', leakFail.length === 0, leakFail.join(' | '));
+    var p32 = T.message(pgrst('P0032', 'target_user_not_found', 500)), p33 = T.message(pgrst('P0033', 'target_user_not_eligible', 500));
+    check('P0032 and P0033 produce the identical message', p32 === p33 && p32 === T.COPY.TARGET_UNAVAILABLE, p32 + ' / ' + p33);
+    var adminFail = admin.filter(function(r){ return T.SPECIFIC[r.code] || Object.keys(T.GROUPS).some(function(g){ return T.GROUPS[g].indexOf(r.code) !== -1; }); });
+    check('5 admin-only codes are absent from the translator map', adminFail.length === 0, adminFail.map(function(r){ return r.code; }).join(', '));
+    var adminOut = admin.map(function(r){ return T.classify(pgrst(r.code, r.token, 500)).category; });
+    check('admin codes, if ever received, fall to INTERNAL_ERROR', adminOut.every(function(c){ return c === 'INTERNAL_ERROR'; }), adminOut.join(','));
+
+    // ---------------------------------------------------------------
+    group('C/D. Implicit, transport and non-PostgREST errors');
+    var implicit = [
+      ['23505 unexpected unique violation', { ok:false, status:409, error:{ code:'23505', message:'duplicate key value violates unique constraint "collaboration_participants_collaboration_id_user_id_key"', details:'Key (collaboration_id, user_id)=(a, b) already exists.', hint:null } }, 'INTERNAL_ERROR'],
+      ['23514 check violation (zero-byte asset)', { ok:false, status:400, error:{ code:'23514', message:'new row for relation "collaboration_assets" violates check constraint "collaboration_assets_file_size_check"', details:'Failing row contains (x, y, 0).', hint:null } }, 'INTERNAL_ERROR'],
+      ['23503 foreign key violation', { ok:false, status:409, error:{ code:'23503', message:'insert or update on table "collaboration_tasks" violates foreign key constraint "collaboration_tasks_assignee_id_fkey"', details:'Key (assignee_id)=(z) is not present in table "users".', hint:null } }, 'INTERNAL_ERROR'],
+      ['42501 RLS denial', { ok:false, status:403, error:{ code:'42501', message:'new row violates row-level security policy for table "wanted_posts"', details:null, hint:null } }, 'INTERNAL_ERROR'],
+      ['PGRST301 invalid JWT', { ok:false, status:401, error:{ code:'PGRST301', message:'JWT expired', details:null, hint:null } }, 'AUTH_REQUIRED'],
+      ['PGRST302 missing bearer token', { ok:false, status:401, error:{ code:'PGRST302', message:'Anonymous access is disabled', details:null, hint:null } }, 'AUTH_REQUIRED'],
+      ['PGRST303 JWT claims', { ok:false, status:401, error:{ code:'PGRST303', message:'JWT claims validation or parsing failed', details:null, hint:null } }, 'AUTH_REQUIRED'],
+      ['HTTP 401 without a code', { ok:false, status:401, error:'Unauthorized' }, 'AUTH_REQUIRED'],
+      ['status 0 network failure', { ok:false, status:0, error:{ message:'Network error' } }, 'NETWORK_ERROR'],
+      ['status 0 string error (supaUpsert catch)', { ok:false, status:0, error:'Failed to fetch' }, 'NETWORK_ERROR'],
+      ['unknown database code', { ok:false, status:500, error:{ code:'XX999', message:'something_internal_happened', details:'internal detail', hint:'internal hint' } }, 'INTERNAL_ERROR'],
+      ['5xx with non-JSON body', { ok:false, status:502, error:'<html>Bad Gateway</html>' }, 'INTERNAL_ERROR'],
+      ['PGRST000 connection failure', { ok:false, status:503, error:{ code:'PGRST000', message:'Database client error', details:'connection refused', hint:null } }, 'INTERNAL_ERROR'],
+      ['40001 serialization failure', { ok:false, status:500, error:{ code:'40001', message:'could not serialize access', details:null, hint:null } }, 'CONFLICT_RETRY'],
+      ['Storage 403 policy error', { name:'StorageApiError', message:'new row violates row-level security policy', status:403, statusCode:'403' }, 'INTERNAL_ERROR'],
+      ['Storage 401', { name:'StorageApiError', message:'Invalid JWT', statusCode:'401' }, 'AUTH_REQUIRED'],
+      ['Auth 429 email rate limit', { name:'AuthApiError', message:'email rate limit exceeded', status:429, code:'over_email_send_rate_limit' }, 'RATE_LIMITED'],
+      ['null failure', null, 'INTERNAL_ERROR'],
+      ['undefined failure', undefined, 'INTERNAL_ERROR']
+    ];
+    implicit.forEach(function(t){
+      var c = T.classify(t[1]);
+      var msg = T.message(t[1], 'Could not complete this action.');
+      var leak = leakFree(t[0], msg);
+      check(t[0] + ' -> ' + t[2] + ', safe copy', c.category === t[2] && leak === null, c.category + ' / ' + (leak || msg));
+    });
+    var sessionCodes = ['PGRST301', 'PGRST302', 'PGRST303'].map(function(code){
+      return T.message({ ok:false, status:401, error:{ code:code, message:'raw postgrest text for ' + code, details:'raw detail', hint:'raw hint' } }, 'Could not complete this action.');
+    });
+    check('PGRST301 / PGRST302 / PGRST303 all show exactly the session copy', sessionCodes.every(function(msg){ return msg === T.COPY.AUTH_REQUIRED; }), sessionCodes.join(' | '));
+    check('every COPY entry is itself leak-free', Object.keys(T.COPY).every(function(k){ return leakFree(k, T.COPY[k]) === null; }));
+
+    // ---------------------------------------------------------------
+    group('F. Zero-byte upload guard (real uploadCollaborationAsset)');
+    function uploadEnv(opts){
+      var calls = { storageFrom: 0, upload: 0, remove: 0, getMyDomainId: 0, supaInsert: 0, endBusy: 0, toasts: [] };
+      var els = { caUploadStatus: { textContent: '' }, caUploadBtn: { dataset: {} } };
+      var env = {
+        calls: calls, els: els,
+        document: { getElementById: function(id){ return els[id] || null; } },
+        showToast: function(msg){ calls.toasts.push(msg); },
+        endCollaborationBusy: function(){ calls.endBusy++; },
+        getMyDomainId: async function(){ calls.getMyDomainId++; return 'user-1'; },
+        sanitizeCollaborationAssetFileName: function(n){ return n; },
+        classifyCollaborationAssetType: function(){ return 'document'; },
+        loadCollaborationAssets: async function(){},
+        currentCollaborationId: 'collab-1',
+        supaInsert: async function(){ calls.supaInsert++; return opts.insertResult || { ok: true, status: 201, data: [] }; },
+        supabaseClient: { storage: { from: function(){ calls.storageFrom++; return {
+          upload: async function(){ calls.upload++; return opts.uploadResult || { data: { path: 'x' }, error: null }; },
+          remove: async function(){ calls.remove++; return opts.removeResult || { data: [{}], error: null }; }
+        }; } } }
+      };
+      return env;
+    }
+    var emptyFile = { name: 'empty.txt', size: 0, type: 'text/plain' };
+    var env0 = uploadEnv({}); await instantiate('uploadCollaborationAsset', env0)(emptyFile);
+    check('size 0: no Storage request, no identity lookup, no insert', env0.calls.storageFrom === 0 && env0.calls.upload === 0 && env0.calls.getMyDomainId === 0 && env0.calls.supaInsert === 0, JSON.stringify(env0.calls));
+    check('size 0: busy guard released exactly once', env0.calls.endBusy === 1, env0.calls.endBusy);
+    check('size 0: user sees the empty-file message', env0.calls.toasts[0] === 'This file is empty and cannot be uploaded.' && env0.els.caUploadStatus.textContent === 'This file is empty and cannot be uploaded.', env0.calls.toasts.join('|'));
+    var envU = uploadEnv({}); await instantiate('uploadCollaborationAsset', envU)({ name: 'odd.bin', type: '' });
+    check('missing size: also blocked before any request', envU.calls.storageFrom === 0 && envU.calls.getMyDomainId === 0 && envU.calls.endBusy === 1, JSON.stringify(envU.calls));
+    var envNeg = uploadEnv({}); await instantiate('uploadCollaborationAsset', envNeg)({ name: 'neg.bin', size: -1, type: '' });
+    check('negative size: blocked before any request', envNeg.calls.storageFrom === 0 && envNeg.calls.endBusy === 1, JSON.stringify(envNeg.calls));
+
+    var env1 = uploadEnv({}); await instantiate('uploadCollaborationAsset', env1)({ name: 'one.txt', size: 1, type: 'text/plain' });
+    check('size 1 (control): upload and insert proceed', env1.calls.getMyDomainId === 1 && env1.calls.upload === 1 && env1.calls.supaInsert === 1 && env1.calls.toasts.indexOf('File uploaded.') !== -1, JSON.stringify(env1.calls));
+
+    var envE = uploadEnv({ uploadResult: { data: null, error: { name: 'StorageApiError', message: 'new row violates row-level security policy', statusCode: '403' } } });
+    await instantiate('uploadCollaborationAsset', envE)({ name: 'a.txt', size: 5, type: 'text/plain' });
+    var upMsg = envE.els.caUploadStatus.textContent;
+    check('Storage upload failure: safe status text, no insert', upMsg === 'Upload failed. Please try again.' && envE.calls.supaInsert === 0 && leakFree('upload', upMsg) === null, upMsg);
+
+    var metaFail = { ok: false, status: 400, error: { code: '23514', message: 'new row for relation "collaboration_assets" violates check constraint "collaboration_assets_file_size_check"', details: 'Failing row contains (...)', hint: null } };
+    var envM = uploadEnv({ insertResult: metaFail });
+    await instantiate('uploadCollaborationAsset', envM)({ name: 'b.txt', size: 5, type: 'text/plain' });
+    var mMsg = envM.els.caUploadStatus.textContent;
+    check('metadata failure + cleanup ok: safe status text', mMsg === 'Upload could not be saved. The uploaded file was removed.' && leakFree('meta', mMsg) === null, mMsg);
+    var envC = uploadEnv({ insertResult: metaFail, removeResult: { data: [], error: { message: 'Object not found', statusCode: '404' } } });
+    await instantiate('uploadCollaborationAsset', envC)({ name: 'c.txt', size: 5, type: 'text/plain' });
+    var cMsg = envC.els.caUploadStatus.textContent;
+    check('metadata failure + cleanup failed: safe text, no Storage path', cMsg === 'Upload could not be saved. The uploaded file could not be removed automatically.' &&cMsg.indexOf('collab-1/') === -1 && leakFree('cleanup', cMsg) === null, cMsg);
+
+    // ---------------------------------------------------------------
+    group('G. Existing specific UX and converted call sites');
+    function rpcEnv(result){
+      var calls = { rpc: 0, toasts: [], goTo: [] };
+      return {
+        calls: calls,
+        getMyDomainId: async function(){ return 'me'; },
+        goTo: function(s){ calls.goTo.push(s); },
+        showToast: function(msg){ calls.toasts.push(msg); },
+        supaRpc: async function(){ calls.rpc++; return result; },
+        loadMyWanted: async function(){}, loadWanted: async function(){},
+        document: { getElementById: function(id){ return id === 'ccRoleInput' ? { value: 'Mixing' } : (id === 'ccSaveBtn' ? {} : null); } },
+        selectedCreditParticipantId: 'p-1',
+        currentCollaborationId: 'collab-1',
+        tryBeginCollaborationBusy: function(){ return true; },
+        endCollaborationBusy: function(){},
+        loadCollaborationCredits: async function(){}
+      };
+    }
+    async function apply(result){ var env = rpcEnv(result); var btn = { textContent: 'APPLY', disabled: false, onclick: function(){} }; await instantiate('applyToWanted', env)('post-1', 'owner-1', btn); return { env: env, btn: btn }; }
+
+    var r1 = await apply(pgrst('23505', 'duplicate key value violates unique constraint "wanted_applications_wanted_post_id_applicant_id_key"', 409));
+    check('23505 -> "You already applied." and button APPLIED/disabled', r1.env.calls.toasts[0] === 'You already applied.' && r1.btn.textContent === 'APPLIED' && r1.btn.disabled === true && r1.btn.onclick === null, r1.env.calls.toasts.join('|'));
+    var r2 = await apply(pgrst('P0012', 'wanted_post_not_open', 500));
+    check('P0012 -> "This Wanted is no longer open."', r2.env.calls.toasts[0] === 'This Wanted is no longer open.', r2.env.calls.toasts.join('|'));
+    var r3 = await apply(pgrst('P0013', 'cannot_apply_to_own_wanted', 500));
+    check('P0013 -> "You cannot apply to your own Wanted."', r3.env.calls.toasts[0] === 'You cannot apply to your own Wanted.', r3.env.calls.toasts.join('|'));
+    var r3b = await (async function(){ var env = rpcEnv(null); await instantiate('applyToWanted', env)('post-1', 'me', null); return env; })();
+    check('own post: client-side check still blocks before any RPC', r3b.calls.rpc === 0 && r3b.calls.toasts[0] === 'You cannot apply to your own Wanted.', JSON.stringify(r3b.calls));
+    var r4 = await apply(pgrst('P0001', 'no_active_stagerz_identity', 400));
+    check('apply P0001 -> session copy (via translator)', r4.env.calls.toasts[0] === T.COPY.AUTH_REQUIRED, r4.env.calls.toasts.join('|'));
+    var r5 = await apply(pgrst('XX999', 'weird_internal_token', 500));
+    check('apply unknown code -> action fallback copy', r5.env.calls.toasts[0] === 'Could not send application.', r5.env.calls.toasts.join('|'));
+    var r6 = await apply({ ok: false, status: 0, error: { message: 'Network error' } });
+    check('apply network failure -> connection copy', r6.env.calls.toasts[0] === T.COPY.NETWORK_ERROR, r6.env.calls.toasts.join('|'));
+
+    var credEnv = rpcEnv(pgrst('P0053', 'duplicate_credit', 500));
+    await instantiate('createCollaborationCredit', credEnv)();
+    check('P0053 -> "This participant already has a credit for this collaboration."', credEnv.calls.toasts[0] === 'This participant already has a credit for this collaboration.', credEnv.calls.toasts.join('|'));
+    var credEnv2 = rpcEnv(pgrst('P0014', 'collaboration_not_active', 500));
+    await instantiate('createCollaborationCredit', credEnv2)();
+    check('credit P0014 -> read-only copy', credEnv2.calls.toasts[0] === T.COPY.READ_ONLY, credEnv2.calls.toasts.join('|'));
+
+    var closeEnv = rpcEnv(pgrst('P0008', 'post_not_found_or_not_open_or_not_owned', 500));
+    await instantiate('closeWantedPost', closeEnv)('post-1');
+    check('closeWantedPost P0008 -> grouped not-found copy', closeEnv.calls.toasts[0] === T.COPY.NOT_FOUND_OR_CHANGED, closeEnv.calls.toasts.join('|'));
+    var closeEnv2 = rpcEnv(pgrst('P0022', 'only_owner_may_change_status', 500));
+    await instantiate('closeWantedPost', closeEnv2)('post-1');
+    check('closeWantedPost grouped forbidden code -> forbidden copy', closeEnv2.calls.toasts[0] === T.COPY.FORBIDDEN, closeEnv2.calls.toasts.join('|'));
+
+    var allToasts = [].concat(r1.env.calls.toasts, r2.env.calls.toasts, r3.env.calls.toasts, r4.env.calls.toasts, r5.env.calls.toasts, r6.env.calls.toasts, credEnv.calls.toasts, credEnv2.calls.toasts, closeEnv.calls.toasts, closeEnv2.calls.toasts, env0.calls.toasts, env1.calls.toasts, envE.calls.toasts, envM.calls.toasts, envC.calls.toasts);
+    var driven = allToasts.map(function(t){ return leakFree('toast', t); }).filter(Boolean);
+    check('D. every toast produced by the driven functions is leak-free', driven.length === 0, driven.join(' | '));
+    check('outputs examined for leaks', outputsSeen.length >= 80, outputsSeen.length);
+  } catch(err){
+    check('harness ran to completion', false, err && err.stack || err);
+  }
+  finish();
+})();
+</script>
+</body>
+</html>
