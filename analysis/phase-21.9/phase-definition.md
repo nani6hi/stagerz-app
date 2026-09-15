@@ -2,18 +2,18 @@
 
 **Branch:** `phase-21.9-s4-error-contract`
 **Base commit:** `b1582a9` (`main`, merge of PR #19 — Phase 21.8B closure)
+**Merged:** **PR #20** into `main` — merge commit `2df2734247f5f1cccf0ae689d6e121775dea652b` (PR head `24252a63c41101b7623d39f68ac35fd209beb8c9`)
 **Addresses:** finding **S-4** — backend error codes reach the user as raw tokens
 **Classification:** **UX / error-contract defect with a LOW information-disclosure component** — not a data-exposure vulnerability
-**Status:** **IMPLEMENTED, REVIEWED, LOCALLY VALIDATED, PUSHED — PR #20 OPEN, NOT MERGED, NOT PRODUCTION VALIDATED.**
+**Status:** **COMPLETE — S-4 REMEDIATED (Phase 21.9).**
 - **Done:**
   - implementation, committed as `ab3a46df3790d33d794435eab241e3da1524f67f`;
   - independent pre-commit review (approved subject to two corrections, both applied);
-  - static check **41/41**, offline browser harness **55/55**;
-  - real-application Level 3 local browser validation **50/50**, network-isolated: 0 successful external requests, 0 Supabase requests;
-  - branch `phase-21.9-s4-error-contract` pushed; **PR #20** opened against `main`.
-- **In progress:** GitHub PR review and checks on PR #20.
-- **Outstanding:** complete the PR review and checks, merge PR #20 if approved, any specifically approved release or test-project validation, and final S-4 closure.
-- **Not merged; `main` unchanged at `b1582a9`; no production validation. S-4 remains OPEN — not REMEDIATED.**
+  - local validation: static check **41/41**, offline browser harness **55/55**, real-application Level 3 **50/50**, network-isolated;
+  - branch pushed; **PR #20** merged into `main` (merge commit `2df2734`);
+  - post-merge validation on the exact merged `main`, 2026-09-15: static **41/41**, harness **55/55**, Level 3 **50/50**; 0 successful external requests, 0 / 0 Supabase requests attempted / sent; repository unchanged (`validation.md` §12);
+  - S-4 closed as **REMEDIATED** in `analysis/phase-21.3/backend-contract.md` §0.2.
+- **Not performed:** any validation against live Supabase. All browser validation was deliberately network-isolated.
 **Validation level required:** **Level 3** — `index.html` behaviour changes (`.apos/VALIDATION_STANDARD.md` §2)
 
 ---
@@ -181,19 +181,20 @@ Details in `validation.md`.
   - a translator smoke test in the real page context;
   - console review and a full network audit.
 - **Local commit:** `ab3a46df3790d33d794435eab241e3da1524f67f`, created with explicit approval.
-- **Push and PR:** branch pushed with explicit approval; **PR #20** is open against `main` and GitHub reports it mergeable. See `validation.md` §7 for the checks observed.
+- **Push and PR:** branch pushed with explicit approval; **PR #20** merged into `main` as merge commit `2df2734`. See `validation.md` §7.
+- **Post-merge validation:** complete on the exact merged `main` `2df2734`, network-isolated: static **41/41**, harness **55/55**, real-application Level 3 **50/50** (`validation.md` §12).
 
-**Outstanding before S-4 can be marked REMEDIATED** (each step approved separately):
-1. Complete the GitHub PR review and checks on PR #20.
-2. Merge PR #20, if approved.
-3. Any specifically approved release or test-project validation.
-4. Final S-4 closure in `backend-contract.md` §0.2.
+**Closure** (each step approved separately):
+1. PR #20 merged into `main` — **done**.
+2. Post-merge validation of the exact merged `main` — **done**, 2026-09-15.
+3. Live-backend release or test-project validation — **not performed**; none was approved. The closure rests on the network-isolated validation above.
+4. Final S-4 closure in `backend-contract.md` §0.2 — **done: S-4 REMEDIATED — Phase 21.9.**
 
 ---
 
 ## 9. Rollback
 
-Revert the branch changes to `index.html`; the analysis files are documentation only. Nothing outside the repository was changed, so there is nothing to roll back in Supabase.
+Revert the Phase 21.9 changes to `index.html` on `main` (now merged, via a revert of merge commit `2df2734`); the analysis files are documentation only. Nothing outside the repository was changed, so there is nothing to roll back in Supabase.
 
 ---
 

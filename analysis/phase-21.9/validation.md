@@ -3,18 +3,19 @@
 **Branch:** `phase-21.9-s4-error-contract`
 **Base commit:** `b1582a92c3dc9190614403434ff7688b66c4267b`
 **Validation level required:** **3** (`index.html` behaviour changes)
-**Status:** **IMPLEMENTED, REVIEWED, LOCALLY VALIDATED (LEVEL 3), PUSHED — PR #20 OPEN, NOT MERGED, NOT PRODUCTION VALIDATED. S-4 is NOT REMEDIATED.**
+**Merged:** **PR #20** into `main` — merge commit `2df2734247f5f1cccf0ae689d6e121775dea652b` (PR head `24252a63c41101b7623d39f68ac35fd209beb8c9`)
+**Status:** **COMPLETE — MERGED, VALIDATED POST-MERGE. S-4 REMEDIATED — Phase 21.9.**
 - **Done:**
-  - implementation, committed locally as `ab3a46df3790d33d794435eab241e3da1524f67f` (parent `b1582a9`);
+  - implementation, committed as `ab3a46df3790d33d794435eab241e3da1524f67f` (parent `b1582a9`);
   - independent pre-commit review, approved subject to two corrections, both applied (§9);
   - Level 1 static review and static invariants (**41/41**);
   - offline browser harness (**55/55**, headless Edge);
   - real-application Level 3 local browser validation (**50/50**, network-isolated; **0** successful external requests, **0** Supabase requests) (§10);
-  - branch pushed and **PR #20** opened against `main` (§7).
-- **In progress:** GitHub PR review and checks on PR #20.
-- **Outstanding:** complete the PR review and checks, merge PR #20 if approved, any specifically approved release or test-project validation, final S-4 closure (§11).
+  - branch pushed and **PR #20** merged into `main` (§7);
+  - post-merge validation of the exact merged `main` `2df2734` (§12): static **41/41**, harness **55/55**, Level 3 **50/50**; **0** successful external requests; **0 / 0** Supabase requests attempted / sent; repository unchanged.
+- **Not performed:** validation against live Supabase. Every browser run, before and after the merge, was deliberately network-isolated.
 
-**S-4 remains OPEN.**
+**S-4 is REMEDIATED — Phase 21.9** (§12).
 
 ---
 
@@ -34,7 +35,7 @@
 - Anything about backend behaviour: no RPC, Storage or Auth request was made to Supabase.
 - That the inventory stays current. It is a 2026-09-14 snapshot; the static check fails if the translator and the snapshot drift apart.
 
-> **Finding-status note.** Finding status lives in `analysis/phase-21.3/backend-contract.md` §0.2. S-4 is recorded there as **OPEN**: remediation implemented, independently reviewed, locally validated, committed and pushed with PR #20 open, but not merged or production-validated.
+> **Finding-status note.** Finding status lives in `analysis/phase-21.3/backend-contract.md` §0.2. S-4 is recorded there as **REMEDIATED — Phase 21.9**: remediation implemented, independently reviewed, locally validated, merged as PR #20 (merge commit `2df2734`) and validated post-merge on that exact `main` (§12), network-isolated.
 
 ---
 
@@ -149,9 +150,9 @@ A scratch copy of `index.html` (outside the repository) was given three faults:
 - **Branch:** `phase-21.9-s4-error-contract`, created from `main` at `b1582a9`.
 - **Product commit:** `ab3a46df3790d33d794435eab241e3da1524f67f` "feat(phase-21.9): add safe frontend error contract". Parent `b1582a92c3dc9190614403434ff7688b66c4267b`; 7 files: `index.html`, `analysis/phase-21.3/backend-contract.md` and the five `analysis/phase-21.9/` files.
 - **Documentation commit:** `3040fdfb3d459b56a8675adaaa5b705f4521d1bf` "docs(phase-21.9): record local validation" records the completed local validation. It changes only `phase-definition.md`, `validation.md` and `backend-contract.md`; `index.html` is unchanged.
-- **Push:** branch `phase-21.9-s4-error-contract` pushed to `origin` with explicit approval (normal push, no force). A later documentation-only commit records the PR status below.
-- **PR #20:** open against `main` (base `b1582a9`, which `main` remains at); not a draft; GitHub reports it mergeable; **not merged**.
-- **Checks observed on PR head `3040fdf`, at the time of writing:**
+- **Push:** branch `phase-21.9-s4-error-contract` pushed to `origin` with explicit approval (normal push, no force). A later documentation-only commit, `24252a6` "docs(phase-21.9): record PR status", recorded the PR status.
+- **PR #20:** **merged** into `main`. Merge commit `2df2734247f5f1cccf0ae689d6e121775dea652b`, parents `b1582a9` and PR head `24252a63c41101b7623d39f68ac35fd209beb8c9`. The merged tree has no file differences from the PR head. The branch is retained.
+- **Checks observed on the earlier PR head `3040fdf`, while PR #20 was open (historical):**
   - the Netlify deploy-preview commit status reported `success`;
   - three Netlify check runs (redirect rules, header rules, pages changed) completed with conclusion `neutral`;
   - no GitHub Actions workflow runs exist for this branch.
@@ -163,7 +164,7 @@ A scratch copy of `index.html` (outside the repository) was given three faults:
 
 ## 8. Unresolved and out of scope
 
-1. **Live-backend behaviour is unvalidated.** All browser validation was network-isolated; any test-project or production validation needs its own approval (§11).
+1. **Live-backend behaviour is unvalidated.** All browser validation, including the post-merge validation (§12), was network-isolated; any test-project or production validation needs its own approval.
 2. **The inventory is a snapshot.** New backend codes need a translator entry; unmapped codes fail safe to the action fallback.
 3. **The pre-existing `supaInsert REQUEST` log** still records every insert payload in the console.
 4. **Backend taxonomy items are left for a later phase:** HTTP 500 for P0002–P0059, P0001's collision with the PL/pgSQL default code, duplicate `delete_failed` codes, unlocked check-then-act races, no UNIQUE constraint on credits.
@@ -184,7 +185,7 @@ An independent ChatGPT review of the complete pre-commit bundle (full `index.htm
 
 **After the corrections, offline only:** static check **41/41**, harness **55/55**, every inline script compiles, `git diff --check` clean. The Phase 21.2 check's network-capable section was **not** run.
 
-**What the review did not change (state at review time):** real-application Level 3 validation, approval to commit, commit, push, PR and production confirmation were still outstanding. Level 3 local validation and the local commit have since been completed (§10, §7); the remaining steps are in §11. **S-4 remains OPEN and is not REMEDIATED.**
+**What the review did not change (state at review time):** real-application Level 3 validation, approval to commit, commit, push, PR and production confirmation were still outstanding. Level 3 local validation and the local commit were completed afterwards (§10, §7), followed by the merge and post-merge validation (§11, §12). At review time S-4 was still OPEN; it is now **REMEDIATED — Phase 21.9** (§12).
 
 ---
 
@@ -252,13 +253,82 @@ The workstation's **Kaspersky** antivirus intercepts local HTTP traffic. It inse
 
 ---
 
-## 11. Remaining Phase 21.9 steps
+## 11. Phase 21.9 closure steps
 
-Each step requires its own explicit approval:
+Each step was approved separately:
 
-1. **Complete the GitHub PR review and checks on PR #20.** The branch is pushed and PR #20 is open (§7). This stage is in progress.
-2. **Merge PR #20**, if approved. Under `.apos/VALIDATION_STANDARD.md` §8 a merge to `main` is a production release and needs Level 4 release validation. Not merged.
-3. **Release or test-project validation**, if specifically approved. None has occurred.
-4. **Final S-4 closure** in `analysis/phase-21.3/backend-contract.md` §0.2, only once the steps above are complete.
+1. **PR #20 review and merge.** PR #20 was merged into `main` as merge commit `2df2734` (§7). Under `.apos/VALIDATION_STANDARD.md` §8 a merge to `main` is a production release.
+2. **Post-merge validation of the exact merged `main`.** Complete, 2026-09-15 (§12).
+3. **Live-backend release or test-project validation.** Not performed; none was approved. The closure decision rests on the network-isolated validation of §12.
+4. **Final S-4 closure** in `analysis/phase-21.3/backend-contract.md` §0.2. Complete: **S-4 REMEDIATED — Phase 21.9.**
 
-**Until then, S-4 remains OPEN and is not REMEDIATED.**
+---
+
+## 12. Final post-merge validation and S-4 closure record
+
+**Main validated:** `2df2734247f5f1cccf0ae689d6e121775dea652b` (merge of PR #20; parents `b1582a9` and PR head `24252a6`)
+**Date:** 2026-09-15
+**Result:** **PASS** on every check.
+
+### 12.1 Synchronization and integrity
+
+- Local `main` was fast-forwarded to `origin/main` with a read-only fetch. Local `main` = `origin/main` = `2df2734`; working tree clean.
+- The merged tree has no file differences from PR head `24252a6`.
+- `index.html` on `main` is byte-identical to the reviewed product state: SHA-256 (LF) `249109be…1ead`, the same blob as product commit `ab3a46d`.
+- Confirmed present on `main`: the backend error contract block and both functions; the zero-byte upload guard; the 5000-character message-edit and 300-character title-edit checks; the PGRST301/302/303 session rule; P0032 and P0033 both `TARGET_UNAVAILABLE` with one shared message.
+- Raw-display regression searches (raw-message variables, `showToast` reading `.message`, `error.details` / `error.hint`, `JSON.stringify` of errors, `textContent` / `innerHTML` reading message, details or hint): **0 matches**.
+- All five Phase 21.9 validation files are present on `main`.
+
+### 12.2 Results
+
+| Check | Result |
+|---|---|
+| Static invariants (`static-check.sh`) | **41/41 PASS**; S-1 confirms only the 7 approved paths differ from `b1582a9` |
+| Offline browser harness | **55/55 PASS** |
+| Syntax | application script compiles; the one script-extraction error is the known HTML-comment false positive (§4.1), identical on the base |
+| `git diff --check` | clean, `b1582a9..2df2734` and working tree |
+| Real-application Level 3 | **50/50 PASS** |
+| Successful external requests | **0** |
+| Supabase requests attempted / sent | **0 / 0** |
+| TCP connections to non-loopback addresses | **0** |
+| Repository during validation | **unchanged** — identical fingerprint (HEAD, branch, status, diff, untracked files) before and after |
+
+The Phase 21.2 static check was not re-run, so its network-capable section was not used.
+
+### 12.3 Level 3 checks on the merged `index.html`
+
+Method as §10.1: headless Edge, fresh profile, hostname resolution blocked except 127.0.0.1, dead proxy for all non-loopback traffic, network log and console captured; the real `index.html` served from 127.0.0.1 and driven in a same-origin iframe with the network-facing globals replaced by counting stubs.
+
+| Area | Result |
+|---|---|
+| Boot and script integrity | Real `index.html` loaded and executed fully; translator tables initialised (12 / 11 / 15-11-16); blocked SDK produced the expected `sdk-unavailable` startup state; no raw backend text rendered |
+| Zero-byte upload | Rejected before the identity lookup: "This file is empty and cannot be uploaded." in the toast and upload status; identity lookup 0, Storage upload 0, metadata insert 0, fetch 0; busy state `true → false` |
+| 1-byte control | Passes the guard and reaches only the stubbed identity lookup and stubbed upload; stubbed failure shows "Upload failed. Please try again."; no insert, no raw Storage text; busy released; fetch 0 |
+| Message edit boundary | **5001** rejected locally with the 5000-character message, 0 RPC, 0 fetch; **5000** passes to the intercepted RPC stub; safe connection copy; busy released |
+| Task title boundary | **301** rejected locally with the 300-character message, 0 RPC, 0 fetch; **300** passes to the intercepted RPC stub; safe connection copy; busy released |
+| Translator smoke test | P0001 and PGRST301/302/303 → `AUTH_REQUIRED`, identical session copy; P0014 → `READ_ONLY`; P0032 and P0033 → `TARGET_UNAVAILABLE`, identical copy; P0040 → `TRANSFER_REQUIRED`; P0053 → `ALREADY_EXISTS`, established copy; status 0 → `NETWORK_ERROR`; unknown code → `INTERNAL_ERROR` with the safe action fallback |
+| Hostile raw backend data | Inputs carried raw `message`, `details` and `hint` text; **none reached any output**; no snake_case token displayed |
+| Console review | No uncaught exception; no syntax, type or reference error. Only the expected `sdk-unavailable` startup message, the intended diagnostic logs of the deliberately failing stubs, and one unrelated line from Edge's built-in component extension |
+
+### 12.4 Network audit
+
+- Loopback: **4** successful requests, matching the server log (test page, `index.html`, `error-codes.tsv`, `favicon.ico` 404).
+- External: **25** attempts recorded (the jsdelivr SDK, Google Fonts, the antivirus-injected script, Edge background services); **0 successful** — each failed at the dead proxy or received no response.
+- Supabase: **0** attempted, **0** sent.
+
+**Environment observation.** Kaspersky again injected its `main.js` script tag into the locally served pages (§10.4). The isolation blocked it, so it never loaded and could not affect the results. This is an environment observation, not a STAGERZ defect.
+
+A first Level 3 launch was discarded before any test ran: a Git Bash path conversion in the throwaway server's read-permission argument made it answer 404 for the test page (2 loopback requests, nothing executed). The rerun with Windows-style paths is the result above.
+
+### 12.5 What this validation does not claim
+
+- **Production Supabase was not exercised.** The validation was deliberately network-isolated; backend-dependent paths were driven by local stubs, and no RPC, Storage, Auth or Edge Function request reached Supabase.
+- No database row, Storage object, Edge Function, secret, deployment or GitHub setting was changed by the validation.
+
+### 12.6 Closure
+
+The exact merged `main` matches the reviewed product state and passes every static, harness and real-application Level 3 check. The closure was explicitly approved.
+
+**S-4 REMEDIATED — Phase 21.9.**
+
+Recorded in `analysis/phase-21.3/backend-contract.md` §0.2 by a documentation-only commit that changes this file, `phase-definition.md` and `backend-contract.md`; `index.html` is not changed by it.
