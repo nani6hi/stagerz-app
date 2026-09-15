@@ -2,9 +2,11 @@
 
 **Branch:** `phase-21.8a-s8-deletion-drainer`
 **Base commit:** `abefeb0`
-**Source-capture checkpoint:** `3fb81ae` — pushed; PR #16 open, not merged
-**Validation level:** **1** — documentation, forensic source capture and an unexecuted workflow definition; `index.html` is not touched
-**Status:** **Preparation validated statically.** The manual-only workflow is prepared but **not committed and never run**. No schedule, no secret, no Edge Function invocation or deployment, no Supabase mutation.
+**Merged:** **PR #16** (`3fb81ae`, `23c05b2`; merge `026bace`) and **PR #17** (head `fd018b8d7aa7689628e8126dcac412a306dccfde`; merge `03ece667eedf0f75022f7a39bf0600e1df2dafd5`)
+**Validation level:** **1** — documentation, forensic source capture and a workflow definition, plus production run evidence; `index.html` is not touched
+**Status:** **COMPLETE — S-8 REMEDIATED (Phase 21.8A / PRs #16 and #17).** Manual production drain validated (run #5); schedule active; scheduled runs #6 and #7 succeeded; G-1 to G-7 all PASS. Chronology and final gates: **§10**.
+
+> **HISTORICAL — sections 1 to 9 are the preparation-time validation record, written before any run.** They are preserved unedited in substance. Statements there such as "never run", "no schedule", "secret does not exist", "PENDING" and "PR #16 open" describe **that point in time**. The completed validation is **§10**.
 
 ---
 
@@ -16,7 +18,7 @@
 
 **Does not claim anything from a workflow run.** The workflow has never executed. The secret it requires does not exist. Every workflow check in this record is a **static review of the file**, not an observation of behaviour. In particular, the predicted first-run end state (§6) is a prediction.
 
-> **Finding-status note.** Finding status lives in one place only: `analysis/phase-21.3/backend-contract.md` §0.2. As of 2026-09-12: **S-1, S-2, S-5, S-6, S-7 REMEDIATED**; **S-3 OPEN (reclassified this date from security to storage-lifecycle/cleanup)**; **S-4 OPEN**; **S-8 OPEN**.
+> **Finding-status note.** Finding status lives in one place only: `analysis/phase-21.3/backend-contract.md` §0.2. As of 2026-09-12: **S-1, S-2, S-5, S-6, S-7 REMEDIATED**; **S-3 OPEN (reclassified this date from security to storage-lifecycle/cleanup)**; **S-4 OPEN**; **S-8 OPEN**. *(Point-in-time note. Current status, 2026-09-15: S-1 to S-8 all REMEDIATED — see `backend-contract.md` §0.2 and §10 below.)*
 
 ---
 
@@ -167,7 +169,7 @@ Recorded without file names, storage paths or user identifiers.
 
 ---
 
-## 7. Gates
+## 7. Gates — at preparation (HISTORICAL; final results in §10.4)
 
 | # | Gate | Status |
 |---|---|---|
@@ -185,7 +187,7 @@ Recorded without file names, storage paths or user identifiers.
 
 ---
 
-## 8. Unresolved concerns
+## 8. Unresolved concerns — at preparation (HISTORICAL; current follow-ups in §10.7)
 
 1. **Source fidelity is inspection-verified, not machine-verified** (§3.2). G-7 closes it.
 2. **The workflow is statically reviewed only** (§5). Runtime behaviour is unobserved until the first approved dispatch.
@@ -197,10 +199,116 @@ Recorded without file names, storage paths or user identifiers.
 
 ---
 
-## 9. Summary
+## 9. Summary — at preparation (HISTORICAL)
 
 Seven Edge Function source files are captured and hash-verified in checkpoint `3fb81ae`, and a manual-only workflow is now prepared: dispatch-only, no inputs, no permissions, no checkout, no retries, secret delivered through stdin, and a hard failure before any network call if the secret is missing.
 
 **Eight repository-safety checks and twenty-two workflow static-review checks pass.** No schedule, no secret, no workflow run, no deployment, no invocation, no database change. `index.html` and all prior phase artifacts are untouched.
 
 **Level 1 is satisfied for the preparation step.** Everything that touches production is gated behind G-2 and G-3, and neither the secret nor the approval exists.
+
+---
+
+## 10. Completed validation and S-8 closure
+
+**Closed:** 2026-09-15. No identifiers, file names, storage paths, user IDs or secret values are recorded here.
+
+### 10.1 HISTORICAL — failed manual runs #1 to #4
+
+All four were `workflow_dispatch` runs on `main` at `026bace`, on 2026-09-13 (UTC): 10:59, 11:31, 11:36 and 11:47.
+
+- **Result:** job failure; the workflow's own annotation reads "process-pending-asset-deletions returned HTTP 401".
+- **Cause:** the maintenance secret had not yet been applied and aligned on the function side.
+- **Effect:** none. A 401 is returned before the service-role client is created, so nothing was read or changed.
+
+### 10.2 SUCCESSFUL MANUAL VALIDATION — run #5
+
+`workflow_dispatch`, 2026-09-13 12:39 UTC, on `main` at `026bace`. **Result: success**, all steps succeeded, **0 annotations**, so no `retry_recorded` warning was emitted.
+
+| | Before | After run #5 |
+|---|---|---|
+| `pending_asset_deletions` | 2 | **0** |
+| `collaboration_assets` total | 17 | **15** |
+| — live | 15 | **15**, unchanged |
+| — soft-deleted | 2 | **0** |
+| `storage.objects` (`collaboration-assets`) | 28 | **28**, unchanged — both queued objects were already absent |
+| Retry state | — | none: no rows left, no attempt counts |
+
+- **HTTP 200:** the Supabase gateway log showed the POST answered by the function.
+- **Status `already_deleted` for both rows:** deduced from the code and the data (queue drained, no Storage object changed), not read from the job log.
+
+**Version reload observation.** Between run #4 and run #5 the drainer's deployed version changed **7 → 8**, while its bundle hash and `updated_at` stayed the same. `process-pending-deletions` (5 → 6) and `delete-account` (4 → 5) changed at the same moment in the same way. Run #4 hit v7 and got 401; run #5 hit v8 and got 200. This is a platform reload that applied the saved secret, not a source change. Phase 21.8B later observed the same pattern on every project-secret change (`analysis/phase-21.8b/phase-definition.md` §12.7). It is the only difference from the predicted end state (§6.2).
+
+### 10.3 AUTOMATIC VALIDATION — scheduled runs
+
+PR #17 (merge `03ece66`, 2026-09-13 17:32 UTC) added the daily schedule.
+
+| Run | Event | Started (UTC) | `main` at | Result |
+|---|---|---|---|---|
+| **#6** | `schedule` | 2026-09-14 08:50 | `b1582a9` | **success** — all steps succeeded, 0 annotations |
+| **#7** | `schedule` | 2026-09-15 08:37 | `2df2734` | **success** — all steps succeeded, 0 annotations |
+
+- **Workflow state:** **active** (GitHub API, 2026-09-15).
+- **Meaning of success:** the workflow passes only on HTTP 200 with the expected response shape, so both scheduled runs authenticated and completed. 0 annotations means no `retry_recorded` warning.
+- **Secret alignment:** the maintenance secret was rotated in Supabase and GitHub during Phase 21.8B (`analysis/phase-21.8b/phase-definition.md` §12.8), before these runs. Their success shows the GitHub secret and the function's secret currently agree.
+- **Timing:** both runs started about 5½ hours after the 03:17 UTC cron time. GitHub schedules are best-effort (§6 of `phase-definition.md`); that is acceptable for a deferred-cleanup queue.
+
+### 10.4 Gates — final
+
+| Gate | Result | Evidence |
+|---|---|---|
+| **G-1** | **PASS** | Source capture `3fb81ae` committed, pushed, reviewed and merged (PR #16, `026bace`) |
+| **G-2** | **PASS** | GitHub maintenance secret configured and aligned — proven by authenticated runs #5, #6 and #7 |
+| **G-3** | **PASS** | First production dispatch explicitly approved |
+| **G-4** | **PASS** | Run #5 reached the intended queue-drain end state (§10.2), with the explained version reload difference |
+| **G-5** | **PASS** | Manual workflow committed (`23c05b2`) and statically reviewed (§5) |
+| **G-6** | **PASS** | Schedule added afterwards, as the separately approved PR #17 |
+| **G-7** | **PASS** | Supabase CLI download-and-diff during Phase 21.8B: 7/7 captured files byte-identical to `main`, 2026-09-13 (`analysis/phase-21.8b/validation.md` §2), re-run after the reaper deployment |
+
+### 10.5 CURRENT READ-ONLY SNAPSHOT — 2026-09-15
+
+Aggregate `SELECT` only, no identifiers:
+
+| Measure | Value |
+|---|---|
+| `pending_asset_deletions` rows | **0** |
+| Maximum `attempt_count` | **0** |
+| `collaboration_assets` total | **15** |
+| Soft-deleted `collaboration_assets` | **0** |
+| Soft-deleted assets with no queue entry | **0** |
+| Objects in `collaboration-assets` | **13** (28 → 13 was Phase 21.8B's orphan reclaim, not this drainer) |
+| `delete_collaboration_asset` still enqueues to `pending_asset_deletions` | **yes** |
+| `pg_cron` / `pg_net` installed | **no** — not used |
+| `pending_asset_deletions` protection | RLS enabled, 0 policies, no `anon` / `authenticated` grants |
+
+**Repository:** no commit after `03ece66` touches `.github/workflows/` or the drainer source; the PR #17 implementation is unchanged on `main`.
+
+### 10.6 Evidence limits
+
+- **Log lines not retrieved.** Literal job log lines for runs #6 and #7, and for #5, were not retrieved: the log endpoint requires authenticated access. The GitHub API established each run's conclusion, step results and annotations.
+- **Function metadata not re-read.** The current Edge Function version and bundle metadata were not re-read in the final revalidation, because that read was denied. This does not invalidate the G-7 source-identity evidence or the scheduled-execution evidence.
+- **Present-object branch never exercised.** The only production run that processed rows handled objects that were **already absent**. The drainer's branch where an object is present and removed has **not** been exercised in production.
+
+### 10.7 Non-blocking follow-ups
+
+None keeps S-8 open; none is raised as a new finding here:
+
+1. **Throughput cap:** 25 deletions per day.
+2. **Stuck rows:** permanently failing oldest rows could eventually fill a whole batch; there is no attempt cap.
+3. **Partial failure:** a failed metadata-row delete after a successful Storage removal is only logged, and the run still reports success.
+4. **Unknown outcome:** a `curl --max-time 60` timeout leaves the outcome of that call unknown.
+5. **Unpinned dependency:** `@supabase/supabase-js@2` is not pinned in the drainer.
+6. **Schedule auto-disable:** GitHub may eventually disable scheduled workflows in an inactive public repository.
+7. **Possible hardening:** attempt cap and retry ordering; stronger (constant-time) secret comparison; explicit rejection of an empty configured maintenance secret; dependency pinning.
+
+### 10.8 Closure
+
+The original defect — no active automatic drainer — no longer exists:
+- the drainer is scheduled and the workflow is active;
+- two consecutive scheduled runs succeeded;
+- manual recovery remains available;
+- the queue is healthy and empty.
+
+The classification is unchanged: **reliability / data-lifecycle, MEDIUM, not a security vulnerability**.
+
+**S-8 REMEDIATED — Phase 21.8A / PRs #16 and #17.**

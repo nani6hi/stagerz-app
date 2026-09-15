@@ -52,7 +52,11 @@ The client half is not a placeholder either. It is the **demand side of the cont
 >
 > That validation was **deliberately network-isolated**; live Supabase was not exercised. §11.3 is preserved unedited as the evidence that found the finding, and carries its own banner. Detail: `analysis/phase-21.9/`.
 
-**Five evidence epochs are used throughout this document:**
+> **S-8 was found after this document's §11 evidence was written, and it is also REMEDIATED.**
+>
+> **S-8** — the pending asset-deletion pipeline had no active automatic drainer — is a **reliability / data-lifecycle** finding (MEDIUM), **not a security vulnerability**. It has no §11 section; its evidence lives in `analysis/phase-21.8a/`. Phase 21.8A added a manual-only caller (PR #16), validated a production drain on 2026-09-13, and then added a daily schedule as a separate change (PR #17). The workflow is active and its first two scheduled runs succeeded (2026-09-14, 2026-09-15).
+
+**Six evidence epochs are used throughout this document:**
 
 | Label | Meaning |
 |---|---|
@@ -61,8 +65,9 @@ The client half is not a placeholder either. It is the **demand side of the cont
 | **CURRENT (post-21.5)** | Re-verified live 2026-09-08 against `kbnmkyvbwkuvcklywdhk`. §0.2. The post-21.4 re-verification of 2026-08-31 stands for §11.4's current-state block and §12.7, neither of which Phase 21.5 touched |
 | **CURRENT (post-21.8B)** | Re-verified live 2026-09-13 against `kbnmkyvbwkuvcklywdhk`, after the Phase 21.8B delete run and delete disablement. The S-3 row of §0.2 and the banner on §11.2 |
 | **CURRENT (post-21.9)** | Validated 2026-09-15 on merged `main` at `2df2734`, network-isolated; a frontend validation, not a live backend read. The S-4 row of §0.2 and the closure banner on §11.3 |
+| **CURRENT (S-8 closure)** | Revalidated 2026-09-15: repository, GitHub Actions run history and state (read-only API), and an aggregate read-only queue query against `kbnmkyvbwkuvcklywdhk`. The S-8 row of §0.2 |
 
-### 0.2 Current status of all findings — S-4 row validated 2026-09-15 on merged `main` (post-remediation, network-isolated); S-3 row live-verified 2026-09-13 (post-remediation); S-6 and S-7 rows 2026-09-11 (post-remediation); S-5 row 2026-09-11; S-2 row 2026-09-08; all others 2026-08-31
+### 0.2 Current status of all findings — S-8 row revalidated 2026-09-15 (post-remediation); S-4 row validated 2026-09-15 on merged `main` (post-remediation, network-isolated); S-3 row live-verified 2026-09-13 (post-remediation); S-6 and S-7 rows 2026-09-11 (post-remediation); S-5 row 2026-09-11; S-2 row 2026-09-08; all others 2026-08-31
 
 | ID | Finding | Status |
 |---|---|---|
@@ -73,8 +78,11 @@ The client half is not a placeholder either. It is the **demand side of the cont
 | **S-5** | Default privileges grant ALL on new objects to `anon` | ✅ **REMEDIATED — Phase 21.6.** 2026-09-11: `anon` and `authenticated` removed from the `postgres` TABLES and SEQUENCES defaults in `public` and `storage`; `postgres` and `service_role` retained. Every existing object ACL byte-identical. FUNCTIONS and `supabase_admin` defaults deliberately unchanged |
 | **S-6** | `anon` / `authenticated` hold `MAINTAIN` on `public.users` | ✅ **REMEDIATED — Phase 21.7.** 2026-09-11: `REVOKE MAINTAIN … FROM anon, authenticated`. `public.users` now grants table-level privileges to `postgres` and `service_role` only; neither app role holds any of the eight. **All seven column grants, RLS, both policies and zero triggers verified byte-identical.** Root cause was five enumerated revokes on 2026-07-12 written before PostgreSQL 17 named the privilege |
 | **S-7** | Three `log_collaboration_*_activity` trigger functions executable by `PUBLIC`, and so by `anon` | ✅ **REMEDIATED — Phase 21.7.** 2026-09-11: `EXECUTE` revoked from `PUBLIC` and from `authenticated` on all three. Now `{postgres=X/postgres,service_role=X/postgres}` — `PUBLIC`, `anon` and `authenticated` all false — matching the `handle_new_auth_user()` posture. Bodies, security attributes and trigger definitions unchanged; Advisor lint `anon_security_definer_function_executable` 3 → 0 |
+| **S-8** | Pending asset-deletion pipeline had no active automatic drainer (reliability / data-lifecycle, MEDIUM — **not a security vulnerability**) | ✅ **REMEDIATED — Phase 21.8A / PRs #16 and #17.** PR #16 (merge `026bace`) captured the deployed Edge Function source and added a manual-only GitHub Actions caller of `process-pending-asset-deletions` (maintenance-secret gated, `permissions: {}`, batch ≤ **25**, oldest first). Production drain validated 2026-09-13 (run #5): queue **2 → 0**, `collaboration_assets` **17 → 15**, Storage unchanged because both objects were already absent. PR #17 (merge `03ece66`) then added a daily schedule (`17 3 * * *`) as a separate approved change, keeping manual dispatch. Workflow **active**; scheduled runs on **2026-09-14** and **2026-09-15** both succeeded. Queue empty on 2026-09-15, with no failed attempts. Gates G-1 to G-7 PASS. Non-blocking reliability follow-ups are listed in `analysis/phase-21.8a/validation.md` §10.7 |
 
-**All seven findings in this table — S-1 to S-7 — are now remediated, each by its own approved phase: S-1 by Phase 21.4, S-2 by Phase 21.5, S-5 by Phase 21.6, S-6 and S-7 by Phase 21.7, S-3 by Phase 21.8B, S-4 by Phase 21.9.**
+**All eight findings in this table — S-1 to S-8 — are now remediated, each by its own approved phase: S-1 by Phase 21.4, S-2 by Phase 21.5, S-5 by Phase 21.6, S-6 and S-7 by Phase 21.7, S-8 by Phase 21.8A, S-3 by Phase 21.8B, S-4 by Phase 21.9.** S-3 and S-8 are storage-lifecycle and reliability findings rather than security vulnerabilities.
+
+**S-8's remediation is a scheduled caller, not a change to the drainer.** The drainer's source in this repository has not changed since G-7 proved the deployed copy byte-identical to it on 2026-09-13; the deployed metadata was not re-read at closure. The only production run that processed rows handled objects that were already absent, so the branch where an object is present and removed has not yet run in production. Throughput is one batch of at most 25 per day, and the listed hardening items remain open as non-blocking follow-ups. Detail: `analysis/phase-21.8a/`.
 
 **S-4's remediation is a display contract, not a backend change.** The backend still raises the same 58 codes with the same HTTP mapping; the frontend no longer shows their raw text. The inventory is a 2026-09-14 snapshot, so a new backend code must be added to the translator (until then it fails safe to the action's fallback copy). Backend taxonomy items (HTTP 500 for P0002–P0059, P0001's collision with the PL/pgSQL default, duplicate codes, unlocked check-then-act races) and the pre-existing `supaInsert REQUEST` console log remain out of scope. Detail: `analysis/phase-21.9/phase-definition.md` §10.
 
