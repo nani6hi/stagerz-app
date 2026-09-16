@@ -4,7 +4,13 @@
 **Base commit:** `ebfe536` (`main`, merge of PR #10 — Phase 21.2 documentation follow-up)
 **Addresses:** Phase 20.7 register item **C-3** (Critical) — *the backend contract exists only inside Supabase* (`analysis/phase-20.7/codebase-assessment.md` §C-3, §A.8)
 **Resumption note (2026-08-31):** this phase was **paused** after Step 1 so that finding **S-1**, discovered during its extraction, could be remediated separately as **Phase 21.4 / PR #11** (merge `968b501`). The paused artefacts were subsequently lost from volatile storage and **recovered hash-verified** from history; the branch now sits on `main` at `f4d1fa7`. **S-1 is remediated; S-2–S-5 remain open.** Current finding status and the historical-vs-current evidence split are in `backend-contract.md` §0.1–§0.2. The "Base commit: `ebfe536`" above is retained deliberately — it records when this document was authored, not where the branch points today.
-**Status:** **Step 1 — read-only extraction planning and client-side audit. COMPLETE.** Live read-only access since confirmed; headline counts captured, detailed snapshot awaiting delivery (see §4). No application source modified. Not committed, not pushed.
+**Status (2026-09-17):** **RESUMED — INCOMPLETE (one gate open).**
+- **Step 1** (client-side audit) was completed and merged in PR #12.
+- **Resume:** the six `.sql` snapshots are now **complete** for the current epoch `20260916215204`, extracted read-only on branch `phase-21.3-backend-contract-resume` from `main` @ `2fdef81` and fingerprint-verified against the live catalog.
+- **Gates:** R-1–R-4, R-6–R-11 and S-1–S-6 pass. **R-5 fails on grant width** (W-1 to W-4); the phase closes only after a recorded owner decision on those items (`validation.md` §14, §17).
+- **Scope:** no application source was modified.
+
+The text below "Resumption note" and §1–§8 is the Step 1 record; the current-epoch outcome is §9.
 **Validation level:** **Level 1** for this step — it adds documentation only and does not touch `index.html`. The extraction step that follows is also Level 1 by the same reasoning; Level 3 would only apply if a later phase changed application behaviour.
 
 ---
@@ -65,15 +71,15 @@ The MCP tools remain unavailable *to this agent*, so the detailed extraction is 
 
 | Path | Contents | State |
 |---|---|---|
-| `phase-definition.md` | This document | Complete |
-| `backend-contract.md` | Client-side contract; reconciliation targets; known discrepancies; live results (§11) | Client side complete; live counts and facts recorded; per-object detail awaiting delivery |
-| `schema.sql` | Tables, views, columns, constraints, indexes | Query + confirmed counts recorded; detail awaiting delivery |
-| `functions.sql` | 20 RPCs + trigger/helper functions, EXECUTE grants | Query + confirmed counts recorded; detail awaiting delivery |
-| `rls-policies.sql` | RLS state and every policy | Query + confirmed counts recorded; detail awaiting delivery |
-| `grants.sql` | Table, column and default privileges | Query + confirmed counts recorded; detail awaiting delivery |
-| `triggers.sql` | `public` triggers + the `auth.users` signup hook | Query + confirmed counts recorded; detail awaiting delivery |
-| `storage-policies.sql` | Bucket definition and object policies | Query + confirmed counts recorded; detail awaiting delivery |
-| `validation.md` | The checks that prove the capture is complete and safe | Complete |
+| `phase-definition.md` | This document | Current (2026-09-17) |
+| `backend-contract.md` | Client-side contract; reconciliation targets; known discrepancies; live results (§11); **current contract (§13)** | Complete for epoch `20260916215204` |
+| `schema.sql` | Tables, views, columns, constraints, indexes, RLS state, view definition, Realtime publications, extensions, API roles, migration names | **Complete** — 17 tables, 1 view, 141 columns, 67 constraints, 40 indexes |
+| `functions.sql` | All 34 functions with full definitions, attributes and EXECUTE grants; SQLSTATE contract | **Complete** — 34/34 byte-identical |
+| `rls-policies.sql` | RLS state and every `public` policy | **Complete** — 25/25 |
+| `grants.sql` | Schema, table, column, function and default privileges; effective API-role matrix | **Complete** |
+| `triggers.sql` | `public`, `auth.users` and `storage` triggers; event triggers | **Complete** — 8 triggers |
+| `storage-policies.sql` | Bucket configuration, storage RLS, object policies, storage grants, path contract | **Complete** — 1 bucket, 2 policies |
+| `validation.md` | The checks that prove the capture is complete and safe | Current — R-5 open |
 
 ---
 
@@ -97,7 +103,7 @@ The MCP tools remain unavailable *to this agent*, so the detailed extraction is 
 | ~~**Q-1**~~ | ~~How is read-only backend access to be provided?~~ **ANSWERED** — verified read-only access to `kbnmkyvbwkuvcklywdhk` is in place; detailed extraction is being performed externally and delivered for transcription | Was blocking; no longer |
 | **Q-2** | Is `kbnmkyvbwkuvcklywdhk` still the *"disposable test project"* the code calls it ([307-310](../../index.html#L307-L310), [1218-1225](../../index.html#L1218-L1225))? Phase 20.7 raised this and it is **still unanswered** | Determines whether production user data sits on a project not intended to persist — and how carefully this capture must be handled |
 | ~~**Q-3**~~ | ~~Capture `auth` and `storage`, or only `public`?~~ **ANSWERED — yes, both are in scope.** Confirmed live: the signup trigger `on_auth_user_created` sits on `auth.users`, and the 2 object policies sit on `storage.objects`. A `public`-only capture would have missed both | Settled by evidence |
-| **Q-4** | What keeps the snapshot current? | R5. Ties directly to Phase 21.2's unanswered Q-5 |
+| **Q-4** | What keeps the snapshot current? | R5. Ties directly to Phase 21.2's unanswered Q-5. *Partly addressed 2026-09-17:* every object carries a server-side SHA-256 and the aggregates are listed in `validation.md` §13, so drift is detectable by re-running the read-only extractions. No owner or schedule is defined for re-capture yet |
 | ~~**Q-5**~~ | ~~Record `supabase_realtime` membership?~~ **ANSWERED — captured.** Exactly the 5 tables the frontend subscribes to are members; check R-9 passes | Closed |
 
 ---
@@ -111,4 +117,33 @@ The **supply side** is now partially captured. Verified read-only access exists,
 **Three results already stand.** The signup trigger the repository never recorded is identified — `on_auth_user_created AFTER INSERT ON auth.users → handle_new_auth_user()`, the mechanism behind the identity chain `getMyDomainId()` relies on. The realtime publication matches the frontend's five subscriptions exactly (check **R-9** passes). And the first of the four known discrepancies is **confirmed**: `public_profiles` is sourced from `public.users` and never reads `profiles.display_name`, the column Edit Profile writes.
 
 **One finding worth flagging beyond the capture itself:** the `collaboration-assets` bucket has `file_size_limit = NULL` and `allowed_mime_types = NULL`, and the client-side audit already established the frontend imposes no restriction either — so asset uploads are **unbounded in size and type at every layer**. Pre-existing, out of scope to fix in a capture-only phase, recorded for a product decision.
+
+---
+
+## 9. Resume outcome — 2026-09-17
+
+**Pause history.**
+- Paused after Step 1 for S-1 (Phase 21.4).
+- Paused again for S-2 to S-8 (Phases 21.5–21.9).
+- Paused on 2026-09-15 for the backend integrity remediation (O-1/O-2/O-3), which this phase's own re-baseline found.
+
+All of those are REMEDIATED.
+
+**The resume captured the current post-remediation backend** (migration epoch `20260916215204`, 42 migrations):
+- **How:** read-only extraction, deterministic rendering, and SHA-256 reconciliation of every captured definition against the live catalog (`validation.md` §11–§13).
+- **Result:** the six snapshots are complete, with 34/34 function bodies, 25 + 2 policies with full expressions, 8 triggers, 67 constraints, 40 indexes, 141 columns, every privilege row and every default ACL.
+- **Current contract:** summarised in `backend-contract.md` §13.
+
+**Gate outcome.**
+- **Pass:** R-1–R-4, R-6–R-11 and S-1–S-6.
+- **Fail:** **R-5** records four grant-width items (W-1 `wanted_posts` INSERT `id`/`created_at`; W-2 extra `profiles` UPDATE columns; W-3 extra `users` UPDATE columns; W-4 unused `follows`/`likes` writes).
+- **Scope of those items:** all are own-row-scoped by RLS, and none is a new security finding. Step 1's rule is still that a materially wider grant "is a finding, not a pass".
+
+**Status:** **INCOMPLETE.** Phase 21.3 closes once each of W-1 to W-4 has a recorded decision (accept as design, or narrow in a separately approved change) and R-5 is re-evaluated.
+
+**Carried open questions:**
+- **Q-2** (is this the "disposable test project"?);
+- **Q-4** (who re-captures the snapshot, and when);
+- the unbounded-upload product decision;
+- Auth settings that are not observable read-only (`backend-contract.md` §13.6).
 

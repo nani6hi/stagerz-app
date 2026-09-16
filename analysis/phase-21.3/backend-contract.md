@@ -13,10 +13,12 @@ This document has **two halves.**
 
 | Half | Source | Status |
 |---|---|---|
-| **Client side** — what `index.html` demands of the server | Static audit of the working tree at `ebfe536` | **COMPLETE and authoritative** |
-| **Server side** — what the Supabase project actually provides | Live read-only introspection | **Access confirmed; headline counts and several facts captured (§11). Detailed snapshot awaiting delivery** |
+| **Client side** — what `index.html` demands of the server | Static audit of the working tree at `ebfe536`, re-derived 2026-09-17 against the current `index.html` | **COMPLETE and authoritative.** The same 14 relations, 20 RPCs and 7 direct write sites; only line numbers moved (§13.2) |
+| **Server side** — what the Supabase project actually provides | Live read-only introspection | **CAPTURED 2026-09-17 for the current epoch** (migration `20260916215204`). The six `.sql` snapshots hold every table, column, constraint, index, function body, policy, grant, default ACL, trigger and the bucket configuration, each fingerprinted against the live catalog (§13) |
 
-Read-only access to `kbnmkyvbwkuvcklywdhk` has been verified and the confirmed results so far are recorded in **§11**. The per-object detail — column lists, constraint definitions, function bodies, policy expressions, grant rows — is being extracted externally and will be transcribed verbatim into the `.sql` artifacts when it arrives.
+> **Update 2026-09-17.** The per-object snapshot that the 2026-08 text below describes as "awaiting delivery" has now been extracted mechanically from the live catalog and is in the `.sql` files. **§13 is the current server-side contract.** §11 is the 2026-08 extraction record, kept for its evidence; where its counts differ from §13, §13 is current.
+
+*Step 1 text (2026-08):* Read-only access to `kbnmkyvbwkuvcklywdhk` has been verified and the confirmed results so far are recorded in **§11**. The per-object detail — column lists, constraint definitions, function bodies, policy expressions, grant rows — is being extracted externally and will be transcribed verbatim into the `.sql` artifacts when it arrives.
 
 **Nothing is invented, and no placeholder stands in for data that can now be read live.** Where a fact is confirmed it is stated as confirmed; where detail is still outstanding that is stated plainly rather than filled with a guess.
 
@@ -56,7 +58,7 @@ The client half is not a placeholder either. It is the **demand side of the cont
 >
 > **S-8** — the pending asset-deletion pipeline had no active automatic drainer — is a **reliability / data-lifecycle** finding (MEDIUM), **not a security vulnerability**. It has no §11 section; its evidence lives in `analysis/phase-21.8a/`. Phase 21.8A added a manual-only caller (PR #16), validated a production drain on 2026-09-13, and then added a daily schedule as a separate change (PR #17). The workflow is active and its first two scheduled runs succeeded (2026-09-14, 2026-09-15).
 
-**Six evidence epochs are used throughout this document:**
+**Seven evidence epochs are used throughout this document:**
 
 | Label | Meaning |
 |---|---|
@@ -66,6 +68,7 @@ The client half is not a placeholder either. It is the **demand side of the cont
 | **CURRENT (post-21.8B)** | Re-verified live 2026-09-13 against `kbnmkyvbwkuvcklywdhk`, after the Phase 21.8B delete run and delete disablement. The S-3 row of §0.2 and the banner on §11.2 |
 | **CURRENT (post-21.9)** | Validated 2026-09-15 on merged `main` at `2df2734`, network-isolated; a frontend validation, not a live backend read. The S-4 row of §0.2 and the closure banner on §11.3 |
 | **CURRENT (S-8 closure)** | Revalidated 2026-09-15: repository, GitHub Actions run history and state (read-only API), and an aggregate read-only queue query against `kbnmkyvbwkuvcklywdhk`. The S-8 row of §0.2 |
+| **CURRENT (contract snapshot, epoch `20260916215204`)** | Extracted 2026-09-17 (UTC) from the live catalog of `kbnmkyvbwkuvcklywdhk` after the O-1/O-2/O-3 remediation. §13 and the six `.sql` snapshots. This is the authoritative current server-side contract |
 
 ### 0.2 Current status of all findings — S-8 row revalidated 2026-09-15 (post-remediation); S-4 row validated 2026-09-15 on merged `main` (post-remediation, network-isolated); S-3 row live-verified 2026-09-13 (post-remediation); S-6 and S-7 rows 2026-09-11 (post-remediation); S-5 row 2026-09-11; S-2 row 2026-09-08; all others 2026-08-31
 
@@ -85,6 +88,13 @@ The client half is not a placeholder either. It is the **demand side of the cont
 **S-8's remediation is a scheduled caller, not a change to the drainer.** The drainer's source in this repository has not changed since G-7 proved the deployed copy byte-identical to it on 2026-09-13; the deployed metadata was not re-read at closure. The only production run that processed rows handled objects that were already absent, so the branch where an object is present and removed has not yet run in production. Throughput is one batch of at most 25 per day, and the listed hardening items remain open as non-blocking follow-ups. Detail: `analysis/phase-21.8a/`.
 
 **S-4's remediation is a display contract, not a backend change.** The backend still raises the same 58 codes with the same HTTP mapping; the frontend no longer shows their raw text. The inventory is a 2026-09-14 snapshot, so a new backend code must be added to the translator (until then it fails safe to the action's fallback copy). Backend taxonomy items (HTTP 500 for P0002–P0059, P0001's collision with the PL/pgSQL default, duplicate codes, unlocked check-then-act races) and the pre-existing `supaInsert REQUEST` console log remain out of scope. Detail: `analysis/phase-21.9/phase-definition.md` §10.
+
+**Backend integrity observations O-1, O-2 and O-3 are also REMEDIATED** (not S-numbered). They were found by this phase's re-baseline on 2026-09-15 and fixed as migration `20260916215204 backend_integrity_o1_o2_o3` (PR #21, merge `e7fd4ac`), validated before merge and reconciled after it. The detail is in `analysis/backend-integrity-remediation/`.
+- **O-1:** direct `wanted_applications` INSERT is revoked; `create_wanted_application` is the only creation path.
+- **O-2:** direct `wanted_posts` DELETE is revoked, and `collaborations_wanted_post_id_fkey` is `ON DELETE RESTRICT`.
+- **O-3:** `collaboration_assets` INSERT is limited to nine columns, with `deleted_at IS NULL` and a folder binding.
+
+The `security_definer_view` Security Advisor ERROR on `public.public_profiles` remains the **accepted Phase 21.4 design** (§13.6).
 
 **S-3's remediation is a reclaim path, not a permission change.** It removed the existing orphans and provides a validated, bounded way to remove future ones. It does **not** stop new orphans from being created — the upload-then-insert failure path still leaves one behind — and it does **not** address the separate observation of live `collaboration_assets` rows whose Storage objects are missing (2 at 2026-09-13), which the reaper by design never touches. Detail: `analysis/phase-21.8b/`.
 
@@ -393,6 +403,8 @@ Selected inventory (full list in `functions.sql`):
 
 ### 11.4 Grants — the split is real, and precisely engineered
 
+> **Superseded for current state (2026-09-17).** The totals and the three-`log_*`-functions note below predate Phases 21.5–21.7 and the O-1/O-2/O-3 remediation. The current grants are in `grants.sql` and §13.4. The column-grant analysis below is still accurate for `users`, `profiles`, `notifications` and `wanted_posts` UPDATE.
+
 > **CURRENT (post-21.4), live-verified 2026-08-31 — one grant in this section changed.**
 >
 > **`public.public_profiles` now grants `SELECT` only** to `anon` and `authenticated`:
@@ -423,6 +435,8 @@ Two consequences worth stating:
 
 ### 11.5 Counts, reconciled
 
+> **HISTORICAL counts (2026-08, pre-21.5).** Current counts are in §13.1: 17 tables, 18 relations, 25 policies, and no test tables.
+
 | Object | Live | Client demand | Result |
 |---|---|---|---|
 | `public` tables | **19** | — | 5 unreferenced: `follows`, `likes`, `pending_asset_deletions`, `pending_auth_deletions`, plus the 2 test tables (net of the 14) |
@@ -438,6 +452,8 @@ Two consequences worth stating:
 **No frontend dependency is missing from the backend.** All 20 RPCs and all 14 relations exist by name.
 
 ### 11.6 RLS posture
+
+> **HISTORICAL (pre-21.5).** Currently RLS is enabled, and not forced, on **all 17** `public` tables (§13.5). The two test tables no longer exist.
 
 RLS is enabled on **17 of 19** tables. The two exceptions are the test tables (S-2).
 
@@ -493,6 +509,8 @@ FROM users;
 - **`collaboration_credits` has no unique constraint** — `P0053 duplicate_credit` is enforced only by an explicit check inside `create_collaboration_credit`, with no database-level backstop against a concurrent duplicate
 
 ### 11.11 What remains to transcribe
+
+> **HISTORICAL — resolved 2026-09-17.** The claim below that 12 bodies were captured was never reflected in the repository: the 2026-09-15 re-baseline found 0 of 34 bodies in `functions.sql`. All **34 of 34** function definitions are now in `functions.sql`, byte-identical to the live catalog (§13.3).
 
 Everything above is captured. The one outstanding item is **verbatim bodies for 22 of the 34 functions** in `functions.sql` — 12 are captured. Their *contract-bearing* content is already extracted in full (signature, volatility, security mode, `search_path`, EXECUTE grants, and every `RAISE` with its SQLSTATE and message), so nothing about the contract is unknown; only the full source text is pending.
 
@@ -604,3 +622,137 @@ GRANT SELECT ON TABLE public.public_profiles TO anon, authenticated;
 ```
 
 `arwdDxtm` → `r` for precisely those two roles; `postgres` and `service_role` untouched; grant-row deltas (−12 table, −42 column) accounted for entirely by this view. Full record: `analysis/phase-21.4/`.
+
+---
+
+## 13. CURRENT server-side contract — epoch `20260916215204` (captured 2026-09-17)
+
+**Source:** a read-only extraction of `kbnmkyvbwkuvcklywdhk` (`stagerz-foundation-v2-test`, PostgreSQL 17.6, `ACTIVE_HEALTHY`), taken 2026-09-16 23:09–23:13 UTC.
+- **Epoch:** 42 migrations recorded; latest `20260916215204 backend_integrity_o1_o2_o3`.
+- **What was read:** catalog and metadata only. No application row, user, Storage object or secret was read or recorded.
+- **Where the detail is:** the six `.sql` files. Each is comment-only, and every definition in them is fingerprinted with a server-side SHA-256. `validation.md` §13 records the method and the reconciliation.
+
+### 13.1 Inventory
+
+| Object | Current | Snapshot |
+|---|---|---|
+| `public` tables | **17** (RLS enabled 17, forced 0) | `schema.sql` |
+| `public` views | **1** (`public_profiles`) | `schema.sql` |
+| Columns | **141** | `schema.sql` |
+| Constraints | **67** (PK 17, UNIQUE 9, FK 30, CHECK 11) | `schema.sql` |
+| Indexes | **40** | `schema.sql` |
+| Sequences / user-defined types / rules in `public` | **0 / 0 / 0** | `schema.sql` |
+| Functions | **34** (no overloads): 20 frontend RPCs, 5 helpers, 4 trigger functions, 5 `admin_*` | `functions.sql` |
+| RLS policies | **25** `public` + **2** `storage.objects` | `rls-policies.sql`, `storage-policies.sql` |
+| Non-internal triggers | **3** `public`, **1** `auth.users`, **4** `storage` (platform) | `triggers.sql` |
+| Privilege rows | 393 table-level (313 in `public`), 39 column-level, 93 function EXECUTE; 24 default-ACL entries (256 rows) | `grants.sql` |
+| Storage buckets | **1** (`collaboration-assets`) | `storage-policies.sql` |
+| Realtime (`supabase_realtime`) | **5** tables | `schema.sql` |
+| Extensions | pg_stat_statements 1.11, pgcrypto 1.3, plpgsql 1.0, supabase_vault 0.3.1, uuid-ossp 1.1 | `schema.sql` |
+
+### 13.2 Client demand re-derived (current `index.html`, blob `9720134`)
+
+- **Access paths:** unchanged. All access goes through the eight helpers; the only literal REST path is `/rest/v1/rpc/`, and every RPC name is a string literal.
+- **Relations:** the same **14** as §2, all present.
+- **RPCs:** the same **20** as §3, all present, all `SECURITY DEFINER` with `search_path=""`, all executable by `authenticated` only (plus `postgres` and `service_role`). Current call lines:
+  - `close_own_wanted_post` 2130, `create_wanted_application` 2164, `respond_to_wanted_application` 2550;
+  - `change_collaboration_status` 3304, `invite_collaboration_participant` 3440, `remove_collaboration_participant` 3458, `transfer_collaboration_ownership` 3476, `leave_collaboration` 3495;
+  - `edit_collaboration_message` 3765, `delete_collaboration_message` 3783, `create_collaboration_message` 3827;
+  - `edit_collaboration_task` 4024, `delete_collaboration_task` 4042, `create_collaboration_task` 4064, `complete_collaboration_task` 4089;
+  - `edit_collaboration_asset` 4708, `delete_collaboration_asset` 4730;
+  - `edit_collaboration_credit` 5108, `delete_collaboration_credit` 5126, `create_collaboration_credit` 5148.
+- **Direct writes:** the same **7** sites, compared with the granted columns below.
+
+| # | Line | Write | Columns the frontend sends | Granted to `authenticated` |
+|---|---|---|---|---|
+| 1 | 2230 | UPDATE `wanted_posts` | title, description, role_needed, category, location, remote, compensation | the same 7 columns — **exact** |
+| 2 | 2245 | INSERT `wanted_posts` | user_id, title, description, role_needed, category, location, remote, compensation, status | table-level INSERT — all 11 columns; **also `id`, `created_at`** |
+| 3 | 2304 | UPDATE `profiles` | display_name, role, location, bio, skills | 9 columns; **also `available`, `category`, `country_flag`, `looking_for`** |
+| 4 | 2314 | UPDATE `users` | username | 6 columns; **also `first_name`, `last_name`, `photo_url`, `bio`, `location`** |
+| 5 | 2718 | UPDATE `notifications` | read | `read` only — **exact** |
+| 6 | 2726 | UPDATE `notifications` | read | `read` only — **exact** |
+| 7 | 4908 | INSERT `collaboration_assets` | the 9 metadata columns | the same 9 columns — **exact** (O-3) |
+
+- **Grants with no frontend write path at all:** `follows` and `likes` INSERT and DELETE (recorded in Phase 21.6 as a product gap).
+- **Every such grant stays inside RLS.** Writes are own-row only (`current_active_stagerz_user_id()`), and no internal column (`id` of `users`, `is_system`, `blocked`, `anonymized_at`, ownership or status of other rows) is writable. The width is recorded under R-5 (`validation.md` §14).
+- **Storage** (`collaboration-assets`): download at 4777 and 4952, upload at 4898, cleanup `remove` at 4934 (denied by design; no DELETE policy).
+- **SQLSTATE branches:** `23505` at 2175 (duplicate application) and 2319 (username taken); `P0012` at 2181 and `P0013` at 2186. `P0053` is handled through the Phase 21.9 translator map. Every other code goes through `backendErrorMessage()`.
+- **Realtime:** `postgres_changes` on the five collaboration tables (lines 4258–4270) plus presence.
+- **Auth:** `getSession` ×4, `signInWithOtp` ×1, `signOut` ×1, `onAuthStateChange` ×1.
+
+### 13.3 Functions and SQLSTATE contract
+
+- **Definitions:** all **34** `pg_get_functiondef()` texts are in `functions.sql`, byte-identical to the live catalog (34/34 SHA-256 matches; aggregate `1abd299b…8d43`).
+- **Attributes:** every function is owned by `postgres`, `SECURITY DEFINER` and `SET search_path TO ''`.
+- **EXECUTE:**
+  - no function is executable by `anon` or `PUBLIC`;
+  - 25 are executable by `authenticated` (the 20 RPCs and 5 helpers);
+  - the 5 `admin_*` functions and the 4 trigger functions are limited to `postgres` and `service_role`.
+- **Custom SQLSTATEs:** **121** RAISE EXCEPTION sites and **58** distinct codes — 53 raised by client-reachable functions, 5 by `admin_*` only.
+  - Tokens, raising functions and classification are **identical** to `analysis/phase-21.9/error-codes.tsv`.
+  - All 53 client-facing codes are mapped by the frontend translator (S-4 remains remediated).
+- **Non-RAISE code the frontend uses:** `23505`, from `wanted_applications_wanted_post_id_applicant_id_key` and `users_username_key`.
+
+### 13.4 Grants
+
+The details are in `grants.sql`.
+
+**Effective privileges of the API roles on `public`:**
+
+| Role | Privileges |
+|---|---|
+| `anon` | SELECT on `follows`, `likes`, `profiles`, `public_profiles`, `wanted_posts`; nothing else, and no function EXECUTE |
+| `authenticated` | SELECT on every table the app reads, except `users`, which has column-level SELECT only on `id, username, first_name, last_name, photo_url, bio, location`, filtered by RLS to the caller's own row |
+| `authenticated` writes | exactly those listed in §13.2, plus `follows` / `likes` INSERT and DELETE |
+
+- **O-1 / O-2 / O-3:** no INSERT on `wanted_applications`; no DELETE on `wanted_posts`; `collaboration_assets` INSERT on the nine columns only.
+- **S-1:** `public_profiles` is SELECT-only for both roles.
+- **S-6:** neither role holds MAINTAIN on any `public` relation. `anon` and `authenticated` do hold MAINTAIN on `storage.objects` and `storage.buckets`: the documented platform-owned latent twin.
+- **Default ACLs:**
+  - `postgres` TABLES and SEQUENCES defaults in `public` and `storage` grant only `postgres` and `service_role` (S-5).
+  - `postgres` FUNCTIONS defaults and all `supabase_admin` / `supabase_auth_admin` defaults are unchanged platform settings, as documented in Phase 21.6. The `supabase_admin` `public` TABLES default still names `anon` and `authenticated` — the known latent twin, which applies only to objects created as `supabase_admin`.
+
+### 13.5 RLS
+
+- **Coverage:** RLS is enabled on all 17 `public` tables and forced on none; 25 policies, all permissive. Expressions are verbatim in `rls-policies.sql` (aggregate `d16c3e41…1163`).
+- **Zero-policy tables (deny-all queues):** `pending_asset_deletions` and `pending_auth_deletions`.
+- **Read pattern:** reads are participant-scoped through `is_collaboration_participant()`, or public for `follows`, `likes`, `profiles` and `wanted_posts`.
+- **Write pattern:** writes are own-row-scoped through `current_active_stagerz_user_id()`. There are no policies for DELETE on `wanted_posts` or INSERT on `wanted_applications` (O-1, O-2).
+- **Asset INSERT check:** adds `deleted_at IS NULL` and the `<collaboration_id>/` folder binding (O-3).
+
+### 13.6 `public_profiles`, Storage, Realtime, Auth, triggers
+
+**`public_profiles`**
+- **Definition:** unchanged (pretty-definition md5 `d86256ac…`, SHA-256 `f0651e4d…`), no `security_invoker` or `security_barrier`; SELECT only for `anon` and `authenticated`.
+- **Advisor:** the Security Advisor's `security_definer_view` ERROR is the **accepted Phase 21.4 design** — neither remediated nor suppressed.
+
+**Storage** (bucket `collaboration-assets`)
+- **Bucket settings:** private, `STANDARD`, no `file_size_limit`, no `allowed_mime_types`, versioning disabled.
+- **Policies:** two `storage.objects` policies (SELECT and INSERT for `authenticated`), both authorising by the first path segment through `is_collaboration_participant()`. There is no UPDATE or DELETE policy.
+- **Triggers:** platform triggers `protect_objects_delete` and `update_objects_updated_at`.
+- **Not captured:** object rows.
+
+**Realtime**
+- **`supabase_realtime`:** exactly `collaboration_activity`, `collaboration_assets`, `collaboration_credits`, `collaboration_messages`, `collaboration_tasks` (all columns, no row filter, default replica identity). This matches the frontend's five subscriptions (R-9).
+- **Platform publication:** `supabase_realtime_messages_publication`, managed by Supabase.
+
+**Auth — observable facts**
+- **Signup trigger:** `on_auth_user_created` (AFTER INSERT on `auth.users`) → `handle_new_auth_user()`, which creates the `users`, `user_auth_accounts` and `profiles` rows.
+- **Password protection:** the Security Advisor reports **leaked-password protection disabled** (WARN).
+- **Client-side flow (from `index.html`, §8):** email magic link through `signInWithOtp`, redirect to `https://stagerz.app`, implicit flow.
+- **NOT OBSERVABLE with the read-only tools available:** site URL, redirect allow-list, enabled providers, sign-up enabled or disabled, email OTP expiry and rate limits, JWT expiry, MFA settings, SMTP configuration. These live in Auth service configuration, not in the database, and were **not** inferred.
+
+**Triggers** (`public`)
+- `trg_log_collaboration_asset_activity`, `trg_log_collaboration_credit_activity`, `trg_log_collaboration_message_activity` — AFTER INSERT, FOR EACH ROW, enabled, no WHEN clause.
+- The `storage` triggers are platform-owned. The database event triggers are the six Supabase platform triggers (pg_graphql / pg_cron / pg_net helpers and PostgREST schema-cache watchers).
+
+**API roles**
+- `authenticator` can become `anon`, `authenticated` or `service_role`, and preloads `supautils, safeupdate`.
+- Statement timeouts: `anon` 3s, `authenticated` 8s.
+- `postgres` has `BYPASSRLS`; no API role does.
+
+### 13.7 Migration epoch
+
+- **History:** 42 rows in `supabase_migrations.schema_migrations`, `20260712100630` … `20260916215204`; the names are listed in `schema.sql` §8.
+- **Not in the history:** Phases 21.4–21.7 were applied with `execute_sql` and have no rows. Their changes are present in the captured state and recorded in `analysis/phase-21.4` … `21.7/migration.sql`.
+- **Consequence:** replaying the migration history alone would **not** reproduce the current backend. The snapshot files here are the reviewable description of what exists; they are not a migration chain.
