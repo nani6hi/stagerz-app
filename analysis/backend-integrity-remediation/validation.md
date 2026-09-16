@@ -3,7 +3,13 @@
 **Branch:** `backend-integrity-o1-o2-o3`
 **Base commit:** `20acbe8292e3b706fd57040f1f2ff6c790e67a62` (`main`)
 **Target:** `stagerz-foundation-v2-test` / **`kbnmkyvbwkuvcklywdhk`**
-**Status:** **PREPARED — NOT APPLIED.** Only the pre-apply baseline (§2) has been captured, read-only. No post-apply gate has run.
+**Status:** **APPLIED AND VALIDATED on the test project, 2026-09-16.**
+- Migration version `20260916215204` (`backend_integrity_o1_o2_o3`).
+- All pre-apply gates, post-apply catalog gates and behavioural tests pass; the validation left no data behind. Record: **§9**.
+- **O-1, O-2 and O-3 are REMEDIATED** on `kbnmkyvbwkuvcklywdhk`.
+- The branch is **not merged**. Phase 21.3 stays paused until merge and closure are approved.
+
+Sections 2–8 are the preparation-time plan and baseline, kept as written.
 
 **Files:**
 - `migration.sql` — the change;
@@ -201,3 +207,123 @@ Nothing in this directory has been executed against any database, apart from the
 | Inverse check | The rollback reverses exactly the migration's statements, in reverse order |
 | Expression fidelity | Parse trees of the rollback's three policy expressions equal the trees of the verbatim captured live deparse, ignoring only the explicit `public.` qualification. The migration's new asset check keeps the original three AND terms identical and adds exactly three: `deleted_at IS NULL` and the two path conditions |
 | PL/pgSQL bodies | Not parsed offline: the available parser build has no PL/pgSQL entry point. They are guarded by review and by the in-file PREFLIGHT/POSTFLIGHT; any runtime error aborts the whole `DO` statement with nothing applied |
+
+---
+
+## 9. Apply and validation record — 2026-09-16 (UTC)
+
+Explicit user approval covered: applying the committed `migration.sql` once to `kbnmkyvbwkuvcklywdhk`, the rollback-only synthetic behavioural validation, read-only inspection, and this record. `rollback.sql` was **not** executed.
+
+### 9.1 Pre-apply gates
+
+| Gate | Result |
+|---|---|
+| Repository | Branch `backend-integrity-o1-o2-o3` at `2c0fb5e98a82b38aa095227f2f0be5527f4809f9` (parent `20acbe8`); equals `origin`; clean; `main` / `origin/main` unchanged at `20acbe8` |
+| Migration bytes | Committed LF blob: SHA-256 `7f273f084330506cc1689f8e955902313b9d948d5645d4405ed9633003ef5221` (= §3 P-2), md5 `a98f61314fddb46e8e04cf19b00accfd`, 18,133 bytes, 0 CR |
+| P-1 Target | `stagerz-foundation-v2-test` / `kbnmkyvbwkuvcklywdhk`, `ACTIVE_HEALTHY`, PostgreSQL 17.6.1.141; session user `postgres` |
+| P-3 No drift | `catalog-fingerprint.sql` output identical to §2.1 and §2.2 (27 policies, 30 FKs, 34 functions, 41 migrations, latest `20260721122606`, all md5s equal) |
+| P-4 / P-5 / P-6 | Review completed; explicit apply approval given |
+| P-7 Fixtures | Synthetic fixtures created inside the rolled-back validation statement (§9.4); no real account used |
+| P-8 Advisor | Equal to §2.4: ERROR `security_definer_view` ×1 (`public.public_profiles`), WARN ×25 and ×1, INFO ×2 |
+| Row-count baseline (for §9.5) | Captured 21:51:11 UTC, counts only |
+
+### 9.2 Apply
+
+- **Call:** one `apply_migration` call, name `backend_integrity_o1_o2_o3`, with the committed LF content unchanged.
+- **Result:** success. The in-file PREFLIGHT and POSTFLIGHT both passed; any failure would have aborted the whole statement.
+- **Recorded migration:** version **`20260916215204`** (applied 2026-09-16 21:52:04 UTC).
+- **Stored statements:** exactly one statement, **md5 `a98f61314fddb46e8e04cf19b00accfd`, 18,133 bytes — identical to the committed file** (C-13).
+- **History:** the previous 41 rows are unchanged (fingerprint `d2f56c8198fab655bcbae00144912144` before and after).
+- **Single call:** no other persistent database change was made; no statement was applied separately or retried.
+
+### 9.3 Post-apply catalog gates
+
+| Gate | Result |
+|---|---|
+| C-1 RLS | **PASS** — 17/17 enabled, 0 forced |
+| C-2 O-1 | **PASS** — `wanted_applications` ACL `…,authenticated=r/postgres`; authenticated INSERT columns none; only "applicant or wanted owner can read applications" remains |
+| C-3 O-2 grant | **PASS** — `wanted_posts` ACL `…,anon=r/postgres,authenticated=ar/postgres`; DELETE false; DELETE policy absent; the other three policies unchanged |
+| C-4 O-2 FK | **PASS** — `FOREIGN KEY (wanted_post_id) REFERENCES wanted_posts(id) ON DELETE RESTRICT`; on update `a`, match `s`, not deferrable, validated; `collaborations_wanted_post_id_key UNIQUE (wanted_post_id)` and NOT NULL unchanged |
+| C-5 | **PASS** — `wanted_applications_wanted_post_id_fkey` still `ON DELETE CASCADE` |
+| C-6 O-3 columns | **PASS** — ACL `…,authenticated=r/postgres`; column ACLs `{authenticated=a/postgres}` on exactly `asset_type, collaboration_id, description, file_name, file_size, mime_type, storage_path, title, uploaded_by` |
+| C-7 O-3 policy | **PASS** — `((uploaded_by = current_active_stagerz_user_id()) AND is_collaboration_participant(collaboration_id) AND (EXISTS (… c.status = 'active' …)) AND (deleted_at IS NULL) AND (split_part(storage_path, '/'::text, 1) = (collaboration_id)::text) AND (length(storage_path) > (length((collaboration_id)::text) + 1)))`; SELECT policy unchanged |
+| C-8 Unrelated state | **PASS** — policies 25; every "unchanged" md5 in §2.2 identical |
+| C-9 `public_profiles` | **PASS** — ACL, `reloptions` NULL, viewdef md5 `d86256ac…` unchanged; `users` ACL and RLS unchanged |
+| C-10 Functions | **PASS** — 34; definitions md5 `04d3928e…`, ACL md5 `1e60caa4…` unchanged |
+| C-11 Queue / drainer / reaper | **PASS** — `pending_asset_deletions` unchanged; the four Edge Functions keep their versions (8 / 9 / 11 / 4) and bundle hashes (`79b2fa66…`, `66f3c27a…`, `d3c3f1b5…`, `b0663090…`); no workflow or function file changed |
+| C-12 History | **PASS** — 42 rows; the new row is `20260916215204 backend_integrity_o1_o2_o3` |
+| C-13 File ↔ applied | **PASS** — stored statement md5 and length equal the committed file |
+| C-14 Advisor | **PASS** — unchanged after apply and after validation: no new finding; `security_definer_view` still exactly 1 (`public.public_profiles`, accepted) |
+
+### 9.4 Behavioural validation (rollback-only)
+
+Executed with `behavioral-validation-run-2026-09-16.sql`.
+
+**Fixtures, synthetic only.** At the start of the same statement it creates four synthetic auth users; the normal signup trigger creates their public rows. It then creates two synthetic posts, one application, and one collaboration through the real accept RPC (owner plus member). Every write ends with the statement's final exception.
+
+**Result** (message of the final, intended exception):
+
+| Test | Result |
+|---|---|
+| Fixtures | 4 synthetic users, 2 posts, 1 collaboration with 2 participants |
+| T1 direct application INSERT | **PASS** — denied, 42501 |
+| T2 `create_wanted_application` | **PASS** — pending application plus one owner notification |
+| T3 owner DELETE of post | **PASS** — denied, 42501 |
+| T4 privileged DELETE of post with collaboration | **PASS** — 23503 (FK RESTRICT) |
+| T4b collaboration still present | **PASS** |
+| T5 transfer, then former-owner DELETE | **PASS** — transfer succeeded; DELETE denied, 42501 |
+| T6 `close_own_wanted_post` | **PASS** — post closed |
+| T7 frontend-shaped asset INSERT with RETURNING | **PASS** |
+| T8 explicit `id` | **PASS** — denied, 42501 |
+| T9 explicit `created_at` | **PASS** — denied, 42501 |
+| T10 explicit `deleted_at` (no RETURNING) | **PASS** — denied, 42501 |
+| T11 foreign-folder `storage_path` | **PASS** — denied by RLS |
+| T11b folder-only `storage_path` | **PASS** — denied by RLS |
+| T12 `delete_collaboration_asset` | **PASS** — soft-deleted and queued |
+
+**First attempt (also rolled back).** The first execution aborted with `22P02 malformed array literal`. The committed template appended eleven untyped string literals to the `text[]` results array; T7's own PASS line was one of them, so T7 was reported as failed and T12 hit the same defect. The abort rolled the whole statement back.
+
+The literals were given `::text` casts. No test or expectation changed, and the rollback design was untouched. The corrected template is `behavioral-validation.sql`, and the executed copy is kept as evidence. The second execution is the result above.
+
+### 9.5 No data left behind
+
+Counts only, captured before validation (21:51:11) and after both executions (21:56:32).
+
+| Relation | Before | After |
+|---|---|---|
+| `auth.users` / `public.users` / `user_auth_accounts` / `profiles` | 27 / 32 / 27 / 32 | 27 / 32 / 27 / 32 |
+| `wanted_posts` (closed) | 25 (2) | 25 (2) |
+| `wanted_applications` | 18 | 18 |
+| `collaborations` / participants (owners) | 11 / 21 (11) | 11 / 21 (11) |
+| messages / tasks / credits / activity | 28 / 14 / 10 / 175 | 28 / 14 / 10 / 175 |
+| `collaboration_assets` / `pending_asset_deletions` / `pending_auth_deletions` | 15 / 0 / 0 | 15 / 0 / 0 |
+| `notifications` | 128 | 128 |
+| `storage.objects` | 13 | 13 |
+| Latest `created_at` per table (including Storage) | unchanged | unchanged |
+| Synthetic markers (usernames, post titles, profile names, auth metadata, asset paths) | 0 | 0 |
+
+A compact catalog re-check after validation still shows the §9.3 state: ACLs, FK, 25 policies, the nine insert columns, function md5, 42 migrations, 17 RLS tables.
+
+### 9.6 Evidence limitations
+
+- **Database-level only.** Behaviour was tested in PostgreSQL with the `authenticated` role and JWT claims set exactly as PostgREST sets them. No HTTP request went through PostgREST or the API gateway, and no production UI smoke test was run.
+- **Synthetic accounts only.** They were created and rolled back inside one statement; real accounts were not exercised.
+- **Unchanged header.** `migration.sql` still carries its preparation-time "PREPARED, NOT APPLIED" header. The file is deliberately unchanged so that its bytes stay identical to the applied migration; this section is the authoritative status.
+- **Transaction-control side effects.** Rolled-back work leaves no rows, but not every side effect is transactional; statistics counters can advance. No sequences exist in `public`.
+- **Untested asset upload.** Storage uploads were not tested; the frontend upload path is covered only by the frontend-shaped metadata insert (T7).
+
+### 9.7 Final status
+
+| Observation | Status |
+|---|---|
+| **O-1** | **REMEDIATED** — applied 2026-09-16, catalog and behaviour validated |
+| **O-2** | **REMEDIATED** — applied 2026-09-16, catalog and behaviour validated |
+| **O-3** | **REMEDIATED** — applied 2026-09-16, catalog and behaviour validated |
+| `public_profiles` Advisor item | Unchanged; accepted design |
+
+**Not yet done:**
+- merge of `backend-integrity-o1-o2-o3`;
+- project-level documentation (Phase 21.3 snapshot, `PROJECT_CONTEXT.md`);
+- resuming Phase 21.3.
+
+Each needs its own approval. `rollback.sql` remains available and unexecuted.

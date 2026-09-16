@@ -1,4 +1,25 @@
 -- =====================================================================
+--  ####  EVIDENCE - THE COPY THAT WAS EXECUTED ON 2026-09-16  ####
+--
+-- Executed once, rollback-only, against kbnmkyvbwkuvcklywdhk
+-- (stagerz-foundation-v2-test) after migration version 20260916215204.
+-- It was sent with its comment lines omitted; the executable text is
+-- otherwise this file. Result: all tests PASS, and the statement ended
+-- with the intended exception, so nothing was committed (validation.md,
+-- section 9).
+--
+-- Differences from behavioral-validation.sql as committed in 2c0fb5e:
+--   1. a synthetic-fixture block at the start of the body creates four
+--      auth users (via the normal on_auth_user_created trigger), two
+--      posts, one application and - through respond_to_wanted_application
+--      - one collaboration, all inside this same rolled-back statement;
+--   2. three bookkeeping variables for those fixtures;
+--   3. the eleven ::text casts described in behavioral-validation.sql.
+-- No real user, post, application, collaboration or Storage object is
+-- read or written by the tests.
+-- =====================================================================
+-- (original template header follows)
+-- =====================================================================
 -- STAGERZ - Backend integrity remediation - O-1 / O-2 / O-3
 -- POST-APPLY BEHAVIOURAL VALIDATION - ROLLBACK-ONLY TEMPLATE
 -- =====================================================================
@@ -27,13 +48,6 @@
 -- Role switching mirrors PostgREST: role 'authenticated' plus JWT claims,
 -- so auth.uid() and every RLS policy behave as for a real API request.
 -- The executing session must be allowed to SET ROLE authenticated.
---
--- Change 2026-09-16 (after first use): eleven bare string literals
--- appended to the text[] results array now carry an explicit ::text
--- cast. Without it PostgreSQL parses the literal as an array value
--- (22P02 "malformed array literal"). No test, expectation or rollback
--- behaviour changed. The executed copy, with in-statement synthetic
--- fixtures, is behavioral-validation-run-2026-09-16.sql.
 -- =====================================================================
 
 do $validation$
@@ -57,7 +71,45 @@ declare
   v_asset  uuid;
   v_n      bigint;
   v_step   text;
+  -- run-copy additions: synthetic fixture bookkeeping
+  v_b_user uuid;
+  v_m_auth uuid;
+  v_app_m  uuid;
 begin
+  -- ===== RUN-COPY ADDITION: SYNTHETIC FIXTURES =========================
+  -- Created inside this same statement; rolled back by the final RAISE.
+  -- No existing user, post, application or collaboration is touched.
+  p_a_auth := gen_random_uuid();
+  p_b_auth := gen_random_uuid();
+  p_o_auth := gen_random_uuid();
+  v_m_auth := gen_random_uuid();
+  insert into auth.users (id, aud, role, raw_user_meta_data) values
+    (p_a_auth, 'authenticated', 'authenticated', '{"display_name":"BIR validation A"}'::jsonb),
+    (p_b_auth, 'authenticated', 'authenticated', '{"display_name":"BIR validation B"}'::jsonb),
+    (p_o_auth, 'authenticated', 'authenticated', '{"display_name":"BIR validation O"}'::jsonb),
+    (v_m_auth, 'authenticated', 'authenticated', '{"display_name":"BIR validation M"}'::jsonb);
+  select public_user_id into p_a_user from public.user_auth_accounts where auth_user_id = p_a_auth;
+  select public_user_id into v_b_user from public.user_auth_accounts where auth_user_id = p_b_auth;
+  select public_user_id into p_o_user from public.user_auth_accounts where auth_user_id = p_o_auth;
+  select public_user_id into p_m_user from public.user_auth_accounts where auth_user_id = v_m_auth;
+  update public.users set username = 'zz_bir_validation_' || substr(md5(id::text), 1, 12)
+   where id in (p_a_user, v_b_user, p_o_user, p_m_user);
+  insert into public.wanted_posts (user_id, title, role_needed, status)
+    values (v_b_user, 'BIR validation post 1', 'validator', 'open') returning id into p_post1;
+  insert into public.wanted_posts (user_id, title, role_needed, status)
+    values (p_o_user, 'BIR validation post 2', 'validator', 'open') returning id into p_post2;
+  insert into public.wanted_applications (wanted_post_id, applicant_id)
+    values (p_post2, p_m_user) returning id into v_app_m;
+  -- the collaboration is created through the real accept RPC, as O
+  perform set_config('request.jwt.claims', json_build_object('sub', p_o_auth, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claim.sub', p_o_auth::text, true);
+  perform set_config('role', 'authenticated', true);
+  perform public.respond_to_wanted_application(v_app_m, 'accepted');
+  execute 'reset role';
+  select id into p_collab from public.collaborations where wanted_post_id = p_post2;
+  select count(*) into v_n from public.collaboration_participants where collaboration_id = p_collab;
+  results := results || ('FIXTURES 4 synthetic users, 2 posts, 1 collaboration with ' || v_n || ' participants');
+  -- =====================================================================
   if p_a_auth is null or p_a_user is null or p_b_auth is null or p_post1 is null
      or p_o_auth is null or p_o_user is null or p_post2 is null or p_collab is null
      or p_m_user is null then

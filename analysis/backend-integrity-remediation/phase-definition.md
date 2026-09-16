@@ -4,12 +4,13 @@
 **Base commit:** `20acbe8292e3b706fd57040f1f2ff6c790e67a62` (`main`)
 **Phase number:** not assigned. The next 21.x number is ambiguous (21.10 is proposed in the Phase 20.7 roadmap), so this remediation is named descriptively until one is assigned.
 **Target:** `stagerz-foundation-v2-test` / `kbnmkyvbwkuvcklywdhk`
-**Status:** **CONFIRMED — REMEDIATION PREPARED, NOT APPLIED.**
-- Migration and rollback are written and statically reviewed.
-- No change has been made to Supabase.
-- **Explicit approval is required before `apply_migration`.**
+**Status:** **O-1, O-2, O-3 REMEDIATED on the test project — applied and validated 2026-09-16.**
+- Applied with explicit approval as migration version `20260916215204` (`backend_integrity_o1_o2_o3`) from commit `2c0fb5e`. The stored statement is byte-identical to `migration.sql` (SHA-256 `7f273f08…5221`).
+- All pre-apply gates, post-apply catalog gates C-1 to C-14 and behavioural tests T1 to T12 pass; the validation left no data behind (`validation.md` §9).
+- `rollback.sql` was not executed.
+- **Not yet merged** to `main`.
 
-**Phase 21.3:** remains **PAUSED** until this remediation is applied and passes post-apply validation.
+**Phase 21.3:** remains **PAUSED** until merge and closure of this remediation are approved.
 **Validation level:** backend-only, no `index.html` change. The gates are in `validation.md`.
 
 ---
@@ -20,9 +21,11 @@ Found during the Phase 21.3 resume/re-baseline (2026-09-15) and confirmed by two
 
 | ID | Observation | Classification | Severity |
 |---|---|---|---|
-| **O-1** | `authenticated` can INSERT directly into `wanted_applications` (all columns, including `status`), bypassing `create_wanted_application` | CONFIRMED — REMEDIATION PREPARED, NOT APPLIED | Low — workflow integrity |
-| **O-2** | `authenticated` can DELETE its own `wanted_posts` row. `collaborations_wanted_post_id_fkey` is `ON DELETE CASCADE`, so deleting a post destroys its collaboration and all collaboration data, even after collaboration ownership was transferred | CONFIRMED — REMEDIATION PREPARED, NOT APPLIED | **Highest of the three** — irreversible destruction of other users' data; bypasses the collaboration ownership model |
-| **O-3** | `authenticated` can INSERT every `collaboration_assets` column, including `id`, `created_at` and the lifecycle column `deleted_at`, and `storage_path` is not bound to the collaboration folder | CONFIRMED — REMEDIATION PREPARED, NOT APPLIED | Low — storage lifecycle / metadata integrity |
+| **O-1** | `authenticated` could INSERT directly into `wanted_applications` (all columns, including `status`), bypassing `create_wanted_application` | **REMEDIATED** (2026-09-16, validated) | Low — workflow integrity |
+| **O-2** | `authenticated` could DELETE its own `wanted_posts` row. `collaborations_wanted_post_id_fkey` was `ON DELETE CASCADE`, so deleting a post destroyed its collaboration and all collaboration data, even after collaboration ownership was transferred | **REMEDIATED** (2026-09-16, validated) | **Highest of the three** — irreversible destruction of other users' data; bypassed the collaboration ownership model |
+| **O-3** | `authenticated` could INSERT every `collaboration_assets` column, including `id`, `created_at` and the lifecycle column `deleted_at`, and `storage_path` was not bound to the collaboration folder | **REMEDIATED** (2026-09-16, validated) | Low — storage lifecycle / metadata integrity |
+
+The descriptions below (§2–§8) were written before the apply and describe the defects as found.
 
 ---
 
@@ -123,9 +126,9 @@ Phase 21.4 fixed the write exposure (S-1) and deliberately kept definer semantic
 
 ## 9. Required approvals, in order
 
-1. Independent review of this directory; the pushed branch is the review target.
-2. Explicit approval for `apply_migration`, after the PRE-APPLY gates in `validation.md` §3 pass.
-3. Explicit approval for the rollback-only behavioural validation with synthetic fixtures.
-4. Separate approvals for any production smoke test, PR, merge and documentation closure.
+1. Independent review of this directory — **done**.
+2. Explicit approval for `apply_migration` — **given and executed** 2026-09-16 (version `20260916215204`).
+3. Explicit approval for the rollback-only behavioural validation — **given and executed**; all tests pass (`validation.md` §9.4).
+4. **Still open**, each needing its own approval: any production smoke test, PR and merge, project-level documentation closure (Phase 21.3 snapshot, `PROJECT_CONTEXT.md`), and resuming Phase 21.3.
 
-Nothing in this preparation step applied, executed or invoked anything against Supabase, apart from read-only catalog and aggregate queries.
+The preparation step itself applied nothing. The only persistent Supabase change of this remediation is the single approved migration.
