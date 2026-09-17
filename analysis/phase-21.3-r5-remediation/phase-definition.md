@@ -8,10 +8,14 @@
 
 | File | Role | SHA-256 (LF, as committed) |
 |---|---|---|
-| `migration.sql` | executable migration candidate, one guarded DO statement | `95ea14d93c60736211544df7dd20dce7ee4c9d11163a08226f5f3882d2a46388` (35,073 bytes, md5 `9cb4f548a8cfec8e338d6996dba0eea1`) |
-| `rollback.sql` | reviewed rollback, one guarded DO statement | `d6a1bf13643b1e97ae763fc9b1096db5f2c10094243deec5ab3cf5eb7c6eee82` (25,672 bytes) |
-| `behavioral-validation.sql` | rollback-only post-apply test template with in-statement synthetic fixtures | `5ca0648a05ec141cdfb5e5b47fad9fb5103574ed05f4ef173cdaf63e14efaba7` (22,451 bytes) |
+| `migration.sql` | executable migration candidate, one guarded DO statement | `5ca16d90ae685e0da450a11de1ef16e602f73b5a5bbc1b5b1bd74e639e47033a` (36,271 bytes, md5 `e99dfd9e4a2dd987469d2ebcdf37571d`) |
+| `rollback.sql` | reviewed rollback, one guarded DO statement | `7ac92c1d21930e072973bdfc94164f1c98acf85cdda6578bcfd26a5bf3629e95` (26,291 bytes) |
+| `behavioral-validation.sql` | rollback-only post-apply test template with in-statement synthetic fixtures | `3f1793eac24e0dff93343516d4fe88c182704eac02c849d45004522a957f09ca` (27,413 bytes) |
 | `validation.md` | baseline, gates, behavioural matrix, static review | — |
+
+**History.**
+- **`b0c0a49`:** first preparation. Its display-name rule showed the signup placeholder `'New Artist'` like a real name.
+- **This revision:** implements the product owner's final decision (**option A**, §2) and supersedes those hashes. W-1, W-2, W-3 and W-4 scope is unchanged.
 
 ---
 
@@ -34,15 +38,29 @@ Phase 21.3 (`analysis/phase-21.3/validation.md` §8–§17, commit `e5244a9`) fa
 | `profiles` | Public profile. `display_name` is the authoritative, editable public display name. `profiles.bio` and `profiles.location` are the profile versions. Grants and policies are unchanged (W-2). |
 | `public_profiles` | Public projection. The same seven columns (`id, username, photo_url, is_system, created_at, is_deleted, display_name`) with the same names, order and types. `display_name` now comes from `profiles`. |
 
-New `display_name` rule, evaluated per user:
+**Final `display_name` rule** (product owner decision, **option A**). `'New Artist'` is a technical signup placeholder, not a genuine public name. The rule is evaluated per user, first match wins:
 
-1. `users.anonymized_at IS NOT NULL` → `'Deleted User'` (unchanged).
-2. `btrim(profiles.display_name)` is non-empty → that trimmed value.
-3. Otherwise → `users.username`, or `'STAGERZ Artist'` if that is NULL (unchanged fallback).
+1. `users.anonymized_at IS NOT NULL` → `'Deleted User'`. This keeps the existing view's anonymization semantics.
+2. Take `profiles.display_name` with **all** leading and trailing whitespace removed (`[[:space:]]`: spaces, tabs, CR, LF). Use it if it is non-null, non-empty and **not exactly** `'New Artist'` → that trimmed value.
+3. Otherwise, if `users.username` contains a non-whitespace character → `users.username`, unchanged.
+4. Otherwise → `'STAGERZ Artist'`.
+
+No row data is changed.
+
+**Why this exact placeholder comparison** (read-only evidence, `validation.md` §2.6):
+- **Single producer.** The literal `'New Artist'` is produced only by `handle_new_auth_user`: `coalesce(new.raw_user_meta_data->>'display_name', 'New Artist')`, run by the `on_auth_user_created` trigger.
+  - `profiles.display_name` has no column default and no CHECK constraint; no column default anywhere contains the text.
+  - Only migration `20260712100630` mentions it.
+- **Always the metadata-less default.** The frontend signs up with `signInWithOtp` and sends no metadata, and 0 auth users carry a `display_name` in their metadata. The value is therefore always the exact literal.
+- **Data matches the literal.** All 24 placeholder rows match it byte-for-byte. There are **0** case variants, 0 leading/trailing-whitespace variants and 0 inner-whitespace variants, and 0 onboarded users hold the placeholder.
+- **Case-sensitive comparison.** A case-insensitive match would not catch any placeholder the backend can produce. It would only hide a name a user deliberately typed, such as `'new artist'`.
+- **Whitespace trimmed first.** The comparison runs after trimming, so a padded placeholder (possible through signup metadata or a direct API call) is still recognised.
+- **Accepted consequence.** A user who deliberately saves exactly `New Artist` sees their username instead. This is the product owner's decision, and T16 covers it.
 
 Design points:
 
-- **Join.** `FROM public.users u LEFT JOIN public.profiles p ON p.user_id = u.id`.
+- **Join.** `FROM public.users u LEFT JOIN (SELECT pr.user_id, <trimmed display_name> AS name FROM public.profiles pr) p ON p.user_id = u.id`.
+  - The derived table only computes the trimmed name once. It reads nothing but `profiles.user_id` and `profiles.display_name`, both already public.
   - `profiles.user_id` is `NOT NULL`, `UNIQUE` and a FK to `users` with `ON DELETE CASCADE`, so the join cannot multiply rows.
   - The LEFT JOIN keeps a user with no profile row, which then uses the username fallback. The live count of such users is 0.
   - The row set therefore stays exactly `users`, as it is today. The migration preflight checks the constraints; the postflight checks the row set.
@@ -54,7 +72,9 @@ Design points:
   - The migration postflight asserts owner, ACL, `reloptions`, column list, absence of column ACLs and anon/authenticated privileges.
 - **Dependencies.** Nothing depends on `public_profiles`: no view, rule, function body (checked by literal text search) or publication. Its only change of dependencies is from `{users}` to `{profiles, users}`.
 - **Consequence: the view becomes non-auto-updatable** (a join). Nothing writes through it: `anon` and `authenticated` only have SELECT, and neither `index.html` nor the repository's Edge Function sources reference it except for SELECTs. `service_role` / `postgres` lose the theoretical ability to UPDATE `users` through the view; nothing uses it. The postflight records the change as `NO/NO`.
-- **Functions.** `admin_anonymize_account` already sets `profiles.display_name = 'Deleted User'` and nulls the legacy `users` name columns. `handle_new_auth_user` creates the profile with `coalesce(raw_user_meta_data->>'display_name', 'New Artist')`. Neither needs a change.
+- **Functions.** No function changes:
+  - `admin_anonymize_account` already sets `profiles.display_name = 'Deleted User'` and nulls the legacy `users` name columns.
+  - `handle_new_auth_user` keeps creating the placeholder; the view simply never shows it.
 
 ### 2.1 Visible effect on current data (aggregate counts only, 2026-09-17)
 
@@ -62,17 +82,18 @@ Design points:
 |---|---|
 | users | 32 |
 | users without a profile / profiles without a user | 0 / 0 |
-| blank profile `display_name` | 0 |
+| blank or whitespace-only profile `display_name` | 0 |
+| profiles holding the `'New Artist'` placeholder | 24, all of them not onboarded (username NULL) |
 | anonymized users | 0 |
-| users whose `display_name` would change | **27** |
-| — of which: not onboarded (username NULL), `display_name` goes from `'STAGERZ Artist'` to the trigger placeholder `'New Artist'` | 24 |
-| — of which: onboarded, `display_name` goes from the legacy first/last name to the chosen profile `display_name` (the intended fix) | 3 |
-| onboarded users whose profile still holds the `'New Artist'` placeholder | 0 |
-| system users whose `display_name` would change | 0 |
+| users whose public `display_name` changes under the final rule | **3**, each moving from the legacy first/last name to the chosen profile `display_name` (the intended fix) |
+| — to username / to `'STAGERZ Artist'` | 0 / 0 |
+| users whose `display_name` stays the same | 29, including the 24 non-onboarded users, who keep `'STAGERZ Artist'` |
+| rows that would publicly show `'New Artist'` | **0** |
+| system users whose `display_name` changes | 0 |
 
-The 24 placeholder rows are exactly the 24 users who never completed onboarding. The frontend's only username-setting flow (`saveProfile`) requires a non-empty display name, so an onboarded user always has a chosen name.
+With the `b0c0a49` rule, 27 names would have changed; 24 of them would newly have shown `'New Artist'`. Option A removes that visible effect.
 
-Non-onboarded users cannot post, apply or be found by the invite search (which filters on `username`), so the practical visibility of the placeholder is low. **The placeholder is deliberately not special-cased**, because hard-coding `'New Artist'` in the view would hide a name a user deliberately chose. §8 records this as an open product question.
+The frontend's only username-setting flow (`saveProfile`) requires a non-empty display name, so an onboarded user normally has a chosen name.
 
 ## 3. Remediation (`migration.sql`)
 
@@ -111,12 +132,30 @@ select u.id, u.username, u.photo_url, u.is_system, u.created_at,
        (u.anonymized_at is not null) as is_deleted,
        case
          when u.anonymized_at is not null then 'Deleted User'::text
-         when nullif(btrim(p.display_name), ''::text) is not null then btrim(p.display_name)
-         else coalesce(u.username, 'STAGERZ Artist'::text)
+         when p.name <> ''::text and p.name <> 'New Artist'::text then p.name
+         when regexp_replace(u.username, '^[[:space:]]+|[[:space:]]+$', '', 'g') <> ''::text then u.username
+         else 'STAGERZ Artist'::text
        end as display_name
   from public.users u
-  left join public.profiles p on p.user_id = u.id;
+  left join (select pr.user_id,
+                    regexp_replace(pr.display_name, '^[[:space:]]+|[[:space:]]+$', '', 'g') as name
+               from public.profiles pr) p
+    on p.user_id = u.id;
 ```
+
+**How NULLs fall through.**
+- A missing profile row gives a NULL `p.name`. The comparisons then yield NULL, so the CASE falls through to the username branch.
+- A NULL `username` falls through to `'STAGERZ Artist'` the same way.
+
+**Checked against synthetic literals (read-only, no table rows).** Both this expression and the independent postflight specification were evaluated on 18 cases:
+- genuine, padded, tab- or newline-padded, and inner-spaced names;
+- the exact, padded and tab-padded placeholder;
+- `new artist`, `NEW ARTIST` and `New Artist Collective`;
+- empty and whitespace-only names, and a NULL name;
+- a NULL, blank or whitespace username;
+- anonymized accounts.
+
+They agreed on all 18 (`validation.md` §2.6).
 
 - `authenticated` keeps column UPDATE on `username` only.
 - Every column SELECT grant on `users` is kept, because `fetchMyProfile` still selects `id,username,first_name,last_name,photo_url,bio,location`.
@@ -150,9 +189,11 @@ drop policy "active users can remove own likes"   on public.likes;
   - kind, owner, `reloptions` NULL, ACL, column names, types and order, and no column ACLs;
   - `anon`/`authenticated` hold SELECT only;
   - dependencies are exactly `{profiles, users}`;
-  - the definition no longer references `first_name`/`last_name` and contains the LEFT JOIN;
+  - the definition no longer references `first_name`/`last_name`; it contains a LEFT JOIN and the `'New Artist'`, `'STAGERZ Artist'` and `'Deleted User'` constants;
   - the view is not auto-updatable.
-- **W-3, `public_profiles` rows:** the row set equals `users`, and a row-by-row comparison of every view column against the specification finds 0 mismatches. This computes only counts; no data leaves the statement.
+- **W-3, `public_profiles` rows:** the row set equals `users`, and a row-by-row comparison of every view column finds 0 mismatches.
+  - The comparison is against an **independently written** specification of the final rule: a `substring`-based trim and a regex non-whitespace test.
+  - It computes only counts; no data leaves the statement.
 - **W-4:** exact ACLs; no INSERT/UPDATE/DELETE for `authenticated`; SELECT kept for both roles; only the SELECT policy remains on each table.
 - **Global:** RLS enabled and not forced on the five tables; 21 public policies; 34 public functions; O-1/O-2/O-3 state intact (the `wanted_applications` and `collaboration_assets` ACLs, the FK is `ON DELETE RESTRICT`, and the nine `collaboration_assets` INSERT columns).
 
@@ -172,7 +213,7 @@ One guarded `DO` statement.
 
 **PREFLIGHT.** Requires exactly the state `migration.sql` leaves behind:
 - ACLs, column ACLs and policies;
-- for `public_profiles`: dependencies `{profiles, users}`, the join in the definition, and view rows matching the migration's `display_name` rule.
+- for `public_profiles`: dependencies `{profiles, users}`, a LEFT JOIN and the `'New Artist'` constant in the definition, and view rows matching the migration's final (option A) `display_name` rule.
 
 Any other state, including a partial one, aborts with no change.
 
@@ -184,7 +225,8 @@ Any other state, including a partial one, aborts with no change.
 
 **POSTFLIGHT.** Requires the exact pre-migration baseline:
 - all ACLs, column ACLs and policies;
-- `public_profiles` pretty-definition md5 = `d86256ac1ad53a250c96c315ed69a52e`, dependencies `{users}`, updatability `YES/YES`, and owner, ACL and `reloptions` unchanged;
+- `public_profiles` pretty-definition md5 = `d86256ac1ad53a250c96c315ed69a52e`, and the definition contains neither `New Artist` nor `profiles`, so no part of the placeholder rule survives;
+- `public_profiles` dependencies `{users}`, updatability `YES/YES`, and owner, ACL and `reloptions` unchanged;
 - 25 public policies, 34 functions, O-1/O-2/O-3 intact.
 
 Offline, the rollback view text parses to the same tree as the live pretty definition. If the server deparse still differed, the postflight would abort the rollback atomically, with no partial state.
@@ -205,12 +247,10 @@ Rows written while the migration was in effect are not modified. `rollback.sql` 
 
 ## 8. Remaining questions and follow-ups (recorded, not actioned)
 
-1. **`'New Artist'` placeholder.** Non-onboarded users (24 today) will show `'New Artist'` instead of `'STAGERZ Artist'`. Options:
-   - accept it (current design);
-   - change the `handle_new_auth_user` default;
-   - treat the placeholder as unset in the view.
-
-   This is a product decision; it has no security impact.
+1. **`'New Artist'` placeholder: decided (option A), implemented in this revision.** Residual points:
+   - The view and `handle_new_auth_user` share the literal. If the trigger default ever changes, the view must change with it. Keeping them in sync is a review item for any future change to `handle_new_auth_user`.
+   - A user who deliberately saves exactly `New Artist` is shown their username. This is accepted and tested (T16).
+   - `index.html` may still show the raw `profiles.display_name` (for example, `'New Artist'`) to the user in their own Edit Profile form. That is a frontend matter outside this backend change.
 2. **`wanted_posts` `status = 'open'` on INSERT.** Optional hardening (§3).
 3. **Legacy `users` identity columns.** `first_name`, `last_name`, `photo_url`, `bio`, `location` stay as dormant data, still read by `fetchMyProfile` (only `username` is used). A later cleanup could narrow that SELECT. Dropping the columns is out of scope.
 4. **`public_profiles.photo_url`** still comes from `users.photo_url`, which is no longer client-editable. All current values are NULL (aggregate). Avatar support will need its own design (storage, validation, which table owns the URL).

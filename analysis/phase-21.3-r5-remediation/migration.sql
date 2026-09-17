@@ -40,12 +40,20 @@
 --           SELECT grant on users is kept; no column is dropped.
 --      - CREATE OR REPLACE VIEW public.public_profiles
 --        same seven columns, same names, same order, same types;
---        display_name now derives from profiles.display_name:
---          anonymized                      -> 'Deleted User'   (unchanged)
---          btrim(profiles.display_name)<>'' -> that trimmed value
---          otherwise                        -> username, then
---                                              'STAGERZ Artist' (unchanged)
+--        display_name now derives from profiles.display_name
+--        (product decision, option A - final):
+--          1. anonymized account                      -> 'Deleted User'
+--          2. profiles.display_name, trimmed of all
+--             leading/trailing whitespace, when it is
+--             non-null, non-empty and not exactly the
+--             technical signup placeholder 'New Artist'
+--             (case-sensitive; handle_new_auth_user is
+--             the only producer of that literal)     -> that trimmed value
+--          3. username, when it contains a
+--             non-whitespace character                -> username
+--          4. otherwise                               -> 'STAGERZ Artist'
 --        users.first_name / last_name no longer feed the view.
+--        No existing row is changed.
 --        No WITH (...) clause: reloptions stay NULL, so the view keeps
 --        running with its owner's rights exactly as today (the accepted
 --        Phase 21.4 security_definer_view design). CREATE OR REPLACE
@@ -303,11 +311,15 @@ begin
          (u.anonymized_at is not null) as is_deleted,
          case
            when u.anonymized_at is not null then 'Deleted User'::text
-           when nullif(btrim(p.display_name), ''::text) is not null then btrim(p.display_name)
-           else coalesce(u.username, 'STAGERZ Artist'::text)
+           when p.name <> ''::text and p.name <> 'New Artist'::text then p.name
+           when regexp_replace(u.username, '^[[:space:]]+|[[:space:]]+$', '', 'g') <> ''::text then u.username
+           else 'STAGERZ Artist'::text
          end as display_name
     from public.users u
-    left join public.profiles p on p.user_id = u.id;
+    left join (select pr.user_id,
+                      regexp_replace(pr.display_name, '^[[:space:]]+|[[:space:]]+$', '', 'g') as name
+                 from public.profiles pr) p
+      on p.user_id = u.id;
 
   -- ---- W-4 ------------------------------------------------------------
   revoke insert, delete on table public.follows, public.likes from authenticated;
@@ -436,7 +448,10 @@ begin
   if md5(v_text) = c_view_md5_before
      or position('first_name' in v_text) > 0
      or position('last_name' in v_text) > 0
-     or position('LEFT JOIN profiles p ON p.user_id = u.id' in v_text) = 0 then
+     or position('LEFT JOIN' in v_text) = 0
+     or position('''New Artist''::text' in v_text) = 0
+     or position('''STAGERZ Artist''::text' in v_text) = 0
+     or position('''Deleted User''::text' in v_text) = 0 then
     raise exception 'postflight: public_profiles definition is not the intended one';
   end if;
   if (select is_updatable || '/' || is_insertable_into from information_schema.views
@@ -446,7 +461,9 @@ begin
 
   -- ---- W-3: public_profiles row-by-row equivalence --------------------
   -- Same row set as users, and every column equals its specification.
-  -- Only counts are computed; no row data leaves this statement.
+  -- The specification is written independently of the view expression
+  -- (substring-based trim, regex non-whitespace test). Only counts are
+  -- computed; no row data leaves this statement.
   if (select count(*) from public.public_profiles) <> (select count(*) from public.users)
      or (select count(distinct id) from public.public_profiles) <> (select count(*) from public.users) then
     raise exception 'postflight: public_profiles row set differs from users';
@@ -461,8 +478,11 @@ begin
          (u.username, u.photo_url, u.is_system, u.created_at, (u.anonymized_at is not null),
           case
             when u.anonymized_at is not null then 'Deleted User'
-            when p.display_name is not null and btrim(p.display_name) <> '' then btrim(p.display_name)
-            when u.username is not null then u.username
+            when p.display_name is not null
+                 and substring(p.display_name from '^[[:space:]]*(.*[^[:space:]])[[:space:]]*$') is not null
+                 and substring(p.display_name from '^[[:space:]]*(.*[^[:space:]])[[:space:]]*$') <> 'New Artist'
+              then substring(p.display_name from '^[[:space:]]*(.*[^[:space:]])[[:space:]]*$')
+            when u.username is not null and u.username ~ '[^[:space:]]' then u.username
             else 'STAGERZ Artist'
           end);
   if v_count <> 0 then

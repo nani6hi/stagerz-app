@@ -22,6 +22,13 @@
 --   A  onboarded (username set)      - the acting user
 --   B  onboarded                     - the other user
 --   N  not onboarded (username NULL)
+--   P  created inside T14 with NO signup metadata, exactly like the OTP
+--      signup, so the trigger writes the 'New Artist' placeholder
+--
+-- Display-name tests (T12-T16) follow the final product decision
+-- (option A): 'New Artist' is a technical placeholder, never shown.
+-- T13-1 .. T13-12 cover cases A-G of the decision; the placeholder
+-- match is exact after trimming and case-sensitive (T15).
 --
 -- Role switching mirrors PostgREST: role 'authenticated' plus JWT
 -- claims, so auth.uid() and every RLS policy behave as for a real API
@@ -57,7 +64,7 @@ begin
   -- the migration must be in effect
   if (select relacl::text from pg_class where oid = 'public.wanted_posts'::regclass)
        is distinct from '{postgres=arwdDxtm/postgres,service_role=arwdDxtm/postgres,anon=r/postgres,authenticated=r/postgres}'
-     or position('LEFT JOIN profiles p ON p.user_id = u.id' in pg_get_viewdef('public.public_profiles'::regclass, true)) = 0 then
+     or position('''New Artist''::text' in pg_get_viewdef('public.public_profiles'::regclass, true)) = 0 then
     raise exception 'behavioral-validation: migration.sql is not in effect';
   end if;
 
@@ -224,34 +231,108 @@ begin
                              then 'T12 PASS display_name comes from profiles, not users.first/last_name'
                              else 'T12 FAIL display_name not from profiles' end;
 
-  -- W-3  T13: blank profile display_name falls back to username
-  update public.profiles set display_name = '   ' where user_id = b_user;                -- privileged, rolled back
+  -- ---------------------------------------------------------------------
+  -- W-3  T13-*: final display-name precedence (product decision, option A)
+  --   1 anonymized -> 'Deleted User'
+  --   2 profiles.display_name trimmed of all leading/trailing whitespace,
+  --     if non-empty and not exactly 'New Artist' (case-sensitive)
+  --   3 username, if it contains a non-whitespace character
+  --   4 'STAGERZ Artist'
+  -- Every case is set up on fixture B with privileged, rolled-back writes.
+  -- The profile row is removed only in the last two cases (NULL name).
+  -- ---------------------------------------------------------------------
+  declare
+    c         record;
+    v_expect  text;
+  begin
+    for c in
+      select * from (values
+        (1,  'A  anonymized account',                    'R5 Genuine',                          'keep',  true,  'is_deleted'),
+        (2,  'B  genuine name, whitespace trimmed',      ' '||chr(9)||'R5 Genuine'||chr(10)||' ', 'keep',  false, 'R5 Genuine'),
+        (3,  'C  placeholder New Artist',                'New Artist',                          'keep',  false, 'USERNAME'),
+        (4,  'D  placeholder with surrounding spaces',   '  New Artist  ',                      'keep',  false, 'USERNAME'),
+        (5,  'D  placeholder with tab / newline',        chr(9)||'New Artist'||chr(13)||chr(10), 'keep', false, 'USERNAME'),
+        (6,  'E  empty display_name',                    '',                                    'keep',  false, 'USERNAME'),
+        (7,  'E  whitespace-only display_name',          ' '||chr(9)||' ',                      'keep',  false, 'USERNAME'),
+        (8,  'G  placeholder and NULL username',         'New Artist',                          'null',  false, 'STAGERZ Artist'),
+        (9,  'G  placeholder and blank username',        'New Artist',                          'blank', false, 'STAGERZ Artist'),
+        (10, 'A  anonymized wins over placeholder',      'New Artist',                          'null',  true,  'is_deleted'),
+        (11, 'F  NULL display_name (no profile row)',    null,                                  'keep',  false, 'USERNAME'),
+        (12, 'G  NULL display_name and NULL username',   null,                                  'null',  false, 'STAGERZ Artist')
+      ) as x(ord, lbl, dn, un_mode, anon, expected)
+      order by ord
+    loop
+      update public.users
+         set username      = case c.un_mode when 'keep' then b_uname when 'null' then null else ' '||chr(9) end,
+             anonymized_at = case when c.anon then now() end
+       where id = b_user;
+      if c.dn is null then
+        delete from public.profiles where user_id = b_user;
+      else
+        update public.profiles set display_name = c.dn where user_id = b_user;
+      end if;
+      if c.expected = 'is_deleted' then
+        select display_name = 'Deleted User' and is_deleted into v_bool
+          from public.public_profiles where id = b_user;
+      else
+        v_expect := case c.expected when 'USERNAME' then b_uname else c.expected end;
+        select display_name = v_expect and not is_deleted into v_bool
+          from public.public_profiles where id = b_user;
+      end if;
+      results := results || (case when coalesce(v_bool, false) then 'T13-' || c.ord || ' PASS '
+                                  else 'T13-' || c.ord || ' FAIL ' end || c.lbl);
+    end loop;
+    update public.users set username = b_uname, anonymized_at = null where id = b_user;
+  end;
+
+  -- W-3  T14: the real signup path produces the placeholder, which is not shown
+  declare
+    p_auth  uuid := gen_random_uuid();
+    p_user  uuid;
+    v_raw   text;
+    v_pub1  text;
+    v_pub2  text;
+  begin
+    insert into auth.users (id, aud, role, raw_user_meta_data)
+      values (p_auth, 'authenticated', 'authenticated', '{}'::jsonb);            -- as the OTP signup: no metadata
+    select public_user_id into p_user from public.user_auth_accounts where auth_user_id = p_auth;
+    select display_name into v_raw from public.profiles where user_id = p_user;
+    select display_name into v_pub1 from public.public_profiles where id = p_user;
+    update public.users set username = 'zz_r5_validation_p_' || substr(md5(p_user::text), 1, 10) where id = p_user;
+    select display_name = (select username from public.users where id = p_user) into v_bool
+      from public.public_profiles where id = p_user;
+    results := results || case when v_raw = 'New Artist' and v_pub1 = 'STAGERZ Artist' and coalesce(v_bool, false)
+                               then 'T14 PASS trigger placeholder hidden: STAGERZ Artist before onboarding, username after'
+                               else 'T14 FAIL signup placeholder handling' end;
+  end;
+
+  -- W-3  T15: the placeholder rule is exact and case-sensitive; real names are kept
+  update public.profiles set display_name = 'new artist' where user_id = b_user;         -- privileged, rolled back
   select display_name into v_txt from public.public_profiles where id = b_user;
-  results := results || case when v_txt = b_uname
-                             then 'T13 PASS blank display_name falls back to username'
-                             else 'T13 FAIL username fallback' end;
+  v_bool := v_txt is not distinct from 'new artist';
+  update public.profiles set display_name = ' New Artist Collective ' where user_id = b_user;
+  select display_name into v_txt from public.public_profiles where id = b_user;
+  results := results || case when v_bool and v_txt is not distinct from 'New Artist Collective'
+                             then 'T15 PASS case variant and longer names are shown as chosen'
+                             else 'T15 FAIL non-placeholder name suppressed' end;
 
-  -- W-3  T14: blank display_name and no username -> 'STAGERZ Artist'
-  update public.profiles set display_name = '' where user_id = n_user;                   -- privileged, rolled back
-  select display_name into v_txt from public.public_profiles where id = n_user;
-  results := results || case when v_txt = 'STAGERZ Artist'
-                             then 'T14 PASS final fallback STAGERZ Artist'
-                             else 'T14 FAIL final fallback' end;
-
-  -- W-3  T15: surrounding whitespace is trimmed
-  update public.profiles set display_name = '  R5 Padded  ' where user_id = n_user;     -- privileged, rolled back
-  select display_name into v_txt from public.public_profiles where id = n_user;
-  results := results || case when v_txt = 'R5 Padded'
-                             then 'T15 PASS display_name is trimmed'
-                             else 'T15 FAIL trimming' end;
-
-  -- W-3  T16: anonymized account shows Deleted User / is_deleted
-  update public.users set anonymized_at = now() where id = b_user;                       -- privileged, rolled back
-  select display_name = 'Deleted User' and is_deleted into v_bool from public.public_profiles where id = b_user;
-  results := results || case when coalesce(v_bool, false)
-                             then 'T16 PASS anonymized user shows Deleted User and is_deleted'
-                             else 'T16 FAIL anonymized rendering' end;
-  update public.users set anonymized_at = null where id = b_user;
+  -- W-3  T16: Edit Profile saving the placeholder text shows the username
+  begin
+    perform set_config('request.jwt.claims', json_build_object('sub', a_auth, 'role', 'authenticated')::text, true);
+    perform set_config('request.jwt.claim.sub', a_auth::text, true);
+    perform set_config('role', 'authenticated', true);
+    update public.profiles set display_name = ' New Artist ' where user_id = a_user;
+    get diagnostics v_n = row_count;
+    select display_name into v_txt from public.public_profiles where id = a_user;
+    execute 'reset role';
+    results := results || case when v_n = 1 and v_txt is not distinct from (select username from public.users where id = a_user)
+                               then 'T16 PASS profile edit to the placeholder text falls back to username'
+                               else 'T16 FAIL placeholder edit fallback' end;
+  exception when others then
+    get stacked diagnostics v_state = returned_sqlstate;
+    results := results || ('T16 FAIL error ' || v_state);
+  end;
+  execute 'reset role';
 
   -- W-3  T17: anon sees exactly the seven public columns, one row per user
   begin

@@ -3,9 +3,11 @@
 **Status:** PREPARED — NOT APPLIED. Nothing in this document has been executed against a database except the read-only captures listed in §2 and the static review in §8.
 **Target:** `stagerz-foundation-v2-test` / `kbnmkyvbwkuvcklywdhk` only.
 **Scripts:**
-- `migration.sql` — SHA-256 `95ea14d93c60736211544df7dd20dce7ee4c9d11163a08226f5f3882d2a46388`.
-- `rollback.sql` — SHA-256 `d6a1bf13643b1e97ae763fc9b1096db5f2c10094243deec5ab3cf5eb7c6eee82`; not executed.
-- `behavioral-validation.sql` — SHA-256 `5ca0648a05ec141cdfb5e5b47fad9fb5103574ed05f4ef173cdaf63e14efaba7`; not run.
+- `migration.sql` — SHA-256 `5ca16d90ae685e0da450a11de1ef16e602f73b5a5bbc1b5b1bd74e639e47033a`.
+- `rollback.sql` — SHA-256 `7ac92c1d21930e072973bdfc94164f1c98acf85cdda6578bcfd26a5bf3629e95`; not executed.
+- `behavioral-validation.sql` — SHA-256 `3f1793eac24e0dff93343516d4fe88c182704eac02c849d45004522a957f09ca`; not run.
+
+These values supersede the `b0c0a49` hashes. This revision implements the final `'New Artist'` placeholder decision (option A; `phase-definition.md` §2).
 
 ---
 
@@ -84,8 +86,12 @@ Results:
 | users with `first_name` or `last_name` | 5 |
 | users with `photo_url` | 0 |
 | anonymized users | 0 |
-| `display_name` values that the new view would change | 27 (24 → `'New Artist'`, 3 → the chosen profile name) |
-| system users affected | 0 |
+| `display_name` values that the final (option A) view would change | **3**, all of them moving to the chosen profile name; 0 to username, 0 to `'STAGERZ Artist'` |
+| `display_name` values unchanged | 29 (includes the 24 non-onboarded users, who keep `'STAGERZ Artist'`) |
+| rows that would show `'New Artist'` | 0 |
+| system users affected | 0 (5 system users) |
+
+For comparison, the `b0c0a49` rule would have changed 27 values, 24 of them to `'New Artist'`.
 
 ### 2.5 Security Advisor baseline — 2026-09-17 00:30 UTC (identical to 2026-09-15)
 
@@ -96,6 +102,54 @@ Results:
 | `auth_leaked_password_protection` | WARN | 1 |
 | `rls_enabled_no_policy` (`pending_asset_deletions`, `pending_auth_deletions`) | INFO | 2 |
 
+### 2.6 `'New Artist'` placeholder evidence — read-only, 2026-09-17 13:53 UTC
+
+These captures chose the exact comparison rule. They are counts and catalog facts only:
+- `P213-R5F-PLACEHOLDER-v1` and `-v2`: data and catalog facts;
+- `P213-R5F-EXPR-v1`: synthetic literals only, no table rows;
+- `P213-R5F-PREFLIGHT-EVAL-v2`: the whole preflight re-evaluated; 31/31 values still match, with the epoch unchanged at 42 / `20260916215204`.
+
+| Fact | Value |
+|---|---|
+| `profiles.display_name` column | `text NOT NULL`, **no column default**; no CHECK constraint on `profiles` or `users` |
+| Column defaults containing the text (any table) | 0 |
+| Functions containing `new artist` (case-insensitive) | only `public.handle_new_auth_user`, whose expression is `coalesce(new.raw_user_meta_data->>'display_name', 'New Artist')` |
+| Trigger | `on_auth_user_created` on `auth.users` runs `handle_new_auth_user` |
+| Migrations mentioning the text | only `20260712100630` |
+| Signup source | `index.html` uses `signInWithOtp` without user metadata; auth users with a `display_name` in their metadata: **0** |
+| Profiles total | 32 |
+| NULL `display_name` | 0 (the column is NOT NULL; a NULL name can only arise from a missing profile row, and there are 0 such rows) |
+| Empty or whitespace-only `display_name` | 0 |
+| Leading/trailing whitespace of any kind | 0 |
+| Exactly `'New Artist'` | 24 |
+| `'New Artist'` after trimming | 24 (identical set) |
+| Case variants (`lower(...) = 'new artist'` but not exact) | **0** |
+| Inner-whitespace variants | 0 |
+| Onboarded users holding the placeholder (any case) | **0** |
+| Non-onboarded users / of which holding the placeholder | 24 / 24 |
+| Usernames that are blank, contain whitespace, or do not match the frontend pattern `^[a-z0-9_.]+$` | 0 / 0 / 0 |
+| FKs referencing `profiles`; triggers on `profiles` / `users` | none; 0 / 0 |
+
+**Decision derived from the evidence:** exact, **case-sensitive** match after removing all leading and trailing whitespace.
+- The only producer emits the exact literal.
+- No case variant exists in the data.
+- A case-insensitive rule would only suppress names typed deliberately (for example `new artist`).
+- Trimming first also covers a padded placeholder supplied through signup metadata or a direct API call.
+
+**Expression check (`P213-R5F-EXPR-v1`).** The view expression and the independent postflight specification agree on all 18 synthetic cases (0 disagreements):
+
+| Case | Result |
+|---|---|
+| genuine name | kept |
+| genuine name padded with spaces, tab/LF/CR | trimmed |
+| inner spaces | preserved |
+| placeholder: exact, space-padded, tab/LF-padded | username |
+| `new artist`, `NEW ARTIST`, `New Artist Collective` | kept as typed |
+| empty, whitespace-only, NULL name | username |
+| placeholder with NULL / blank username | `STAGERZ Artist` |
+| blank name with whitespace-only username | `STAGERZ Artist` |
+| anonymized genuine, anonymized placeholder with NULL username | `Deleted User` |
+
 ## 3. PRE-APPLY gates (at apply time, all read-only)
 
 | Gate | Check | Pass condition |
@@ -105,7 +159,7 @@ Results:
 | P-3 | Epoch | still 42 migrations, latest `20260916215204`; otherwise stop and re-review |
 | P-4 | Preflight dry evaluation | re-run the `P213-R5R-PREFLIGHT-EVAL` query (§2); all values equal the migration constants |
 | P-5 | Advisor | equals §2.5 |
-| P-6 | Counts | §2.4 re-captured; any change is explained before apply |
+| P-6 | Counts | §2.4 and §2.6 re-captured; any change is explained before apply. In particular, a new producer or case variant of the placeholder requires re-review. |
 
 ## 4. Apply procedure (for the later, approved step)
 
@@ -126,8 +180,8 @@ The migration's own postflight already enforces C-1 to C-11 inside the transacti
 | C-5 | `profiles` (W-2) | relation ACL, 9 column UPDATE grants and 2 policies unchanged |
 | C-6 | `public_profiles` security | `relkind='v'`, owner `postgres`, `reloptions` NULL, ACL unchanged, no column ACLs; `anon` and `authenticated` hold SELECT only |
 | C-7 | `public_profiles` shape | columns `id uuid, username text, photo_url text, is_system boolean, created_at timestamptz, is_deleted boolean, display_name text` in this order |
-| C-8 | `public_profiles` definition | depends on exactly `profiles` and `users`; no `first_name` / `last_name`; contains `LEFT JOIN profiles p ON p.user_id = u.id`; not auto-updatable. **Record** the new pretty-definition md5 and SHA-256 for the snapshot. |
-| C-9 | `public_profiles` rows (counts only) | row count = `users` count; 0 rows differ from the specification; `display_name` change count equals §2.4 (27), unless P-6 explained a difference |
+| C-8 | `public_profiles` definition | depends on exactly `profiles` and `users`; no `first_name` / `last_name`; contains a LEFT JOIN and the `'New Artist'`, `'STAGERZ Artist'` and `'Deleted User'` constants; not auto-updatable. **Record** the new pretty-definition md5 and SHA-256 for the snapshot. |
+| C-9 | `public_profiles` rows (counts only) | row count = `users` count; 0 rows differ from the option A specification; 0 rows show `'New Artist'`; `display_name` change count equals §2.4 (3), unless P-6 explained a difference |
 | C-10 | `follows`, `likes` | relation ACL `…,anon=r/postgres,authenticated=r/postgres`; only the `… are publicly readable` policy remains on each; row counts unchanged |
 | C-11 | Global counts | 21 public policies (25 − 4); 34 functions; RLS enabled and not forced on the 5 tables |
 | C-12 | Untouched object sets | Regenerated Phase 21.3 aggregates (§6 of the Phase 21.3 method) for **functions, storage policies, triggers, constraints, indexes, columns, function privileges and default ACLs** equal the `e5244a9` values (§5.1). The only sets that change are **public policies, the view, table privileges and column privileges**, and exactly as described here. |
@@ -155,8 +209,11 @@ The migration's own postflight already enforces C-1 to C-11 inside the transacti
 
 `behavioral-validation.sql` is run once, with explicit approval, **after** a successful apply.
 
-- **Fixtures:** it creates three synthetic auth users through the normal signup trigger, plus one privileged follow and one privileged like, all inside the statement.
-- **Expected output:** an ERROR whose message starts with `VALIDATION RESULTS (rolled back)` and lists `FIXTURES …` and T1–T28, **all PASS**.
+- **Fixtures:** all created inside the statement:
+  - three synthetic auth users through the normal signup trigger;
+  - a fourth (P, inside T14) with **no** metadata, exactly like the OTP signup, so it receives the `'New Artist'` placeholder;
+  - one privileged follow and one privileged like.
+- **Expected output:** an ERROR whose message starts with `VALIDATION RESULTS (rolled back)` and lists `FIXTURES …`, T1–T12, T13-1 to T13-12 and T14–T28, **all PASS**.
 - **Afterwards:** read-only counts must show that no synthetic user, profile, post, follow or like remains. Record only counts.
 
 | Test | Area | Scenario | Expected |
@@ -169,10 +226,23 @@ The migration's own postflight already enforces C-1 to C-11 inside the transacti
 | T6 | W-3 | `username` update | 1 row updated; visible in `public_profiles` |
 | T7–T11 | W-3 | update `users.first_name`, `last_name`, `photo_url`, `bio`, `location` | each `42501` permission denied |
 | T12 | W-3 | legacy first/last name present (privileged) | `display_name` still from `profiles` |
-| T13 | W-3 | blank (whitespace) profile `display_name` | falls back to `username` |
-| T14 | W-3 | empty `display_name` and NULL `username` | `'STAGERZ Artist'` |
-| T15 | W-3 | padded `display_name` | trimmed |
-| T16 | W-3 | anonymized user | `'Deleted User'`, `is_deleted = true` |
+| T13-1 | W-3 decision **A** | anonymized account with a genuine name | `'Deleted User'`, `is_deleted = true` |
+| T13-2 | decision **B** | genuine name padded with space, tab, LF | the trimmed genuine name |
+| T13-3 | decision **C** | `display_name = 'New Artist'` | username |
+| T13-4 | decision **D** | `'  New Artist  '` | username |
+| T13-5 | decision **D** | placeholder padded with tab / CR / LF | username |
+| T13-6 | decision **E** | empty `display_name` | username |
+| T13-7 | decision **E** | whitespace-only `display_name` | username |
+| T13-8 | decision **G** | placeholder and NULL username | `'STAGERZ Artist'` |
+| T13-9 | decision **G** | placeholder and blank (whitespace) username | `'STAGERZ Artist'` |
+| T13-10 | decision **A** precedence | anonymized, placeholder, NULL username | `'Deleted User'`, `is_deleted = true` |
+| T13-11 | decision **F** | NULL `display_name` (profile row removed, privileged) | username |
+| T13-12 | decision **G** | NULL `display_name` and NULL username | `'STAGERZ Artist'` |
+| T14 | W-3 real signup path | new auth user without metadata | profile holds `'New Artist'`; view shows `'STAGERZ Artist'`, then the username once one is set |
+| T15 | W-3 rule is exact and case-sensitive | `'new artist'`, `' New Artist Collective '` | shown as `new artist` / `New Artist Collective` |
+| T16 | W-2 + W-3 | the user saves `' New Artist '` through Edit Profile | 1 row updated; view shows the username (accepted consequence) |
+
+T13 cases A–G correspond to cases A–G of the product decision. Every T13 case other than an expected `'Deleted User'` also asserts `is_deleted = false`.
 | T17 | W-3 no new exposure | `anon` reads the view | exactly the 7 public keys; one row per user |
 | T18 | W-3 no new exposure | `anon` reads `users` | `42501` |
 | T19 | W-3 | `authenticated` updates `public_profiles` | `42501` |
@@ -189,7 +259,9 @@ The migration's own postflight already enforces C-1 to C-11 inside the transacti
 3. open an artist profile;
 4. use collaboration invite search.
 
-Expected: the chosen display name appears everywhere `public_profiles` is shown.
+Expected:
+- the chosen display name appears everywhere `public_profiles` is shown;
+- a not-yet-onboarded account never appears as `New Artist`.
 
 ## 7. Rollback validation (only if a rollback is separately approved)
 
@@ -197,24 +269,28 @@ Expected: the chosen display name appears everywhere `public_profiles` is shown.
 2. After it succeeds, all of the following equal the §2 baseline:
    - relation and column ACLs;
    - policies (25);
-   - `public_profiles` pretty-definition md5 `d86256ac1ad53a250c96c315ed69a52e`, dependencies `{users}`, updatability `YES/YES`, owner, ACL and `reloptions`;
+   - `public_profiles` pretty-definition md5 `d86256ac1ad53a250c96c315ed69a52e`, with no `New Artist` and no `profiles` in the definition; dependencies `{users}`, updatability `YES/YES`, owner, ACL and `reloptions`;
    - the §5.1 aggregates, which all equal the `e5244a9` values again.
 3. Advisor equals §2.5.
 
-## 8. Static review of this preparation (2026-09-17)
+## 8. Static review of this preparation (2026-09-17; re-run for the option A revision)
 
 | Check | Result |
 |---|---|
 | Top-level parse (`@libpg-query/parser@17`, PostgreSQL 17 grammar) | each file is exactly one `DoStmt` |
 | PL/pgSQL parse of each DO body (`parsePlPgSQL`) | OK for all three |
-| Embedded SQL / expressions parsed individually | migration 91/91, rollback 67/67, behavioural 148/148 |
+| Embedded SQL / expressions parsed individually | migration 91/91, rollback 68/68, behavioural 169/169 |
+| Preflight fail-closed | unchanged: all baseline constants and structural checks; 31/31 match live again (`P213-R5F-PREFLIGHT-EVAL-v2`) |
+| Rollback symmetry | 21/21 rollback constants equal the migration's; the DDL is the exact inverse; the rollback preflight recognises the option A view by definition and by row behaviour; the postflight requires the original md5 and the absence of `New Artist` / `profiles` |
 | DDL inventory, migration | `revoke insert` (`wanted_posts`), `grant insert (9 cols)`, `revoke update (5 cols)` (`users`), `create or replace view public.public_profiles`, `revoke insert, delete` (`follows`, `likes`), 4× `drop policy`; **nothing else** |
 | DDL inventory, rollback | exact inverses: `revoke insert (9 cols)`, `grant insert`, `grant update (5 cols)`, original view, `grant insert, delete`, 4× `create policy` |
 | Forbidden content | no `drop table` / `drop column` / `alter table`, no DML outside the postflight counts (migration / rollback), no `storage.` object, no function / trigger DDL, no `security_invoker` / `WITH (…)`, no `ALTER … OWNER`, no secrets, no project URLs, no user identifiers |
 | Preflight constants vs live | all match (§2.2) |
 | Rollback view text vs live definition | same raw parse tree (locations / schema qualification ignored) as the live pretty definition, so the md5 postflight is expected to pass |
-| Postflight join deparse | PostgreSQL 17 pretty deparse of a join qual confirmed on system views as `LEFT JOIN <rel> <alias> ON <qual>` without parentheses |
-| New view normalized (offline deparse) | `SELECT u.id, u.username, u.photo_url, u.is_system, u.created_at, u.anonymized_at IS NOT NULL AS is_deleted, CASE WHEN u.anonymized_at IS NOT NULL THEN 'Deleted User'::text WHEN NULLIF(btrim(p.display_name), ''::text) IS NOT NULL THEN btrim(p.display_name) ELSE COALESCE(u.username, 'STAGERZ Artist'::text) END AS display_name FROM public.users u LEFT JOIN public.profiles p ON p.user_id = u.id` |
+| Postflight definition checks | use only format-stable fragments (`LEFT JOIN`, the three `'…'::text` constants, absence of `first_name` / `last_name`) plus dependencies and the row-level equivalence. PostgreSQL 17 pretty deparse was confirmed on system views as `LEFT JOIN <rel> <alias> ON <qual>`. |
+| Option A semantics | the view expression and the independent specification agree on 18/18 synthetic cases (§2.6) |
+| New view normalized (offline deparse) | `SELECT u.id, u.username, u.photo_url, u.is_system, u.created_at, u.anonymized_at IS NOT NULL AS is_deleted, CASE WHEN u.anonymized_at IS NOT NULL THEN 'Deleted User'::text WHEN p.name <> ''::text AND p.name <> 'New Artist'::text THEN p.name WHEN regexp_replace(u.username, '^[[:space:]]+\|[[:space:]]+$', '', 'g') <> ''::text THEN u.username ELSE 'STAGERZ Artist'::text END AS display_name FROM public.users u LEFT JOIN (SELECT pr.user_id, regexp_replace(pr.display_name, '^[[:space:]]+\|[[:space:]]+$', '', 'g') AS name FROM public.profiles pr) p ON p.user_id = u.id` (inside this table, `\|` is the Markdown escape for a literal pipe) |
+| `public_profiles` contract | still 7 output columns (the derived table's `name` is internal); names, order, types, owner, ACL, `reloptions` NULL and SELECT-only grants asserted by the postflight; only public `profiles` columns are read |
 | Line endings | LF only, no CR, in all files |
 
 **Not verifiable offline** (checked at apply time by the scripts themselves, fail-closed):
@@ -229,7 +305,7 @@ R-5 remediation is **complete** only when all of the following hold:
 - P-1 to P-6 pass;
 - the apply succeeds, with a verified stored-statement hash;
 - C-1 to C-14 pass;
-- T1 to T28 pass, with no data left behind;
+- T1 to T28, including T13-1 to T13-12, pass, with no data left behind;
 - the apply record is documented.
 
 Then Phase 21.3 can regenerate its snapshot and re-evaluate R-5, with W-1, W-3 and W-4 remediated and W-2 accepted as reviewed and non-material. Until then, **R-5 remains FAIL** and Phase 21.3 remains **INCOMPLETE**.

@@ -16,7 +16,9 @@
 --        public_profiles - original definition restored by
 --                         CREATE OR REPLACE (owner, ACL, OID and
 --                         reloptions are preserved; the postflight
---                         requires the original pretty-definition md5)
+--                         requires the original pretty-definition md5,
+--                         so neither the profiles join nor the
+--                         'New Artist' placeholder rule survives)
 --   W-4  follows/likes  - INSERT, DELETE for authenticated restored;
 --                         the four INSERT / DELETE policies re-created
 --                         verbatim (permissive, TO PUBLIC, same
@@ -190,9 +192,11 @@ begin
   end if;
   v_text := pg_get_viewdef('public.public_profiles'::regclass, true);
   if position('first_name' in v_text) > 0
-     or position('LEFT JOIN profiles p ON p.user_id = u.id' in v_text) = 0 then
+     or position('LEFT JOIN' in v_text) = 0
+     or position('''New Artist''::text' in v_text) = 0 then
     raise exception 'rollback preflight: public_profiles is not the migration''s view (definition)';
   end if;
+  -- the migration's final display-name rule (option A), counts only
   select count(*) into v_count
     from public.users u
     left join public.profiles p on p.user_id = u.id
@@ -201,8 +205,11 @@ begin
       or v.display_name is distinct from
          case
            when u.anonymized_at is not null then 'Deleted User'
-           when p.display_name is not null and btrim(p.display_name) <> '' then btrim(p.display_name)
-           when u.username is not null then u.username
+           when p.display_name is not null
+                and substring(p.display_name from '^[[:space:]]*(.*[^[:space:]])[[:space:]]*$') is not null
+                and substring(p.display_name from '^[[:space:]]*(.*[^[:space:]])[[:space:]]*$') <> 'New Artist'
+             then substring(p.display_name from '^[[:space:]]*(.*[^[:space:]])[[:space:]]*$')
+           when u.username is not null and u.username ~ '[^[:space:]]' then u.username
            else 'STAGERZ Artist'
          end;
   if v_count <> 0
@@ -321,7 +328,10 @@ begin
                     and relacl::text = c_acl_view) then
     raise exception 'rollback postflight: public_profiles kind / owner / options / ACL changed';
   end if;
-  if md5(pg_get_viewdef('public.public_profiles'::regclass, true)) is distinct from c_view_md5_before then
+  v_text := pg_get_viewdef('public.public_profiles'::regclass, true);
+  if md5(v_text) is distinct from c_view_md5_before
+     or position('New Artist' in v_text) > 0
+     or position('profiles' in v_text) > 0 then
     raise exception 'rollback postflight: public_profiles definition is not the original one';
   end if;
   if (select string_agg(attname::text || ' ' || format_type(atttypid, atttypmod), ',' order by attnum)
