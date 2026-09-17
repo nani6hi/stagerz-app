@@ -36,6 +36,16 @@
 -- executing session must be allowed to SET ROLE authenticated / anon.
 -- A GUC change made inside a failing inner block is undone with that
 -- block; every block is followed by RESET ROLE.
+--
+-- Change 2026-09-17 (after run 1, 38/40 PASS, fully rolled back):
+--   T15  now uses fixture N and requires each UPDATE to affect exactly
+--        one row. In run 1 it used fixture B, whose profile row T13
+--        had removed, so its UPDATEs hit 0 rows and the rule was never
+--        exercised.
+--   T19  also accepts 55000 "cannot update view" (the join view is not
+--        auto-updatable, so PostgreSQL refuses while rewriting, before
+--        the 42501 privilege check). A successful UPDATE still FAILs.
+--   No other test or expectation changed.
 -- =====================================================================
 
 do $validation$
@@ -307,12 +317,16 @@ begin
   end;
 
   -- W-3  T15: the placeholder rule is exact and case-sensitive; real names are kept
-  update public.profiles set display_name = 'new artist' where user_id = b_user;         -- privileged, rolled back
-  select display_name into v_txt from public.public_profiles where id = b_user;
-  v_bool := v_txt is not distinct from 'new artist';
-  update public.profiles set display_name = ' New Artist Collective ' where user_id = b_user;
-  select display_name into v_txt from public.public_profiles where id = b_user;
-  results := results || case when v_bool and v_txt is not distinct from 'New Artist Collective'
+  -- Uses fixture N, whose profile row is never removed (T13 removes B's),
+  -- and requires each update to hit exactly one row.
+  update public.profiles set display_name = 'new artist' where user_id = n_user;         -- privileged, rolled back
+  get diagnostics v_n = row_count;
+  select display_name into v_txt from public.public_profiles where id = n_user;
+  v_bool := v_n = 1 and v_txt is not distinct from 'new artist';
+  update public.profiles set display_name = ' New Artist Collective ' where user_id = n_user;
+  get diagnostics v_n = row_count;
+  select display_name into v_txt from public.public_profiles where id = n_user;
+  results := results || case when v_bool and v_n = 1 and v_txt is not distinct from 'New Artist Collective'
                              then 'T15 PASS case variant and longer names are shown as chosen'
                              else 'T15 FAIL non-placeholder name suppressed' end;
 
@@ -370,9 +384,12 @@ begin
     update public.public_profiles set username = 'x' where id = a_user;
     results := results || 'T19 FAIL authenticated could update public_profiles'::text;
   exception when others then
-    get stacked diagnostics v_state = returned_sqlstate;
-    results := results || case when v_state = '42501'
-                               then 'T19 PASS public_profiles is not writable by authenticated (42501)'
+    -- the join view is not auto-updatable, so PostgreSQL refuses the write
+    -- while rewriting (55000) before the privilege check (42501) runs
+    get stacked diagnostics v_state = returned_sqlstate, v_msg = message_text;
+    results := results || case when (v_state = '55000' and v_msg like 'cannot update view%')
+                                 or (v_state = '42501' and v_msg like 'permission denied%')
+                               then 'T19 PASS public_profiles is not writable by authenticated (' || v_state || ')'
                                else 'T19 FAIL unexpected ' || v_state end;
   end;
   execute 'reset role';

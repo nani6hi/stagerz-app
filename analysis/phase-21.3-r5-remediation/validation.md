@@ -1,11 +1,16 @@
 # Phase 21.3 R-5 remediation (W-1 / W-3 / W-4) — Validation Plan
 
-**Status:** PREPARED — NOT APPLIED. Nothing in this document has been executed against a database except the read-only captures listed in §2 and the static review in §8.
+**Status:** **APPLIED AND VALIDATED on the test project, 2026-09-17. R-5 PASS.** The apply and validation record is in §10.
+- Sections §1–§9 are the plan as prepared before the apply; they are kept unchanged except for these header lines.
+- The complete evidence, including both behavioural runs, is in `apply-validation-record-2026-09-17.md`.
+
 **Target:** `stagerz-foundation-v2-test` / `kbnmkyvbwkuvcklywdhk` only.
 **Scripts:**
-- `migration.sql` — SHA-256 `5ca16d90ae685e0da450a11de1ef16e602f73b5a5bbc1b5b1bd74e639e47033a`.
+- `migration.sql` — SHA-256 `5ca16d90ae685e0da450a11de1ef16e602f73b5a5bbc1b5b1bd74e639e47033a`. Applied once as migration `20260917143322`; the stored statement is byte-identical.
 - `rollback.sql` — SHA-256 `7ac92c1d21930e072973bdfc94164f1c98acf85cdda6578bcfd26a5bf3629e95`; not executed.
-- `behavioral-validation.sql` — SHA-256 `3f1793eac24e0dff93343516d4fe88c182704eac02c849d45004522a957f09ca`; not run.
+- `behavioral-validation.sql`:
+  - **current (corrected)** — SHA-256 `9bccf38fbc7d6064a9ac9442b227c2549566e8d2825039a8b6ea33e6d2ba2f44` (28,510 bytes); run once (run 2), all tests PASS;
+  - **as committed in `4e687ee`** — SHA-256 `3f1793eac24e0dff93343516d4fe88c182704eac02c849d45004522a957f09ca`; run once (run 1), 38/40 PASS.
 
 These values supersede the `b0c0a49` hashes. This revision implements the final `'New Artist'` placeholder decision (option A; `phase-definition.md` §2).
 
@@ -309,3 +314,76 @@ R-5 remediation is **complete** only when all of the following hold:
 - the apply record is documented.
 
 Then Phase 21.3 can regenerate its snapshot and re-evaluate R-5, with W-1, W-3 and W-4 remediated and W-2 accepted as reviewed and non-material. Until then, **R-5 remains FAIL** and Phase 21.3 remains **INCOMPLETE**.
+
+## 10. Apply and validation record — 2026-09-17 (UTC)
+
+The full evidence is in `apply-validation-record-2026-09-17.md`. This section is the summary.
+
+### 10.1 Apply
+
+- **P-1 to P-6: PASS.** P-4 matched 31/31 values. The pre-apply fingerprint equalled all 12 `e5244a9` aggregates (no drift).
+- **Apply:** exactly one `apply_migration`, recorded as `20260917143322 phase21_3_r5_w1_w3_w4`.
+  - The stored statement is 36,271 bytes with no CR, and its SHA-256 equals `migration.sql` (`5ca16d90…033a`).
+  - Rollback array empty; no other migration was added.
+
+### 10.2 Catalog gates
+
+**C-1 to C-14: all PASS.**
+
+| Object set | After apply |
+|---|---|
+| Functions, columns, constraints, indexes, storage policies, triggers, function privileges, default ACLs | unchanged; equal to `e5244a9` |
+| Public policies | 25 → 21 |
+| View | new pretty-definition md5 `14f32be36ede54565cb69d3bd27a37fb`, SHA-256 `264abc115b84afc0640c35800f655afe04224ff280d31c140fd335f69dda45af` |
+| Table privilege rows | 393 → 388 |
+| Column privilege rows | 39 → 43 |
+
+- **Unchanged, verified before and after:** unrelated grants, policies and effective privileges; RLS; Realtime; buckets; Edge Functions (4, same versions and hashes); O-1/O-2/O-3; the S-state checks; and the row fingerprints of all 21 tables.
+- **Advisor:** security and performance identical to §2.5; the accepted `public_profiles` item is unchanged; nothing was resolved.
+
+### 10.3 Behavioural runs (both rollback-only)
+
+| Run | Template | Result |
+|---|---|---|
+| 1 | `3f1793ea…09ca` (as committed in `4e687ee`) | **38/40 PASS**, 2 FAIL (T15, T19); ended with the intended rolled-back error; zero residue |
+| 2 | `9bccf38f…2f44` (corrected) | **40/40 PASS**: FIXTURES, T1–T12, T13-1 to T13-12, T14–T28; ended with the intended rolled-back error; zero residue |
+
+**Why the template changed.** Both run-1 failures were test-template defects; no backend change was made between the runs.
+
+- **T15 — fixture ordering.**
+  - The T13 loop removes fixture B's `profiles` row (cases 11 and 12). T15 then updated B's profile, which affected **0 rows**, so the view correctly showed B's username and the case-sensitivity rule was never exercised.
+  - The corrected T15 uses fixture N, whose profile row is never removed. It requires each UPDATE to affect exactly one row, and checks the live view for `new artist` and `New Artist Collective`.
+  - Suppression of either name would still fail: fixture N has no username, so it would show `'STAGERZ Artist'` instead.
+- **T19 — denial SQLSTATE.**
+  - After W-3 the view is a join and not auto-updatable, so PostgreSQL rejects `UPDATE public_profiles` while rewriting, with **55000** (`cannot update view …`), before the **42501** privilege check.
+  - The corrected T19 accepts exactly `55000` with that message or `42501` with `permission denied…`.
+  - A successful UPDATE still records FAIL, and any other error is still FAIL.
+  - Run 2 returned `55000`.
+
+No other test, expectation or fixture changed; the PASS/FAIL label inventory is identical.
+
+**Run 2 key results.**
+- **T15 PASS:** case variant and longer names are shown as chosen.
+- **T19 PASS:** `public_profiles` is not writable by `authenticated` (55000).
+- T13-1 to T13-12 (decision cases A–G), T14 and T16 PASS.
+
+**Cleanup after run 2.**
+- The migration list, stored statement, W-1..W-4 catalog state and row fingerprints of all 21 tables are identical before and after the run. The row fingerprints also equal the post-apply capture.
+- Residue counts are all 0.
+
+### 10.4 Result
+
+All exit criteria in §9 hold, so **R-5: PASS.**
+
+| Finding | Status | Evidence |
+|---|---|---|
+| W-1 | remediated | C-2; T1–T3 |
+| W-2 | reviewed; intentional, non-material dormant width; unchanged | C-5; T5 |
+| W-3 | remediated (profile-centred model, option A) | C-4, C-8, C-9; T6–T16 |
+| W-4 | remediated | C-10; T21–T25 |
+
+**Phase 21.3 remains INCOMPLETE** until the following steps, each separately approved:
+- snapshot regeneration for epoch `20260917143322`;
+- fingerprint reconciliation;
+- recording R-5 in the Phase 21.3 documents;
+- context closure.

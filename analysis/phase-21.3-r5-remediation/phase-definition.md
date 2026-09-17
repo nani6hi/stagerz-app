@@ -3,14 +3,21 @@
 **Branch:** `phase-21.3-backend-contract-resume` (local only, not pushed)
 **Parent commit:** `e5244a9fb80987c9ac5b9c5de2882a1eb7901255`. This is the accurate pre-remediation Phase 21.3 snapshot and is not amended.
 **Target:** `stagerz-foundation-v2-test` / `kbnmkyvbwkuvcklywdhk` only. Never `stagerz-app` / `edxicnafggnnvcdvxemk`.
-**Status:** **PREPARED — NOT APPLIED.** No Supabase object, grant, policy, view, row, Storage object or Edge Function has been changed. `rollback.sql` has not been executed. `behavioral-validation.sql` has not been run.
+**Status:** **APPLIED AND VALIDATED on the test project (2026-09-17), R-5 PASS.**
+- `migration.sql` was applied once as migration `20260917143322 phase21_3_r5_w1_w3_w4`; the stored statement is byte-identical.
+- All catalog gates pass. The corrected behavioural template passed 40/40 on run 2; run 1 had 38/40 because of two template defects (`validation.md` §10).
+- `rollback.sql` has not been executed.
+- Not pushed and not merged.
+
+The rest of this document describes the design as prepared.
 **Validation level:** backend-only; no `index.html` change. The gates are in `validation.md`.
 
 | File | Role | SHA-256 (LF, as committed) |
 |---|---|---|
 | `migration.sql` | executable migration candidate, one guarded DO statement | `5ca16d90ae685e0da450a11de1ef16e602f73b5a5bbc1b5b1bd74e639e47033a` (36,271 bytes, md5 `e99dfd9e4a2dd987469d2ebcdf37571d`) |
 | `rollback.sql` | reviewed rollback, one guarded DO statement | `7ac92c1d21930e072973bdfc94164f1c98acf85cdda6578bcfd26a5bf3629e95` (26,291 bytes) |
-| `behavioral-validation.sql` | rollback-only post-apply test template with in-statement synthetic fixtures | `3f1793eac24e0dff93343516d4fe88c182704eac02c849d45004522a957f09ca` (27,413 bytes) |
+| `behavioral-validation.sql` | rollback-only post-apply test template with in-statement synthetic fixtures | `9bccf38fbc7d6064a9ac9442b227c2549566e8d2825039a8b6ea33e6d2ba2f44` (28,510 bytes). Corrected T15/T19 after run 1; the run-1 version was `3f1793ea…09ca`. |
+| `apply-validation-record-2026-09-17.md` | apply and validation evidence (both behavioural runs) | — |
 | `validation.md` | baseline, gates, behavioural matrix, static review | — |
 
 **History.**
