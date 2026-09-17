@@ -11,9 +11,9 @@
 --
 -- Project ref     : kbnmkyvbwkuvcklywdhk  (stagerz-foundation-v2-test)
 -- Server          : PostgreSQL 17.6
--- Migration epoch : 20260916215204 backend_integrity_o1_o2_o3  (42 migrations recorded)
--- Extracted (UTC) : 2026-09-16T23:11:10Z
--- Extraction      : P213-FUNCTIONS-v1, P213-GRANTS-v1 -- read-only catalog SELECTs
+-- Migration epoch : 20260917143322 phase21_3_r5_w1_w3_w4  (43 migrations recorded)
+-- Extracted (UTC) : 2026-09-17T19:33:24Z
+-- Extraction      : P213-FUNCTIONS-v2, P213-GRANTS-v2 -- read-only catalog SELECTs
 --                   (pg_catalog, information_schema, storage.buckets,
 --                   supabase_migrations metadata). No application row,
 --                   user, Storage object or secret data is included.

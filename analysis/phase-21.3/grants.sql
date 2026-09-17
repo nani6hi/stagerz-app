@@ -11,9 +11,9 @@
 --
 -- Project ref     : kbnmkyvbwkuvcklywdhk  (stagerz-foundation-v2-test)
 -- Server          : PostgreSQL 17.6
--- Migration epoch : 20260916215204 backend_integrity_o1_o2_o3  (42 migrations recorded)
--- Extracted (UTC) : 2026-09-16T23:12:40Z
--- Extraction      : P213-GRANTS-v1 -- read-only catalog SELECTs
+-- Migration epoch : 20260917143322 phase21_3_r5_w1_w3_w4  (43 migrations recorded)
+-- Extracted (UTC) : 2026-09-17T19:34:55Z
+-- Extraction      : P213-GRANTS-v2 -- read-only catalog SELECTs
 --                   (pg_catalog, information_schema, storage.buckets,
 --                   supabase_migrations metadata). No application row,
 --                   user, Storage object or secret data is included.
@@ -36,14 +36,14 @@
 -- ---------------------------------------------------------------------
 -- 1. Counts and aggregate fingerprints
 -- ---------------------------------------------------------------------
--- table_privilege_rows        : 393
--- public_table_privilege_rows : 313
--- column_privilege_rows       : 39
+-- table_privilege_rows        : 388
+-- public_table_privilege_rows : 308
+-- column_privilege_rows       : 43
 -- function_privilege_rows     : 93
 -- default_acl_entries         : 24
 -- default_acl_rows            : 256
--- aggregate sha256 table_privileges    : 7b785fb172a68861f02ccdce9a7f1e82ede7a4054f4c9a08cd9493a9a00b0155
--- aggregate sha256 column_privileges   : fc922a1f19525b146d72745f21437ae25193c50918963be72ffd1b5f12aadece
+-- aggregate sha256 table_privileges    : bf9b8893c060c6a054587b450c10588be130d64eb5103a48482cdb82bcdd0592
+-- aggregate sha256 column_privileges   : c8baf9937afe09857bbdb76c09fa106bcd98744ddd24c102e8c95b0fd5781e57
 -- aggregate sha256 function_privileges : a357d8063de20cc086bddb6a9977d0ed10fc9cd329e714193b1825e9dd16d520
 -- aggregate sha256 default_acls        : d231ccfaa157897c13e9b66980ba8298de51e36637caddc37473e643480f4def
 --   = sha256 of the newline-joined exploded rows, in the order printed below,
@@ -53,7 +53,7 @@
 -- 2. Remediated state, stated explicitly (O-1 / O-2 / O-3, S-1, S-6)
 -- ---------------------------------------------------------------------
 -- O-1 wanted_applications, authenticated: INSERT no; insertable columns: (none); SELECT yes
--- O-2 wanted_posts, authenticated: DELETE no; INSERT yes; UPDATE columns: title,description,role_needed,category,location,remote,compensation
+-- O-2 wanted_posts, authenticated: DELETE no; INSERT no; UPDATE columns: title,description,role_needed,category,location,remote,compensation
 -- O-3 collaboration_assets, authenticated: table-level INSERT no; insertable columns: collaboration_id,uploaded_by,storage_path,file_name,mime_type,file_size,asset_type,title,description
 -- S-1 public_profiles: anon SELECT yes INSERT no UPDATE no DELETE no; authenticated SELECT yes INSERT no UPDATE no DELETE no
 -- S-6 users: MAINTAIN anon no, authenticated no
@@ -125,8 +125,8 @@
 -- public.collaboration_participants | r    | postgres               | {postgres=arwdDxtm/postgres,service_role=arwdDxtm/postgres,authenticated=r/postgres}
 -- public.collaboration_tasks        | r    | postgres               | {postgres=arwdDxtm/postgres,service_role=arwdDxtm/postgres,authenticated=r/postgres}
 -- public.collaborations             | r    | postgres               | {postgres=arwdDxtm/postgres,service_role=arwdDxtm/postgres,authenticated=r/postgres}
--- public.follows                    | r    | postgres               | {postgres=arwdDxtm/postgres,service_role=arwdDxtm/postgres,anon=r/postgres,authenticated=ard/postgres}
--- public.likes                      | r    | postgres               | {postgres=arwdDxtm/postgres,service_role=arwdDxtm/postgres,anon=r/postgres,authenticated=ard/postgres}
+-- public.follows                    | r    | postgres               | {postgres=arwdDxtm/postgres,service_role=arwdDxtm/postgres,anon=r/postgres,authenticated=r/postgres}
+-- public.likes                      | r    | postgres               | {postgres=arwdDxtm/postgres,service_role=arwdDxtm/postgres,anon=r/postgres,authenticated=r/postgres}
 -- public.notifications              | r    | postgres               | {postgres=arwdDxtm/postgres,service_role=arwdDxtm/postgres,authenticated=r/postgres}
 -- public.pending_asset_deletions    | r    | postgres               | {postgres=arwdDxtm/postgres,service_role=arwdDxtm/postgres}
 -- public.pending_auth_deletions     | r    | postgres               | {postgres=arwdDxtm/postgres,service_role=arwdDxtm/postgres}
@@ -135,7 +135,7 @@
 -- public.user_auth_accounts         | r    | postgres               | {postgres=arwdDxtm/postgres,service_role=arwdDxtm/postgres,authenticated=r/postgres}
 -- public.users                      | r    | postgres               | {postgres=arwdDxtm/postgres,service_role=arwdDxtm/postgres}
 -- public.wanted_applications        | r    | postgres               | {postgres=arwdDxtm/postgres,service_role=arwdDxtm/postgres,authenticated=r/postgres}
--- public.wanted_posts               | r    | postgres               | {postgres=arwdDxtm/postgres,service_role=arwdDxtm/postgres,anon=r/postgres,authenticated=ar/postgres}
+-- public.wanted_posts               | r    | postgres               | {postgres=arwdDxtm/postgres,service_role=arwdDxtm/postgres,anon=r/postgres,authenticated=r/postgres}
 -- storage.buckets                   | r    | supabase_storage_admin | {supabase_storage_admin=a*r*w*d*D*x*t*m*/supabase_storage_admin,service_role=arwdDxtm/supabase_storage_admin,authenticated=arwdDxtm/supabase_storage_admin,anon=arwdDxtm/supabase_storage_admin,postgres=a*r*w*d*D*x*t*m*/supabase_storage_admin}
 -- storage.objects                   | r    | supabase_storage_admin | {supabase_storage_admin=a*r*w*d*D*x*t*m*/supabase_storage_admin,service_role=arwdDxtm/supabase_storage_admin,authenticated=arwdDxtm/supabase_storage_admin,anon=arwdDxtm/supabase_storage_admin,postgres=a*r*w*d*D*x*t*m*/supabase_storage_admin}
 
@@ -159,9 +159,9 @@
 -- public.collaborations             | anon          | .   | .   | .   | .   | .   | .   | .   | .
 -- public.collaborations             | authenticated | Y   | .   | .   | .   | .   | .   | .   | .
 -- public.follows                    | anon          | Y   | .   | .   | .   | .   | .   | .   | .
--- public.follows                    | authenticated | Y   | Y   | .   | Y   | .   | .   | .   | .
+-- public.follows                    | authenticated | Y   | .   | .   | .   | .   | .   | .   | .
 -- public.likes                      | anon          | Y   | .   | .   | .   | .   | .   | .   | .
--- public.likes                      | authenticated | Y   | Y   | .   | Y   | .   | .   | .   | .
+-- public.likes                      | authenticated | Y   | .   | .   | .   | .   | .   | .   | .
 -- public.notifications              | anon          | .   | .   | .   | .   | .   | .   | .   | .
 -- public.notifications              | authenticated | Y   | .   | .   | .   | .   | .   | .   | .
 -- public.pending_asset_deletions    | anon          | .   | .   | .   | .   | .   | .   | .   | .
@@ -179,7 +179,7 @@
 -- public.wanted_applications        | anon          | .   | .   | .   | .   | .   | .   | .   | .
 -- public.wanted_applications        | authenticated | Y   | .   | .   | .   | .   | .   | .   | .
 -- public.wanted_posts               | anon          | Y   | .   | .   | .   | .   | .   | .   | .
--- public.wanted_posts               | authenticated | Y   | Y   | .   | .   | .   | .   | .   | .
+-- public.wanted_posts               | authenticated | Y   | .   | .   | .   | .   | .   | .   | .
 -- storage.buckets                   | anon          | Y   | Y   | Y   | Y   | Y   | Y   | Y   | Y
 -- storage.buckets                   | authenticated | Y   | Y   | Y   | Y   | Y   | Y   | Y   | Y
 -- storage.objects                   | anon          | Y   | Y   | Y   | Y   | Y   | Y   | Y   | Y
@@ -190,7 +190,8 @@
 --   public.notifications authenticated UPDATE(read)
 --   public.profiles authenticated UPDATE(display_name,role,category,skills,looking_for,location,country_flag,available,bio)
 --   public.users authenticated SELECT(id,username,first_name,last_name,photo_url,bio,location)
---   public.users authenticated UPDATE(username,first_name,last_name,photo_url,bio,location)
+--   public.users authenticated UPDATE(username)
+--   public.wanted_posts authenticated INSERT(user_id,title,description,role_needed,category,location,remote,compensation,status)
 --   public.wanted_posts authenticated UPDATE(title,description,role_needed,category,location,remote,compensation)
 
 -- ---------------------------------------------------------------------
@@ -316,8 +317,6 @@
 -- public.collaborations | service_role | TRUNCATE | postgres | false
 -- public.collaborations | service_role | UPDATE | postgres | false
 -- public.follows | anon | SELECT | postgres | false
--- public.follows | authenticated | DELETE | postgres | false
--- public.follows | authenticated | INSERT | postgres | false
 -- public.follows | authenticated | SELECT | postgres | false
 -- public.follows | postgres | DELETE | postgres | false
 -- public.follows | postgres | INSERT | postgres | false
@@ -336,8 +335,6 @@
 -- public.follows | service_role | TRUNCATE | postgres | false
 -- public.follows | service_role | UPDATE | postgres | false
 -- public.likes | anon | SELECT | postgres | false
--- public.likes | authenticated | DELETE | postgres | false
--- public.likes | authenticated | INSERT | postgres | false
 -- public.likes | authenticated | SELECT | postgres | false
 -- public.likes | postgres | DELETE | postgres | false
 -- public.likes | postgres | INSERT | postgres | false
@@ -491,7 +488,6 @@
 -- public.wanted_applications | service_role | TRUNCATE | postgres | false
 -- public.wanted_applications | service_role | UPDATE | postgres | false
 -- public.wanted_posts | anon | SELECT | postgres | false
--- public.wanted_posts | authenticated | INSERT | postgres | false
 -- public.wanted_posts | authenticated | SELECT | postgres | false
 -- public.wanted_posts | postgres | DELETE | postgres | false
 -- public.wanted_posts | postgres | INSERT | postgres | false
@@ -619,12 +615,16 @@
 -- public.users.location | authenticated | SELECT | postgres | false
 -- public.users.photo_url | authenticated | SELECT | postgres | false
 -- public.users.username | authenticated | SELECT | postgres | false
--- public.users.bio | authenticated | UPDATE | postgres | false
--- public.users.first_name | authenticated | UPDATE | postgres | false
--- public.users.last_name | authenticated | UPDATE | postgres | false
--- public.users.location | authenticated | UPDATE | postgres | false
--- public.users.photo_url | authenticated | UPDATE | postgres | false
 -- public.users.username | authenticated | UPDATE | postgres | false
+-- public.wanted_posts.category | authenticated | INSERT | postgres | false
+-- public.wanted_posts.compensation | authenticated | INSERT | postgres | false
+-- public.wanted_posts.description | authenticated | INSERT | postgres | false
+-- public.wanted_posts.location | authenticated | INSERT | postgres | false
+-- public.wanted_posts.remote | authenticated | INSERT | postgres | false
+-- public.wanted_posts.role_needed | authenticated | INSERT | postgres | false
+-- public.wanted_posts.status | authenticated | INSERT | postgres | false
+-- public.wanted_posts.title | authenticated | INSERT | postgres | false
+-- public.wanted_posts.user_id | authenticated | INSERT | postgres | false
 -- public.wanted_posts.category | authenticated | UPDATE | postgres | false
 -- public.wanted_posts.compensation | authenticated | UPDATE | postgres | false
 -- public.wanted_posts.description | authenticated | UPDATE | postgres | false

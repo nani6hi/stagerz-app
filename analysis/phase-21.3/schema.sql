@@ -11,9 +11,9 @@
 --
 -- Project ref     : kbnmkyvbwkuvcklywdhk  (stagerz-foundation-v2-test)
 -- Server          : PostgreSQL 17.6
--- Migration epoch : 20260916215204 backend_integrity_o1_o2_o3  (42 migrations recorded)
--- Extracted (UTC) : 2026-09-16T23:12:11Z
--- Extraction      : P213-SCHEMA-v1, P213-EPOCH-v1 -- read-only catalog SELECTs
+-- Migration epoch : 20260917143322 phase21_3_r5_w1_w3_w4  (43 migrations recorded)
+-- Extracted (UTC) : 2026-09-17T19:34:05Z
+-- Extraction      : P213-SCHEMA-v2, P213-EPOCH-v2 -- read-only catalog SELECTs
 --                   (pg_catalog, information_schema, storage.buckets,
 --                   supabase_migrations metadata). No application row,
 --                   user, Storage object or secret data is included.
@@ -884,28 +884,32 @@
 --
 -- ===== VIEW public.public_profiles =====
 --   owner: postgres   reloptions: (none) -- no security_invoker, no security_barrier
---   depends on: users
---   check option: NONE   updatable: YES   insertable: YES   trigger-updatable/deletable/insertable: NO/NO/NO
+--   depends on: profiles, users
+--   check option: NONE   updatable: NO   insertable: NO   trigger-updatable/deletable/insertable: NO/NO/NO
 --   columns: id uuid, username text, photo_url text, is_system boolean, created_at timestamp with time zone, is_deleted boolean, display_name text
---   pretty definition md5: d86256ac1ad53a250c96c315ed69a52e  (the Phase 21.4 baseline value)
+--   pretty definition md5: 14f32be36ede54565cb69d3bd27a37fb  (current epoch; the Phase 21.4 / pre-R-5 baseline was d86256ac1ad53a250c96c315ed69a52e)
 --   Runs with the view owner's privileges (PostgreSQL default without security_invoker).
 --   Security Advisor reports this as security_definer_view (ERROR). That is the ACCEPTED
 --   Phase 21.4 design: a curated read-only projection of public.users. Privileges on the
 --   view are SELECT only for anon and authenticated (grants.sql). Not remediated, not suppressed.
 -- >>> BEGIN view public.public_profiles
--- >>> sha256 f0651e4d89598ebcb4876a1267fefe5f8ca61c66f10ba1b46fb08aa45bf18706
--- |  SELECT id,
--- |     username,
--- |     photo_url,
--- |     is_system,
--- |     created_at,
--- |     anonymized_at IS NOT NULL AS is_deleted,
+-- >>> sha256 264abc115b84afc0640c35800f655afe04224ff280d31c140fd335f69dda45af
+-- |  SELECT u.id,
+-- |     u.username,
+-- |     u.photo_url,
+-- |     u.is_system,
+-- |     u.created_at,
+-- |     u.anonymized_at IS NOT NULL AS is_deleted,
 -- |         CASE
--- |             WHEN anonymized_at IS NOT NULL THEN 'Deleted User'::text
--- |             WHEN first_name IS NOT NULL OR last_name IS NOT NULL THEN TRIM(BOTH FROM (COALESCE(first_name, ''::text) || ' '::text) || COALESCE(last_name, ''::text))
--- |             ELSE COALESCE(username, 'STAGERZ Artist'::text)
+-- |             WHEN u.anonymized_at IS NOT NULL THEN 'Deleted User'::text
+-- |             WHEN p.name <> ''::text AND p.name <> 'New Artist'::text THEN p.name
+-- |             WHEN regexp_replace(u.username, '^[[:space:]]+|[[:space:]]+$'::text, ''::text, 'g'::text) <> ''::text THEN u.username
+-- |             ELSE 'STAGERZ Artist'::text
 -- |         END AS display_name
--- |    FROM users;
+-- |    FROM users u
+-- |      LEFT JOIN ( SELECT pr.user_id,
+-- |             regexp_replace(pr.display_name, '^[[:space:]]+|[[:space:]]+$'::text, ''::text, 'g'::text) AS name
+-- |            FROM profiles pr) p ON p.user_id = u.id;
 -- <<< END view public.public_profiles
 
 -- ---------------------------------------------------------------------
@@ -966,7 +970,7 @@
 -- ---------------------------------------------------------------------
 -- 8. Migration history (supabase_migrations.schema_migrations; names only)
 -- ---------------------------------------------------------------------
--- 42 migrations. Phases 21.4-21.7 were applied with execute_sql and are NOT in
+-- 43 migrations. Phases 21.4-21.7 were applied with execute_sql and are NOT in
 -- this list (see analysis/phase-21.4 .. 21.7/migration.sql). The O-1/O-2/O-3
 -- remediation is the last entry (analysis/backend-integrity-remediation/).
 --   20260712100630 web_identity_forward_and_rls
@@ -1011,3 +1015,4 @@
 --   20260721113121 phase_18_2_message_creation_rpc
 --   20260721122606 phase_19_1_enable_realtime_publication
 --   20260916215204 backend_integrity_o1_o2_o3
+--   20260917143322 phase21_3_r5_w1_w3_w4

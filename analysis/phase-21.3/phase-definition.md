@@ -147,3 +147,31 @@ All of those are REMEDIATED.
 - the unbounded-upload product decision;
 - Auth settings that are not observable read-only (`backend-contract.md` §13.6).
 
+
+---
+
+## 10. Post-R-5 regeneration — 2026-09-17
+
+**Status: Phase 21.3 is READY FOR DOCUMENTATION / CONTEXT CLOSURE.** All eleven reconciliation gates and the six phase-specific safety gates pass, and **R-5 now PASSES**.
+
+**What happened between §9 and here.**
+1. §9 closed with R-5 **FAIL** and four recorded width findings (W-1..W-4) awaiting an owner decision.
+2. The product owner decided: narrow W-1, accept W-2, adopt a profile-centred model for W-3, and remove the unused write surface for W-4. The final display-name rule (option A) treats `'New Artist'` as a technical signup placeholder that is never shown.
+3. The remediation was prepared, reviewed, applied once to the test project and validated: `analysis/phase-21.3-r5-remediation/` (migration `20260917143322 phase21_3_r5_w1_w3_w4`).
+   - Catalog gates C-1..C-14 PASS.
+   - Behavioural run 1 was 38/40 because of two defects in the test template; the corrected template then passed 40/40. Both runs were rollback-only and left zero residue.
+4. This step regenerated the six snapshots from the live catalog at the new epoch and re-ran every gate (`validation.md` §18).
+
+**Snapshot epoch now recorded in the six files:** `20260917143322 phase21_3_r5_w1_w3_w4`, 43 migrations, PostgreSQL 17.6.
+
+**Contract deltas versus the `e5244a9` snapshot** — only these, all from R-5:
+- **W-1:** `wanted_posts` client INSERT is column-level on the nine columns the frontend sends; `id` and `created_at` are no longer client-insertable.
+- **W-2:** unchanged (`profiles` grants and policies byte-identical).
+- **W-3:** `users` client UPDATE is `username` only; `public_profiles` derives `display_name` from `profiles.display_name` with the placeholder, username and `'STAGERZ Artist'` fallbacks, and keeps its seven columns, owner, ACL and accepted Phase 21.4 security behaviour.
+- **W-4:** `follows` and `likes` have no client INSERT or DELETE, and their four write policies are gone; the tables, their rows and read access remain.
+
+Functions, triggers, constraints, indexes, columns, function privileges, default ACLs, Storage and Realtime are byte-identical to the previous epoch.
+
+**Remaining work (separate approvals):**
+- update `.apos/PROJECT_CONTEXT.md` (deliberately untouched here);
+- then decide on push, PR and merge. A merge to `main` is a production release.

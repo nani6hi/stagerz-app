@@ -756,3 +756,48 @@ The details are in `grants.sql`.
 - **History:** 42 rows in `supabase_migrations.schema_migrations`, `20260712100630` … `20260916215204`; the names are listed in `schema.sql` §8.
 - **Not in the history:** Phases 21.4–21.7 were applied with `execute_sql` and have no rows. Their changes are present in the captured state and recorded in `analysis/phase-21.4` … `21.7/migration.sql`.
 - **Consequence:** replaying the migration history alone would **not** reproduce the current backend. The snapshot files here are the reviewable description of what exists; they are not a migration chain.
+
+---
+
+## 14. CURRENT server-side contract — epoch `20260917143322` (captured 2026-09-17, post R-5)
+
+§13 above records the **pre-remediation** epoch `20260916215204` and is preserved as written. This section records only what the approved R-5 remediation changed. Everything in §13 that is not listed here still holds, and the six `.sql` snapshots in this directory now describe this epoch.
+
+**Epoch.** 43 migrations; the new one is `20260917143322 phase21_3_r5_w1_w3_w4`, whose stored statement is byte-identical to the reviewed `analysis/phase-21.3-r5-remediation/migration.sql` (SHA-256 `5ca16d90…033a`). The first 42 rows are unchanged. Phases 21.4–21.7 still have no migration rows, so replaying the history alone still would not reproduce the backend.
+
+### 14.1 Client write surface (the R-5 subject)
+
+| Object | Before (§13.4) | Now |
+|---|---|---|
+| `wanted_posts` | `authenticated` held table-level INSERT, so a client could set `id` and `created_at` | table-level INSERT revoked; column INSERT on exactly `user_id, title, description, role_needed, category, location, remote, compensation, status`. `id` and `created_at` keep their defaults and are not client-insertable. UPDATE columns, SELECT, the `status` CHECK and all three policies are unchanged. |
+| `profiles` | 9 column UPDATE grants | unchanged — reviewed as intentional, non-material dormant width (W-2) |
+| `users` | `authenticated` could UPDATE `username, first_name, last_name, photo_url, bio, location` | UPDATE `username` only. The other five columns keep their data and their column SELECT grants, so `fetchMyProfile` still works, but they are no longer client-writable. |
+| `follows`, `likes` | `authenticated` held INSERT and DELETE, with four matching policies | INSERT and DELETE revoked and the four policies dropped. Tables, rows, `anon`/`authenticated` SELECT and the two read policies remain. Public policy count 25 → 21. |
+
+No other grant or policy changed; table privilege rows went 393 → 388 and column privilege rows 39 → 43.
+
+### 14.2 `public_profiles` — profile-centred projection
+
+Same seven columns, in the same order, with the same types: `id uuid, username text, photo_url text, is_system boolean, created_at timestamptz, is_deleted boolean, display_name text`.
+
+`display_name` is now resolved as, first match wins:
+1. anonymized account → `'Deleted User'` (unchanged semantics);
+2. `profiles.display_name`, trimmed of all leading and trailing whitespace, when it is non-empty and **not exactly** the technical signup placeholder `'New Artist'` (case-sensitive) → that trimmed value;
+3. `username`, when it contains a non-whitespace character;
+4. otherwise `'STAGERZ Artist'`.
+
+`users.first_name` and `users.last_name` no longer feed the view.
+
+- **Why the placeholder is special-cased:** `handle_new_auth_user` is its only producer (`coalesce(raw_user_meta_data->>'display_name', 'New Artist')`), the frontend's OTP signup sends no metadata, and the data contains no case or whitespace variant. Product decision: option A.
+- **Security properties are unchanged:** the view still has owner `postgres`, `reloptions` NULL (so it keeps running with its owner's rights — the accepted Phase 21.4 `security_definer_view` Advisor item), the same ACL, no column ACLs, and SELECT-only access for `anon` and `authenticated`.
+- **It now depends on `profiles` and `users`** and is therefore no longer auto-updatable (`is_updatable = NO`). Nothing writes through it.
+- **Definition fingerprints:** pretty-definition md5 `14f32be36ede54565cb69d3bd27a37fb`, SHA-256 `264abc115b84afc0640c35800f655afe04224ff280d31c140fd335f69dda45af`. The pre-R-5 baseline was md5 `d86256ac1ad53a250c96c315ed69a52e`.
+- **Data effect (counts only):** of 32 users, 3 public display names changed, each moving from the legacy first/last name to the chosen profile name; 0 rows show `'New Artist'`; the 24 non-onboarded users still show `'STAGERZ Artist'`. No row was modified.
+
+This supersedes the §13.6 statement that the view "depends only on `users` and never reads `profiles.display_name`", which described the pre-R-5 design.
+
+### 14.3 Unchanged at this epoch
+
+Functions (34, aggregate `1abd299b…3d43`), triggers, constraints, indexes, columns, function EXECUTE privileges, default ACLs, RLS state, Storage (bucket `collaboration-assets` private, two participant policies), Realtime (the five collaboration tables), role settings and extensions are all byte-identical to §13. The Security Advisor baseline is unchanged, including the accepted `public_profiles` item.
+
+Evidence: `validation.md` §18 and `analysis/phase-21.3-r5-remediation/` (apply record, catalog gates C-1..C-14, behavioural runs 1 and 2).
