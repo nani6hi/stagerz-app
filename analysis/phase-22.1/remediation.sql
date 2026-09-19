@@ -1,7 +1,20 @@
 -- =====================================================================
 -- STAGERZ - Phase 22.1 - Legacy Supabase containment (LG-1 .. LG-4)
 -- =====================================================================
---  ####  DRAFT - NOT APPLIED - DO NOT EXECUTE WITHOUT OWNER APPROVAL  ####
+--  ####  EXECUTABLE REMEDIATION - APPLIED 2026-09-19 - DO NOT RE-EXECUTE  ####
+--
+-- APPLIED to edxicnafggnnvcdvxemk on 2026-09-19, between 13:14:49 and
+-- 13:17:16 UTC, as ONE execute_sql call containing this file verbatim as
+-- committed in b31bd26 (SHA-256 b4bb0484593d8094cb5239188f011815f484de6de55467b2a803af18bd188f37).
+-- Result: committed; pre-flight and post-flight passed. No migration id
+-- (migration tool not used). Validation: Part A as expected, Part B
+-- PASS=66 FAIL=0. See apply-validation-record-2026-09-19.md.
+-- This annotated copy differs from the executed text in these header
+-- comment lines only; the DO block is byte-identical. Re-running it would
+-- stop at the pre-flight ("containment policy already present").
+--
+-- (Original header line, prepared text: "DRAFT - NOT APPLIED - DO NOT
+--  EXECUTE WITHOUT OWNER APPROVAL".)
 --
 -- Project ref : edxicnafggnnvcdvxemk  ("stagerz-app", legacy Telegram-era)
 --               NEVER run against kbnmkyvbwkuvcklywdhk.

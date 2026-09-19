@@ -3,7 +3,11 @@
 **Branch:** `phase-22.1-legacy-supabase-containment`, created from `main` @ `eb3c64074f17f0713a9da4e8db47e233b4ae9d23` (the PR #23 merge of Phase 22.0; `main` = `origin/main`).
 **Assigned:** 2026-09-19 by the product owner, as the follow-up recommended by Phase 22.0 (`analysis/phase-22.0/investigation-report.md` §8.5).
 **Target:** Supabase project **`edxicnafggnnvcdvxemk`** ("stagerz-app") **only**.
-**Status:** **PLAN APPROVED — PRE-CHANGE CHECKPOINT; no remediation has been applied.** On 2026-09-19 the owner approved the core remediation R-1 … R-4 and the pre-change checkpoint (commit and push of this plan). The owner decisions are recorded in §8. `remediation.sql`, `validation.sql` and `rollback.sql` remain **unapplied drafts**. Applying them is the next step and needs the owner's go-ahead for the apply itself.
+**Status:** **COMPLETE / PASS (2026-09-19).** PASS means the approved legacy containment objective was achieved. It does **not** mean that `edxicnafggnnvcdvxemk` has been deleted, paused, archived or migrated; the later disposition decision remains separate.
+- The pre-change checkpoint was committed and pushed (`b31bd26`).
+- R-1 … R-4 were applied as one atomic execution (2026-09-19, 13:14:49–13:17:16 UTC). Validation Part A matched all expected values; Part B returned **PASS=66 / FAIL=0**.
+- **N-1** (legacy JWT-based API keys disabled) and **N-2** (new sign-ups OFF; anonymous sign-ins OFF) were performed by the owner in the Supabase dashboard. N-1 is tool-verified (legacy `anon` `disabled: true`); N-2 is owner/dashboard-confirmed. The final read-only verification passed (`apply-validation-record-2026-09-19.md` §8.3).
+- **Final status:** LG-1 REMEDIATED / CONTAINED IN DEPTH; LG-2 REMEDIATED for the scoped `postgres` TABLE/SEQUENCE defaults (platform-owned `supabase_admin` defaults documented as residual); LG-3 and LG-4 REMEDIATED; LG-5 ACCEPTED / DEFERRED; O-1 SKIPPED (optional hardening). Tester data remains stored; no current dependency exists; future Telegram integration remains a separate product decision and is not prohibited. `rollback.sql` was never run.
 
 ---
 
@@ -87,6 +91,8 @@ Phase 22.1 is complete when **all** of these hold:
 8. No secret or personal data was recorded, and no out-of-scope system was mutated.
 9. `PROJECT_CONTEXT.md` records the outcome, and the later disposition decision (keep / pause / export+delete) is left open for the owner.
 
+**Outcome (2026-09-19): criteria 1–9 all MET.** Evidence: `apply-validation-record-2026-09-19.md` §1–§4 and §8.3 (criteria 3–6), §9 (criterion 7), the privacy scans (criterion 8) and `PROJECT_CONTEXT.md` (criterion 9). One nuance on criterion 5: N-2 is owner/dashboard-confirmed rather than tool-verified, and the Auth counts are unchanged.
+
 ## 7. Non-goals
 
 - No schema destruction: no table, column or legacy policy is dropped.
@@ -100,10 +106,11 @@ Phase 22.1 is complete when **all** of these hold:
 
 | # | Item | Decision | Status |
 |---|---|---|---|
-| 1 | **R-1 … R-4** (core database containment, `remediation.sql`) | **APPROVED** | Not yet applied |
+| 1 | **R-1 … R-4** (core database containment, `remediation.sql`) | **APPROVED** | **APPLIED** 2026-09-19 and validated (66/0) |
 | 2 | **O-1** (function default privileges) | **SKIPPED for now.** It is broader than the concrete findings and not needed to contain LG-1 … LG-4 | Optional residual hardening item; **not** a Phase 22.1 blocker |
-| 3 | **N-1** (disable the legacy JWT API keys) | **APPROVED IN PRINCIPLE**, as defence in depth after the database lockdown | **NOT YET EXECUTED**; not part of this checkpoint |
-| 4 | **N-2** (disable new sign-ups) | **APPROVED IN PRINCIPLE**. Confirm the current setting first, if possible | **NOT YET EXECUTED**; the current value is still UNKNOWN (not readable with the available read-only tooling) |
+| 3 | **N-1** (disable the legacy JWT API keys) | **APPROVED IN PRINCIPLE**, then **authorized** (2026-09-19) | **PERFORMED** by the owner in the dashboard; legacy `anon` key `disabled: true` (tool-verified) |
+| 4 | **N-2** (disable new sign-ups) | **APPROVED IN PRINCIPLE**, then **authorized** (2026-09-19) | **PERFORMED** by the owner: sign-ups OFF, anonymous sign-ins OFF (owner/dashboard-confirmed; the prior value was not captured) |
 | 5 | **LG-5** (leaked-password protection) | **ACCEPTED / DEFERRED — accepted risk, not remediated.** Reasons: the project is on Free and the feature needs a higher plan; the project is dormant; only tester accounts exist; containment plus N-1/N-2 materially reduce its relevance | Closed for Phase 22.1 as accepted risk |
 | 6 | Optional HTTP test with the historical key (V-13b) | **NOT APPROVED.** The historical credential must not be exercised. Validation uses catalog, role and database checks, and rollback-only probes | Removed from the validation plan |
-| 7 | Pre-change checkpoint: commit and push this plan before any Supabase change | **APPROVED** | This commit |
+| 7 | Pre-change checkpoint: commit and push this plan before any Supabase change | **APPROVED** | Done: `b31bd26`, pushed |
+| 8 | Apply R-1 … R-4, then validation Parts A and B | **APPROVED** (separate authorization, 2026-09-19) | **APPLIED and VALIDATED** (66/0). See `apply-validation-record-2026-09-19.md` |

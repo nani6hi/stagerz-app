@@ -1,6 +1,6 @@
 # Phase 22.1 — Remediation Plan (legacy project `edxicnafggnnvcdvxemk`)
 
-**Status:** **PLAN APPROVED (2026-09-19) — PRE-CHANGE CHECKPOINT — NOT APPLIED.** The owner approved R-1 … R-4, skipped O-1, approved N-1 and N-2 in principle (not yet executed), accepted/deferred LG-5, and did not approve the historical-key HTTP test (§11). Every SQL file in this directory is still an unapplied draft. The only queries run against the project were read-only catalog, aggregate and log-aggregate queries (§2.2).
+**Status:** **COMPLETE / PASS (2026-09-19).** R-1 … R-4 were applied and validated (Part B **PASS=66 / FAIL=0**). N-1 (legacy JWT-based API keys disabled; tool-verified) and N-2 (sign-ups OFF, anonymous sign-ins OFF; owner/dashboard-confirmed) were performed by the owner. The final verification passed. O-1 was skipped; LG-5 is accepted/deferred; historical-key HTTP testing was never performed; `rollback.sql` was never run. Evidence: `apply-validation-record-2026-09-19.md`. **Caveat:** PASS does not mean the legacy project was deleted, paused, archived or migrated; the disposition decision remains separate. The sections below are the plan as approved.
 **Prepared:** 2026-09-19, on branch `phase-22.1-legacy-supabase-containment` from `main` @ `eb3c640`.
 
 | File | Role |
@@ -20,7 +20,7 @@ The exposure has three layers:
 
 **The fix is at layer 2 and layer 3, in the database.** After R-1 … R-4, no client credential — the historical anon JWT, the unpublished `sb_publishable_` key, or a signed-in user's JWT — can read or write any legacy table. The published key then gives nothing.
 
-- Disabling the legacy key (N-1) is defence in depth that mainly closes the Auth-endpoint surface. It is **approved in principle, not yet executed** (§6).
+- Disabling the legacy key (N-1) is defence in depth that mainly closes the Auth-endpoint surface. It was approved in principle, then **performed by the owner on 2026-09-19** (§6; `apply-validation-record-2026-09-19.md` §8).
 - Leaked-password protection (LG-5) **cannot be enabled on the current Free plan**. The owner has **accepted it as a deferred risk** (§6).
 - O-1 (function default privileges) is **skipped for now** and recorded as optional residual hardening (§4.2).
 - No data, user, table, column or legacy policy is removed.
@@ -354,10 +354,19 @@ Expected, given the owner decisions (O-1 skipped; N-1 and N-2 approved in princi
 
 | # | Item | Decision | Execution status |
 |---|---|---|---|
-| 1 | Core R-1 … R-4 | **APPROVED** | Not yet applied. The apply is the next step |
+| 1 | Core R-1 … R-4 | **APPROVED** | **APPLIED 2026-09-19 and validated (66/0)**; see `apply-validation-record-2026-09-19.md` |
 | 2 | O-1, function default privileges | **SKIPPED for now**: broader than the findings and not needed for LG-1 … LG-4 | Optional residual hardening item (RR-4); not a blocker |
-| 3 | N-1, disable the legacy API keys | **APPROVED IN PRINCIPLE** (defence in depth after the database lockdown) | **NOT YET EXECUTED** |
-| 4 | N-2, disable sign-ups | **APPROVED IN PRINCIPLE**; confirm the current setting first, if possible | **NOT YET EXECUTED**; current value UNKNOWN |
+| 3 | N-1, disable the legacy API keys | **APPROVED IN PRINCIPLE**, then authorized | **PERFORMED** (owner, dashboard); tool-verified `disabled: true` |
+| 4 | N-2, disable sign-ups | **APPROVED IN PRINCIPLE**, then authorized | **PERFORMED** (owner, dashboard): sign-ups OFF, anonymous OFF; owner-confirmed |
 | 5 | LG-5 | **ACCEPTED / DEFERRED — accepted risk, not remediated** | — |
 | 6 | V-13b HTTP probe with the historical key | **NOT APPROVED**; the historical credential is not to be exercised | Removed from validation |
-| 7 | Pre-change checkpoint (commit and push this plan) | **APPROVED** | This commit |
+| 7 | Pre-change checkpoint (commit and push this plan) | **APPROVED** | Done: `b31bd26`, pushed |
+
+**Observed result (2026-09-19), replacing the "expected" wording of §10:**
+- **LG-1:** contained at the database-authorization layer, pending N-1.
+- **LG-2:** remediated for the `postgres` TABLE/SEQUENCE defaults (R-3). Platform-owned `supabase_admin` defaults and the `postgres` FUNCTIONS defaults are residual.
+- **LG-3:** remediated.
+- **LG-4:** remediated.
+- **LG-5:** accepted/deferred.
+
+Details: `apply-validation-record-2026-09-19.md` §6.

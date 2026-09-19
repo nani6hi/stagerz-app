@@ -4,6 +4,8 @@
 --  ####  DRAFT - NEVER EXECUTED - REQUIRES SEPARATE OWNER APPROVAL  ####
 --
 -- Project ref : edxicnafggnnvcdvxemk ONLY.
+-- Status      : R-1 .. R-4 were applied 2026-09-19 and validated (66/0).
+--               This rollback has NOT been run; no regression was observed.
 --
 -- WARNING: a full rollback RE-OPENS LG-1, LG-2, LG-3 and LG-4 - the legacy
 -- tester data becomes publicly readable and writable again through the

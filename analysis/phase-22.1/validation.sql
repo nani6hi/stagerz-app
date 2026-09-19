@@ -4,8 +4,11 @@
 --  ####  DRAFT - NOT EXECUTED - RUN ONLY AS PART OF THE APPROVED APPLY  ####
 --
 -- Project ref : edxicnafggnnvcdvxemk ONLY.
--- Run so far : Part A ONCE, read-only, 2026-09-19, as the pre-change
---              baseline (remediation-plan.md section 7.3). Part B NEVER.
+-- Run so far : Part A, read-only: pre-change baseline (remediation-plan.md
+--              section 7.3) and post-change 2026-09-19 13:17:16 UTC (all
+--              values as bracketed). Part B: ONCE, post-change, 2026-09-19
+--              13:17:51 UTC -> "PASS=66 FAIL=0 (expected 66/0)", rolled
+--              back (confirmed). See apply-validation-record-2026-09-19.md.
 -- Keys       : no check here uses any client key; the historical-key HTTP
 --              probe (V-13b) was NOT approved by the owner.
 -- Privacy    : every check returns booleans, counts, SQLSTATEs or md5
