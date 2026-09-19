@@ -1,0 +1,34 @@
+{
+  "_comment": "STAGERZ-FINGERPRINT-v1 of the production backend of record kbnmkyvbwkuvcklywdhk, captured read-only 2026-09-19 (Phase 22.3, DRAFT). A rebuilt environment passes the reproducibility gate when every key under 'exact' matches. 'environment' values are informational only and are expected to differ.",
+  "marker": "STAGERZ-FINGERPRINT-v1",
+  "captured_from": "kbnmkyvbwkuvcklywdhk",
+  "captured_at": "2026-09-19",
+  "migration_epoch": { "rows": 43, "latest": "20260917143322" },
+  "exact": {
+    "relations": "2278f76df8f503c5a2a6642956feffa8",
+    "relation_count": 18,
+    "columns": "fcd704c20a0297d76c014aa848838645",
+    "column_count": 141,
+    "constraints": "ab65275e52cbe811f33732d10fc2cb41",
+    "indexes": "55bc8b0a291bf22614213ffd6fcea534",
+    "views": "5cae11e32a9f03ea2ef399a53cf90782",
+    "functions": "c501ddb300762848cb0340bd33f7d6a9",
+    "function_count": 34,
+    "triggers": "1e27344d5b09eaf29da03972c2103b28",
+    "trigger_count": 4,
+    "policies": "4d9679798c6a3e3e83b14a5892a55b39",
+    "policy_count": 23,
+    "relation_grants": "409b6162c47dc3caeb5fd99e3d58f280",
+    "column_grants": "32a364a97747c33874fd1770a656ebe6",
+    "function_grants": "7cdd6702ad38e6d8ba3bbdd8d2893816",
+    "default_privileges": "1abceade114422b1e791294209e9e79c",
+    "realtime_members": "collaboration_activity,collaboration_assets,collaboration_credits,collaboration_messages,collaboration_tasks",
+    "buckets": "collaboration-assets:false:-:-",
+    "app_extensions": "pgcrypto@extensions,uuid-ossp@extensions"
+  },
+  "environment_reference_not_compared": {
+    "database_version": "17.6",
+    "extension_versions": "pg_stat_statements 1.11, pgcrypto 1.3, plpgsql 1.0, supabase_vault 0.3.1, uuid-ossp 1.1",
+    "migration_history_present": true
+  }
+}
