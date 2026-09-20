@@ -73,7 +73,7 @@ not close them. They are the proposed scope of **Phase 22.5**.
 
 | Function | Runtime evidence |
 |---|---|
-| `process-pending-asset-deletions` | **PROVEN** — manual run 2026-09-13 plus scheduled GitHub Actions runs on 2026-09-14 and 2026-09-15; the maintenance secret is proven. The *present-object* branch was never exercised, and no run is recorded after 2026-09-15 |
+| `process-pending-asset-deletions` | **PROVEN** — manual run 2026-09-13 plus scheduled GitHub Actions runs on 2026-09-14 and 2026-09-15; the maintenance secret is proven. The *present-object* branch was never exercised, and no run is recorded after 2026-09-15 — **[SUPERSEDED 2026-09-20: incorrect; see §7 Correction record]** |
 | `reap-orphaned-collaboration-assets` | **PROVEN** — dry-run and a real delete of 15 objects, 2026-09-13, with before/after fingerprints |
 | `delete-account` | **NEVER EXECUTED.** It is deployed and maintained, but `index.html` contains **zero** `functions.invoke` / `functions/v1` / `delete-account` references, so **account deletion is unreachable in the current UI**. This is a product gap as well as a test gap, and may matter for data-deletion obligations before real users |
 | `process-pending-deletions` | **NEVER EXECUTED** |
@@ -163,7 +163,7 @@ Against `phase-definition.md` §5:
    `20260917143322`) — the highest-value open risk, because the last app-runtime evidence is
    2026-09-12 and both the schema and the frontend changed afterwards.
 2. Verify the scheduled maintenance workflow `process-pending-asset-deletions.yml` is still
-   healthy (no run recorded after 2026-09-15).
+   healthy (no run recorded after 2026-09-15 — **[SUPERSEDED 2026-09-20: incorrect; see §7 Correction record]**).
 3. Investigate and reconcile the stale Netlify deployment surface (§3).
 4. Decide the intended role of the Netlify surface.
 5. Record the evidence before any clean-room runtime validation.
@@ -191,3 +191,69 @@ the scratch workspace holds only logs, the two fingerprint JSON files and the ex
 Storage migrations, and every artifact hash and result is recorded in
 `baseline-verification-record.md`. They can therefore be removed without evidence loss, and
 reinstalled later from `local-rebuild-plan.md`. Nothing was uninstalled in this phase.
+
+---
+
+## 7. Correction record (added by Phase 22.4, 2026-09-20)
+
+This section corrects statements made earlier in this document. **The original wording is preserved
+above and marked `[SUPERSEDED]`; nothing was silently rewritten.**
+
+### C-1 — The claim that no maintenance run occurred after 2026-09-15 was WRONG
+
+**Originally stated**, in §2 (gate E table) and §5 (purpose item 2):
+
+> "no run is recorded after 2026-09-15"
+
+**Verified by the Phase 22.4 preflight** (read-only, public GitHub REST API, 2026-09-20): the
+workflow `process-pending-asset-deletions.yml` has run daily on schedule and succeeded every time.
+
+| Run | Timestamp (UTC) | Event | Conclusion |
+|---|---|---|---|
+| #12 | 2026-09-20 08:32:05Z | schedule | success |
+| #11 | 2026-09-19 08:00:26Z | schedule | success |
+| #10 | 2026-09-18 08:12:09Z | schedule | success |
+| #9 | 2026-09-17 08:36:45Z | schedule | success |
+| #8 | 2026-09-16 08:32:04Z | schedule | success |
+| #7 | 2026-09-15 08:37:44Z | schedule | success |
+| #6 | 2026-09-14 08:50:57Z | schedule | success |
+
+**Corrected conclusion:** the scheduled maintenance workflow is **ACTIVE and healthy**, with
+**seven consecutive successful scheduled runs** across 2026-09-14 … 2026-09-20. Because the
+workflow fails before any request when the maintenance secret is missing, and a wrong secret would
+be rejected, these successes evidence that the secret path remains configured and accepted. **No
+manual trigger was required or performed by Phase 22.4.**
+
+**What this does NOT change:** gate **E remains OPEN**. `delete-account` and
+`process-pending-deletions` have still never been executed anywhere, and the *present-object*
+branch of `process-pending-asset-deletions` has still never been exercised. This correction
+strengthens the evidence for one already-proven function; it does not close the gate.
+
+### C-2 — Netlify byte counts and the "two builds" characterisation
+
+**Originally stated** in §3: 274,832 and 274,296 bytes, described as if the two Netlify hostnames
+served separate builds.
+
+**Verified by Phase 22.4:** both hostnames serve **one and the same deploy**
+(`6aaedbd3f37b7f0008d4f107`, `commit_ref` `7ae06c1`). Today's cache-busted measurements are
+**274,833 / 274,297**, and the 536-byte difference is a **Netlify-injected hosting-provider comment
+and `<meta>` block** on the primary domain only — not a different build. The earlier figures were
+one byte short through the measurement method used.
+
+**What this does NOT change:** the substantive finding stands — the Netlify surface is **stale**,
+now pinned to commit `7ae06c1` (whose `index.html` is identical to the blob at `ab3a46d`).
+Disposition remains **PENDING OWNER DECISION**; nothing about Netlify was changed. Full diagnosis:
+`analysis/phase-22.4/netlify-surface-diagnosis.md`.
+
+### C-3 — "the current production epoch has been smoke-tested"
+
+§1 recorded that PASS does **not** mean the current production epoch had been smoke-tested. That
+was accurate when written. **Phase 22.4 has since executed a reduced-scope current-epoch production
+smoke (2026-09-20)**: PASS for startup, production environment selection, real magic-link
+authentication, session restoration, Stage read, own-profile read, reversible profile
+write/persistence/restore, and sign-out; **NOT EXECUTED** for the other-artist `public_profiles`
+read (no UI navigation path); **SKIPPED** for the collaboration write path (not residue-free).
+Evidence: `analysis/phase-22.4/production-smoke-record.md`.
+
+**This does NOT convert gates D, E, G or C3 to PASS.** They remain exactly as recorded in §2 and
+are the scope of the proposed Phase 22.5.

@@ -1,6 +1,6 @@
 // tests/environment-selection.test.ts
 //
-// Phase 22.3 -- offline checks for the hostname -> environment selection in
+// Phase 22.3 / 22.4 -- offline checks for the hostname -> environment selection in
 // index.html (the block between "STAGERZ ENVIRONMENT SELECTION (BEGIN)" and
 // "(END)"). Run from the repository root:
 //
@@ -40,8 +40,6 @@ async function loadBlock() {
 const PRODUCTION_HOSTS = [
   "stagerz.app",
   "www.stagerz.app",
-  "aquamarine-puppy-beccd9.netlify.app",
-  "main--aquamarine-puppy-beccd9.netlify.app",
 ];
 
 Deno.test("production hostnames select production with the unchanged URL, key and redirect", async () => {
@@ -88,6 +86,10 @@ Deno.test("a local host without a configured key fails closed", async () => {
 Deno.test("unknown hosts fail closed and never fall back to production", async () => {
   const m = await loadBlock();
   const unknown = [
+    // Phase 22.4 Step 2: the two site-level Netlify hosts were removed from the
+    // production map, so every Netlify hostname class now fails closed.
+    "aquamarine-puppy-beccd9.netlify.app",
+    "main--aquamarine-puppy-beccd9.netlify.app",
     "deploy-preview-12--aquamarine-puppy-beccd9.netlify.app",
     "feature-x--aquamarine-puppy-beccd9.netlify.app",
     "nani6hi.github.io",
@@ -113,5 +115,31 @@ Deno.test("every mapped hostname points at a defined environment", async () => {
   const m = await loadBlock();
   for (const [host, env] of Object.entries(m.STAGERZ_HOST_ENVIRONMENT)) {
     assert(env in m.STAGERZ_ENVIRONMENTS, `${host} -> ${env} is not defined`);
+  }
+});
+
+// Phase 22.4 Step 2 -- architecture invariant. stagerz.app (GitHub Pages) is the
+// only canonical public production surface; no Netlify hostname may be accepted
+// as production. The Netlify site itself is retained, but only the apex and www
+// hosts may select the production backend.
+Deno.test("no *.netlify.app hostname is accepted as production", async () => {
+  const m = await loadBlock();
+  const netlifyHosts = [
+    "aquamarine-puppy-beccd9.netlify.app",
+    "main--aquamarine-puppy-beccd9.netlify.app",
+    "deploy-preview-28--aquamarine-puppy-beccd9.netlify.app",
+    "feature-x--aquamarine-puppy-beccd9.netlify.app",
+    "6aaedbd3f37b7f0008d4f107--aquamarine-puppy-beccd9.netlify.app",
+    "netlify.app",
+  ];
+  for (const host of netlifyHosts) {
+    const s = m.stagerzSelectEnvironment(host, "https://" + host, () => "local-key");
+    assertEquals(s.ok, false, host);
+    assertEquals(s.reason, "unknown-host", host);
+    assertEquals(s.supabaseUrl, undefined, host);
+    assertEquals(s.supabaseKey, undefined, host);
+  }
+  for (const host of Object.keys(m.STAGERZ_HOST_ENVIRONMENT)) {
+    assert(!host.includes("netlify.app"), `${host} must not be in the host map`);
   }
 });
