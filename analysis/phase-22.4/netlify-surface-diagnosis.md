@@ -1,9 +1,11 @@
 # Phase 22.4 — Netlify Deployment Surface: Read-Only Diagnosis
 
 **Date:** 2026-09-20. **Diagnosis nature:** read-only — public HTTP GETs, public GitHub REST, and
-read-only Netlify project/deploy metadata. **No Netlify, DNS or domain change was made.**
-**Status: DIAGNOSED. Architecture APPROVED IN PRINCIPLE by the owner 2026-09-20; repository Step 2
-IMPLEMENTED; all DNS and Netlify steps NOT EXECUTED — see §9.**
+read-only Netlify project/deploy metadata. **No Netlify, DNS or domain change was made _during this diagnosis pass_.**
+**Status: DIAGNOSED; architecture APPROVED and EXECUTED 2026-09-20; Phase 22.4 CLOSED COMPLETE / PASS.**
+Repository Step 2 merged in **PR #29** (`7eaf829`); DNS Step 3 and Netlify Step 4 **have since been
+performed and verified** — §9 below still describes them as NOT EXECUTED and is **superseded by
+§10**, which records what actually happened.
 
 ---
 
@@ -141,7 +143,7 @@ deletion of the site, no redirect change.
 
 ---
 
-## 9. Owner decision and implementation status (2026-09-20)
+## 9. Owner decision and implementation status (2026-09-20) — **written BEFORE execution; superseded by §10**
 
 ### Architecture approved in principle
 
@@ -186,14 +188,14 @@ discussion.
 | Step | System | Status |
 |---|---|---|
 | 0 — read Netlify continuous-deployment settings and deploy list | Netlify UI | **NOT DONE** — root cause of the stale deploy therefore remains **UNKNOWN** (§5) |
-| 1 — add the 3 missing apex `A` records (and optional `AAAA`) | STRATO DNS | **NOT EXECUTED** |
-| 3 — repoint `www` CNAME to `nani6hi.github.io` | STRATO DNS | **NOT EXECUTED** |
-| 4 — remove the `www` alias and the `stagerz.app` custom domain from Netlify | Netlify | **NOT EXECUTED** |
+| 1 — add the 3 missing apex `A` records (and optional `AAAA`) | STRATO DNS | **NOT EXECUTED — still true; the apex record was deliberately left unchanged** |
+| 3 — repoint `www` CNAME to `nani6hi.github.io` | STRATO DNS | **SUPERSEDED — EXECUTED 2026-09-20, see §10** |
+| 4 — remove the `www` alias and the `stagerz.app` custom domain from Netlify | Netlify | **SUPERSEDED — EXECUTED 2026-09-20, see §10** |
 | 5 — Netlify residual role (keep previews / republish / delete) | Netlify | **DEFERRED to the T2 decision** |
 
 **No DNS record, Netlify setting, domain, redirect, deploy or `CNAME` file was changed.**
 
-### Consequences that remain true until the DNS step is executed
+### Consequences that remained true until the DNS step was executed — **SUPERSEDED, see §10**
 
 1. **`www.stagerz.app` still depends on Netlify.** It resolves by CNAME to
    `aquamarine-puppy-beccd9.netlify.app` and is served by Netlify as a 301 to the apex. Removing or
@@ -206,3 +208,101 @@ discussion.
    ownership persists until Step 4.
 4. **The apex still has a single `A` record** and no `AAAA`, so it remains a single-IP dependency
    until Step 1.
+
+---
+
+## 10. Execution record (2026-09-20) — supersedes the "NOT EXECUTED" entries in §9
+
+§9 was written before the migration. Its step table and its "consequences that remain true" list
+are preserved above for the audit trail; the entries below are what actually happened.
+
+### Step 2 — repository — **DONE and MERGED**
+
+PR #29, *"Phase 22.4: stop accepting netlify.app hosts as production"*, head
+`9cd28557283f749ab57010bd3e8d31303001de4e`, **merged into `main` as
+`7eaf829de0927c67ab1455d7c54cb1f8153beee7`**. The production host mapping on `main` is now
+`stagerz.app` and `www.stagerz.app` → production, `localhost` and `127.0.0.1` → local. **No
+`*.netlify.app` hostname is accepted as production by the current `main` code.** GitHub Pages
+deployed the merge; `stagerz.app` serves it **byte-identically** (276,592 bytes, SHA-256
+`4878aacd3aac05bc…`, cache-busted).
+
+### Step 3 — STRATO DNS — **DONE**
+
+`www.stagerz.app` CNAME changed from `aquamarine-puppy-beccd9.netlify.app.` to
+`nani6hi.github.io.`; STRATO reported *"Ihre Aktion wurde erfolgreich ausgeführt."*
+
+**Independently re-verified read-only**, at both a public resolver and the **authoritative**
+nameserver `shades11.rzone.de`: `www.stagerz.app canonical name = nani6hi.github.io`.
+
+The apex `A` record was **deliberately not changed** and still reads `185.199.108.153`. No NS, MX,
+AAAA, DMARC, SPF or unrelated record was intentionally changed.
+
+**Owner browser validation:** in a private/incognito browser, `https://www.stagerz.app` ended at
+`stagerz.app`, the STAGERZ login UI rendered, HTTPS succeeded with no certificate warning, and the
+visible console showed no red runtime error. **This is browser/runtime evidence of the
+owner-observed path — not a claim that global DNS propagation was exhaustively verified from every
+resolver.**
+
+### Step 4 — Netlify custom domains — **DONE**
+
+Before removal, Netlify Domain Management listed `aquamarine-puppy-beccd9.netlify.app` (Netlify
+subdomain), `stagerz.app` (primary; *Pending DNS verification*) and `www.stagerz.app` (auto-redirect
+to primary; *Pending DNS verification*), and reported that `stagerz.app` did not appear to be served
+by Netlify and that its Let's Encrypt certificate could not be renewed.
+
+The owner removed `stagerz.app` via **Options → Remove domain** and confirmed the *"Remove custom
+domain"* dialog. Afterwards Domain Management listed **only**
+`aquamarine-puppy-beccd9.netlify.app`, and the HTTPS section reported *"A custom domain is required
+to provision a certificate."*
+
+**Independently confirmed read-only:** the project's `primarySiteUrl` is now
+**`https://aquamarine-puppy-beccd9.netlify.app`** — previously `https://stagerz.app`. **The split
+deployment ownership described in §4 is resolved.**
+
+**The Netlify project was NOT deleted.** Its native hostname remains, and its residual preview/test
+role stays **deferred to the T2 decision**.
+
+### Steps 0, 1 and 5 — still not executed
+
+- **Step 0** (read Netlify continuous-deployment settings / deploy list) — **not done**, so the
+  stale-deploy **root cause in §5 remains UNKNOWN**.
+- **Step 1** (three missing apex `A` records) — **not executed**; the apex remains a single-IP
+  dependency.
+- **Step 5** (Netlify residual role) — **deferred** to the T2 decision.
+
+### Corrections to the §9 "consequences"
+
+| §9 consequence | Current state |
+|---|---|
+| 1. `www.stagerz.app` still depends on Netlify; the site must be retained | **NO LONGER TRUE.** `www` is served by GitHub Pages. The Netlify project is retained by owner choice, not by necessity |
+| 2. The stale Netlify surface remains publicly served | **STILL TRUE** at the native hostname — re-verified unchanged (274,833 bytes, SHA-256 `9074cb183e841ff6…`). Note that this deploy **predates the environment-selection block entirely**, so PR #29's fail-closed protection does **not** apply to what it currently serves |
+| 3. Netlify still believes it owns `stagerz.app` | **NO LONGER TRUE.** Resolved by Step 4 |
+| 4. The apex still has a single `A` record | **STILL TRUE** — Step 1 not executed |
+
+### Transient finding during migration — `www` certificate — **RESOLVED**
+
+**What was observed, and is preserved here deliberately.** Immediately after the DNS change,
+`http://www.stagerz.app/` returned **301 → `https://stagerz.app/`** with `Server: GitHub.com`, so
+DNS and Pages routing were already correct — but `https://www.stagerz.app/` **failed TLS**: the
+certificate presented was **`CN=*.github.io`**, the CNAME target's default wildcard, which does not
+cover `www.stagerz.app`. Three consecutive `curl` attempts returned `code=000`, while the apex
+presented a valid `CN=stagerz.app`.
+
+**Resolved the same day, with no setting change.** GitHub Pages Settings showed
+*"DNS Check in Progress"* and then *"DNS check successful"* (custom domain `stagerz.app`, Enforce
+HTTPS enabled throughout; **nothing was changed**). GitHub issued the certificate at
+**`notBefore = Sep 20 14:42:34 2026 GMT`**. The owner then explicitly entered
+`https://www.stagerz.app` in a private/incognito browser: no TLS warning, successful navigation,
+address bar ending at `stagerz.app`, STAGERZ login UI rendering normally. Independent
+re-verification confirms it: **HTTP 301 → `https://stagerz.app/`**, `Server: GitHub.com`, and a
+certificate `subject=CN=stagerz.app` with **SAN `DNS:stagerz.app, DNS:www.stagerz.app`**, issuer
+Let's Encrypt, **`Verify return code: 0 (ok)`**.
+
+**Classification: a transient migration condition — certificate provisioning lag — not a
+misconfiguration.** The certificate's own `notBefore` is objective proof that none covering
+`www.stagerz.app` existed during the failing checks, and that one existed afterwards. The earlier
+HSTS concern (Netlify had set `max-age=31536000` on `www`) is moot now that a valid certificate is
+in place.
+
+**This is not a claim that global DNS or TLS propagation was exhaustively verified from every
+resolver.** Full chronology and evidence: `closeout.md` §7.
