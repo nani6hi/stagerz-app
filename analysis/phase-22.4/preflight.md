@@ -1,5 +1,12 @@
 # Phase 22.4 — Preflight (read-only)
 
+
+> **NOTE (2026-09-20, after the migration).** The deployment facts recorded below — in particular
+> that `www.stagerz.app` resolved through Netlify and that Netlify held the `stagerz.app` custom
+> domain — describe the state **at preflight time**. They were superseded the same day by migration
+> Steps 3 and 4. Current architecture: `analysis/phase-22.4/closeout.md` §2 and
+> `netlify-surface-diagnosis.md` §10. This file is preserved unchanged as the preflight audit trail.
+
 **Date:** 2026-09-20. **Nature:** read-only. No file was edited, no environment mutated.
 **Base:** `origin/main` = `3b38e6b849a88e46aa0fd67c0f7040e761b274b5`, verified. Working tree clean.
 

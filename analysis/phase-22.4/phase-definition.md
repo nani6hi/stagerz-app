@@ -3,7 +3,7 @@
 **Branch:** `phase-22.4-current-epoch-production-smoke`, from `main` @ `3b38e6b849a88e46aa0fd67c0f7040e761b274b5` (the PR #28 merge of the Phase 22.3 closeout).
 **Assigned:** 2026-09-20 by the product owner, as the next Foundation phase defined in `analysis/phase-22.3/closeout.md` §5.
 **Production backend of record:** `kbnmkyvbwkuvcklywdhk`.
-**Status:** **ACTIVE — production smoke EXECUTED and PASSED at reduced scope (2026-09-20); Netlify architecture APPROVED IN PRINCIPLE and repository Step 2 IMPLEMENTED (2026-09-20); all DNS and Netlify mutations NOT EXECUTED.** The only production data mutation was the single approved reversible profile edit, which was restored. `www.stagerz.app` still depends on Netlify until the DNS step is executed, so the Netlify site must be retained. See `netlify-surface-diagnosis.md` §9.
+**Status:** **COMPLETE / PASS — closed 2026-09-20.** Production smoke EXECUTED and PASSED at the intentionally reduced scope; repository Step 2 merged in **PR #29** (`7eaf829`); DNS Step 3 and Netlify Step 4 **EXECUTED and verified** — GitHub Pages is the sole canonical public production surface, `www.stagerz.app` resolves through it and redirects to the apex over HTTPS, and Netlify holds neither STAGERZ custom domain. The transient `www` certificate gap observed during migration is **RESOLVED**. The only production data mutation was the single approved reversible profile edit, which was restored. Full record: `closeout.md`.
 
 ## 1. Objective
 
@@ -68,7 +68,8 @@ made**, and the Netlify site is explicitly **retained** — `www.stagerz.app` st
 | `analysis/phase-22.4/phase-definition.md` | This file |
 | `analysis/phase-22.4/preflight.md` | Read-only preflight: epoch, test design, tester-data safety, write boundary, workflow check, GO/NO-GO |
 | `analysis/phase-22.4/production-smoke-record.md` | The executed manual smoke: per-test results with evidence scope, residue check, findings |
-| `analysis/phase-22.4/netlify-surface-diagnosis.md` | Read-only Netlify diagnosis and classification, architecture options, the owner decision of 2026-09-20 and the implementation status of each migration step |
+| `analysis/phase-22.4/netlify-surface-diagnosis.md` | Read-only Netlify diagnosis and classification, architecture options, the owner decision of 2026-09-20, and **§10 the execution record** of migration Steps 2/3/4 |
+| `analysis/phase-22.4/closeout.md` | **Closeout:** closure statement, deployment architecture after reconciliation, smoke-evidence summary, migration record, deferred gates and carry-forwards, and the one open item holding closure |
 
 ## 5. Acceptance criteria
 
@@ -79,8 +80,8 @@ made**, and the Netlify site is explicitly **retained** — `www.stagerz.app` st
    persistence and exact restoration, sign-out. See §6 for what was not covered.
 4. Production data is left as found. **MET** — the one edit was restored and verified.
 5. The scheduled maintenance workflow's health is established read-only. **MET.**
-6. The stale Netlify surface is diagnosed on evidence, without being changed. **MET.**
-7. The Netlify role decision is prepared for the owner. **MET — and the owner APPROVED the target architecture in principle on 2026-09-20.** Repository **Step 2 is IMPLEMENTED** (no `*.netlify.app` host is accepted as production); **all DNS and Netlify steps remain NOT EXECUTED**, and `www.stagerz.app` still depends on Netlify until the DNS step. See `netlify-surface-diagnosis.md` §9.
+6. The stale Netlify surface is diagnosed on evidence, without being changed. **MET** — the diagnosis itself mutated nothing; the surface was only changed later, under the separate owner approval recorded in criterion 7.
+7. The Netlify role decision is prepared for the owner. **MET — the owner APPROVED the target architecture on 2026-09-20, and migration Steps 2, 3 and 4 were EXECUTED and independently verified:** the repository change merged in PR #29 (`7eaf829`), `www.stagerz.app` now resolves by CNAME to `nani6hi.github.io` and serves a valid certificate (SAN covers `www.stagerz.app`), and Netlify holds neither STAGERZ custom domain (`primarySiteUrl` is now the `.netlify.app` host). Steps 0 and 1 remain **not executed**; Step 5 (Netlify residual role) is **deferred to the T2 decision**. **No blocker remains.** See `closeout.md` §4 and §7, and `netlify-surface-diagnosis.md` §10.
 8. Deferred gates D/E/G/C3 remain recorded as deferred, not converted. **MET.**
 9. `PROJECT_CONTEXT.md` updated. **MET.**
 

@@ -257,3 +257,22 @@ Evidence: `analysis/phase-22.4/production-smoke-record.md`.
 
 **This does NOT convert gates D, E, G or C3 to PASS.** They remain exactly as recorded in §2 and
 are the scope of the proposed Phase 22.5.
+
+### C-4 — Netlify disposition is no longer "pending" (added 2026-09-20)
+
+**Originally stated** in C-2 above: *"Disposition remains **PENDING OWNER DECISION**; nothing about
+Netlify was changed."* That was accurate when written.
+
+**Superseded the same day.** The owner approved the target architecture and **Phase 22.4 executed
+it**: the repository change merged as PR #29 (`7eaf829`) so no `*.netlify.app` hostname is accepted
+as production; `www.stagerz.app` was re-homed by CNAME to `nani6hi.github.io`; and Netlify's
+`stagerz.app` and `www.stagerz.app` custom domains were removed, leaving its `primarySiteUrl` as
+`https://aquamarine-puppy-beccd9.netlify.app`. **GitHub Pages is now the sole canonical public
+production application surface.**
+
+**What this does NOT change:** the Netlify **native** hostname still serves the stale `7ae06c1`
+deploy — a build that predates the environment-selection block entirely, so PR #29's fail-closed
+protection does not apply to what it currently serves. The Netlify project was **not** deleted and
+its residual preview/test role stays deferred to the T2 decision. Gates **D, E, G and C3** are
+untouched and remain OPEN. Evidence: `analysis/phase-22.4/closeout.md` and
+`analysis/phase-22.4/netlify-surface-diagnosis.md` §10.
