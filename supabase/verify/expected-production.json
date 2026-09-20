@@ -1,5 +1,5 @@
 {
-  "_comment": "STAGERZ-FINGERPRINT-v1 of the production backend of record kbnmkyvbwkuvcklywdhk, captured read-only 2026-09-19 (Phase 22.3, DRAFT). A rebuilt environment passes the reproducibility gate when every key under 'exact' matches. 'environment' values are informational only and are expected to differ.",
+  "_comment": "STAGERZ-FINGERPRINT-v1 of the production backend of record kbnmkyvbwkuvcklywdhk, captured read-only 2026-09-19 (Phase 22.3). A rebuilt environment passes the reproducibility gate when every key under 'exact' matches. 'environment' values are informational only and are expected to differ.",
   "marker": "STAGERZ-FINGERPRINT-v1",
   "captured_from": "kbnmkyvbwkuvcklywdhk",
   "captured_at": "2026-09-19",

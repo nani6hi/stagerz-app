@@ -1,6 +1,6 @@
-# STAGERZ backend — environment & configuration inventory (DRAFT, Phase 22.3)
+# STAGERZ backend — environment & configuration inventory (Phase 22.3)
 
-Values of secrets are **never** recorded here, only their names and purpose. Captured read-only from production `kbnmkyvbwkuvcklywdhk` on 2026-09-19 unless stated otherwise.
+Values of secrets are **never** recorded here, only their names and purpose. Captured read-only from the production backend of record `kbnmkyvbwkuvcklywdhk` on 2026-09-19 unless stated otherwise. The Auth capture (§6) is complete; this inventory is current, not a draft.
 
 ## 1. Edge Functions
 
