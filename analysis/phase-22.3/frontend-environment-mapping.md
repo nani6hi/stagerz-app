@@ -1,6 +1,16 @@
 # Phase 22.3 — Frontend Environment Mapping (design D / G3)
 
+
+> **SUPERSEDED IN PART — Phase 22.4 Step 2 (2026-09-20).** The two site-level Netlify hostnames
+> (`aquamarine-puppy-beccd9.netlify.app` and `main--aquamarine-puppy-beccd9.netlify.app`) were
+> **removed from the production mapping**; every `*.netlify.app` hostname now fails closed as
+> `unknown-host`. The rows below record the mapping as it stood at Phase 22.3 and are kept for the
+> audit trail. Current mapping: `stagerz.app` and `www.stagerz.app` → production; `localhost` and
+> `127.0.0.1` → local; everything else fails closed. See
+> `analysis/phase-22.4/netlify-surface-diagnosis.md` §9.
+
 **Owner approval:** decision 4. Implement a minimal hostname-based environment config now:
+
 - no build system;
 - unknown hosts fail closed;
 - the sign-in redirect follows the selected environment;
