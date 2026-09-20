@@ -1,6 +1,6 @@
 // tests/environment-selection.test.ts
 //
-// Phase 22.3 / 22.4 -- offline checks for the hostname -> environment selection in
+// Phase 22.3 / 22.4 / 22.5 -- offline checks for the hostname -> environment selection in
 // index.html (the block between "STAGERZ ENVIRONMENT SELECTION (BEGIN)" and
 // "(END)"). Run from the repository root:
 //
@@ -33,7 +33,7 @@ async function loadBlock() {
   return factory() as {
     STAGERZ_ENVIRONMENTS: Record<string, { supabaseUrl: string; supabaseKey: string | null; authRedirectUrl: string | null }>;
     STAGERZ_HOST_ENVIRONMENT: Record<string, string>;
-    stagerzSelectEnvironment: (host: string, origin: string, getLocalKey?: () => string | null) => Selection;
+    stagerzSelectEnvironment: (host: string, origin: string, getLocalKey?: () => string | null, getLocalUrl?: () => string | null) => Selection;
   };
 }
 
@@ -141,5 +141,152 @@ Deno.test("no *.netlify.app hostname is accepted as production", async () => {
   }
   for (const host of Object.keys(m.STAGERZ_HOST_ENVIRONMENT)) {
     assert(!host.includes("netlify.app"), `${host} must not be in the host map`);
+  }
+});
+
+// ---------------------------------------------------------------------------
+// Phase 22.5 -- localStorage['stagerz:local-supabase-url'] override.
+//
+// Purpose: let a browser served from localhost target a disposable cloud test
+// project (T2) for runtime validation, without ever letting a production
+// visitor be redirected anywhere. No real T2 project exists yet; the ref used
+// below is an obvious placeholder, not a real Supabase project.
+// ---------------------------------------------------------------------------
+
+const PLACEHOLDER_T2_URL = "https://notarealprojectref00.supabase.co";
+const LOCAL_DEFAULT_URL = "http://127.0.0.1:54321";
+
+Deno.test("no URL override leaves the local default unchanged", async () => {
+  // An absent getter, and every value that means "nothing is set", must all
+  // leave the shipped default in place -- never fail, never use production.
+  const m = await loadBlock();
+  const noOverride: Array<(() => string | null) | undefined> = [
+    undefined,
+    () => null,
+    () => "",
+    () => "   ",
+  ];
+  for (const getUrl of noOverride) {
+    const s = m.stagerzSelectEnvironment("localhost", "http://localhost:8080", () => "local-key", getUrl);
+    assertEquals(s.ok, true);
+    assertEquals(s.name, "local");
+    assertEquals(s.supabaseUrl, LOCAL_DEFAULT_URL);
+    assertEquals(s.supabaseKey, "local-key");
+  }
+});
+
+Deno.test("a valid non-production Supabase URL is accepted on local hosts", async () => {
+  const m = await loadBlock();
+  for (const host of ["localhost", "127.0.0.1"]) {
+    const origin = "http://" + host + ":8080";
+    for (const value of [PLACEHOLDER_T2_URL, PLACEHOLDER_T2_URL + "/", "  " + PLACEHOLDER_T2_URL + "  "]) {
+      const s = m.stagerzSelectEnvironment(host, origin, () => "t2-publishable-key", () => value);
+      assertEquals(s.ok, true, value);
+      assertEquals(s.name, "local", value);
+      assertEquals(s.supabaseUrl, PLACEHOLDER_T2_URL, value); // normalised
+      assertEquals(s.supabaseKey, "t2-publishable-key", value);
+      assertEquals(s.authRedirectUrl, origin, value); // follows the browser origin
+    }
+  }
+});
+
+Deno.test("a loopback override with an explicit port is accepted", async () => {
+  const m = await loadBlock();
+  const s = m.stagerzSelectEnvironment("localhost", "http://localhost:8080", () => "k", () => "http://127.0.0.1:64321");
+  assertEquals(s.ok, true);
+  assertEquals(s.supabaseUrl, "http://127.0.0.1:64321");
+});
+
+Deno.test("the production project URL is rejected by the override denylist", async () => {
+  // Derived from the block itself, so the test cannot drift from the constant.
+  const m = await loadBlock();
+  const productionUrl = m.STAGERZ_ENVIRONMENTS.production.supabaseUrl;
+  assert(productionUrl.includes(".supabase.co"), "production URL shape changed");
+  for (const host of ["localhost", "127.0.0.1"]) {
+    for (const value of [productionUrl, productionUrl + "/", "  " + productionUrl + " "]) {
+      const s = m.stagerzSelectEnvironment(host, "http://" + host + ":8080", () => "k", () => value);
+      assertEquals(s.ok, false, value);
+      assertEquals(s.reason, "environment-not-configured", value);
+      assertEquals(s.supabaseUrl, undefined, value);
+      assertEquals(s.supabaseKey, undefined, value);
+    }
+  }
+});
+
+Deno.test("malformed and non-Supabase override values fail closed", async () => {
+  const m = await loadBlock();
+  const rejected = [
+    "not a url",
+    "javascript:alert(1)",
+    "//notarealprojectref00.supabase.co",
+    "ftp://notarealprojectref00.supabase.co",
+    "http://notarealprojectref00.supabase.co", // http, not https
+    "https://notarealprojectref00.supabase.co:443", // explicit port
+    "https://notarealprojectref00.supabase.co/rest/v1", // path
+    "https://notarealprojectref00.supabase.co?x=1", // query
+    "https://user:pw@notarealprojectref00.supabase.co", // credentials
+    "https://notarealprojectref00.supabase.co.evil.example", // suffix attack
+    "https://evil.example/notarealprojectref00.supabase.co",
+    "https://evil.example",
+    "https://supabase.co",
+    "http://127.0.0.1", // no port
+    "http://127.0.0.1:0", // port out of range
+    "http://127.0.0.1:99999", // port out of range
+    "http://localhost:54321", // only 127.0.0.1 is accepted
+    "http://127.0.0.1:54321/rest",
+  ];
+  for (const value of rejected) {
+    const s = m.stagerzSelectEnvironment("localhost", "http://localhost:8080", () => "k", () => value);
+    assertEquals(s.ok, false, value);
+    assertEquals(s.reason, "environment-not-configured", value);
+    assertEquals(s.supabaseUrl, undefined, value);
+    assertEquals(s.supabaseKey, undefined, value);
+  }
+});
+
+Deno.test("production hostnames ignore the URL override entirely", async () => {
+  const m = await loadBlock();
+  const productionUrl = m.STAGERZ_ENVIRONMENTS.production.supabaseUrl;
+  const prodKey = m.STAGERZ_ENVIRONMENTS.production.supabaseKey;
+  for (const host of ["stagerz.app", "www.stagerz.app"]) {
+    let urlGetterCalled = false;
+    let keyGetterCalled = false;
+    const s = m.stagerzSelectEnvironment(
+      host,
+      "https://" + host,
+      () => { keyGetterCalled = true; return "local-key"; },
+      () => { urlGetterCalled = true; return PLACEHOLDER_T2_URL; },
+    );
+    assertEquals(s.ok, true, host);
+    assertEquals(s.name, "production", host);
+    assertEquals(s.supabaseUrl, productionUrl, host); // never the override
+    assertEquals(s.supabaseKey, prodKey, host);
+    assertEquals(s.authRedirectUrl, "https://stagerz.app", host);
+    assertEquals(urlGetterCalled, false, "url override must not be consulted on " + host);
+    assertEquals(keyGetterCalled, false, "key override must not be consulted on " + host);
+  }
+});
+
+Deno.test("only the local environment opts into the URL override", async () => {
+  // Structural guarantee: production immunity comes from the data, not from a
+  // convention in the selection function.
+  const m = await loadBlock();
+  assertEquals(
+    (m.STAGERZ_ENVIRONMENTS.production as Record<string, unknown>).allowsLocalUrlOverride,
+    undefined,
+  );
+  assertEquals(
+    (m.STAGERZ_ENVIRONMENTS.local as Record<string, unknown>).allowsLocalUrlOverride,
+    true,
+  );
+});
+
+Deno.test("an unknown host still fails closed even with a valid override set", async () => {
+  const m = await loadBlock();
+  for (const host of ["deploy-preview-32--aquamarine-puppy-beccd9.netlify.app", "evil-stagerz.app", ""]) {
+    const s = m.stagerzSelectEnvironment(host, "https://" + host, () => "k", () => PLACEHOLDER_T2_URL);
+    assertEquals(s.ok, false, host);
+    assertEquals(s.reason, "unknown-host", host);
+    assertEquals(s.supabaseUrl, undefined, host);
   }
 });

@@ -1020,6 +1020,18 @@ html,body{width:100%;height:100%;background:#08080f;color:#f0f0f5;font-family:'I
 // local key is not stored in the repository: set it once in the browser
 // with localStorage.setItem('stagerz:local-supabase-key', <key from
 // `supabase status`>). See analysis/phase-22.3/frontend-environment-mapping.md.
+//
+// Phase 22.5 -- the LOCAL environment's URL can also be overridden, with
+// localStorage.setItem('stagerz:local-supabase-url', <url>), so a browser
+// served from localhost can target a disposable cloud test project (T2)
+// for runtime validation. The override is consulted ONLY for an environment
+// that opts in with allowsLocalUrlOverride, which is the local one alone;
+// production hostnames never reach it. It accepts ONLY
+// https://<project-ref>.supabase.co or http://127.0.0.1:<port>, and NEVER
+// the production ref -- which is derived from the production URL below, so
+// the denylist cannot drift out of sync with it. Anything else fails closed
+// exactly like a missing key: no client is created, and nothing ever falls
+// back to production.
 var STAGERZ_ENVIRONMENTS = {
   production: {
     supabaseUrl: 'https://kbnmkyvbwkuvcklywdhk.supabase.co',
@@ -1029,7 +1041,8 @@ var STAGERZ_ENVIRONMENTS = {
   local: {
     supabaseUrl: 'http://127.0.0.1:54321',
     supabaseKey: null,
-    authRedirectUrl: null
+    authRedirectUrl: null,
+    allowsLocalUrlOverride: true
   }
 };
 var STAGERZ_HOST_ENVIRONMENT = {
@@ -1038,17 +1051,53 @@ var STAGERZ_HOST_ENVIRONMENT = {
   'localhost': 'local',
   '127.0.0.1': 'local'
 };
-function stagerzSelectEnvironment(hostname, origin, getLocalKey){
+// Phase 22.5 -- the production project ref, derived from the production URL
+// above so the denylist below can never drift out of sync with it. If it
+// cannot be derived, every hosted override is refused rather than silently
+// allowed.
+var STAGERZ_PRODUCTION_REF = (/^https:\/\/([a-z0-9-]+)\.supabase\.co$/.exec(STAGERZ_ENVIRONMENTS.production.supabaseUrl) || [])[1] || null;
+// Accepts exactly two shapes, after trimming whitespace and trailing slashes:
+//   https://<project-ref>.supabase.co  -- never the production ref
+//   http://127.0.0.1:<port>            -- port 1-65535
+// Returns the normalised URL, or null for anything else. No other host,
+// scheme, port, path, query or credential form is accepted.
+function stagerzValidateLocalSupabaseUrl(value){
+  if(typeof value !== 'string') return null;
+  var url = value.trim().replace(/\/+$/, '');
+  if(!url) return null;
+  var hosted = /^https:\/\/([a-z0-9-]+)\.supabase\.co$/.exec(url);
+  if(hosted){
+    if(!STAGERZ_PRODUCTION_REF || hosted[1] === STAGERZ_PRODUCTION_REF) return null;
+    return url;
+  }
+  var loopback = /^http:\/\/127\.0\.0\.1:(\d{1,5})$/.exec(url);
+  if(loopback){
+    var port = Number(loopback[1]);
+    return (port >= 1 && port <= 65535) ? url : null;
+  }
+  return null;
+}
+function stagerzSelectEnvironment(hostname, origin, getLocalKey, getLocalUrl){
   var name = Object.prototype.hasOwnProperty.call(STAGERZ_HOST_ENVIRONMENT, hostname) ? STAGERZ_HOST_ENVIRONMENT[hostname] : null;
   if(!name) return { ok: false, reason: 'unknown-host' };
   var env = STAGERZ_ENVIRONMENTS[name];
   var key = env.supabaseKey || (typeof getLocalKey === 'function' ? getLocalKey() : null);
   if(!key) return { ok: false, reason: 'environment-not-configured', name: name };
-  return { ok: true, name: name, supabaseUrl: env.supabaseUrl, supabaseKey: key, authRedirectUrl: env.authRedirectUrl || origin };
+  var url = env.supabaseUrl;
+  if(env.allowsLocalUrlOverride){
+    var raw = (typeof getLocalUrl === 'function') ? getLocalUrl() : null;
+    if(typeof raw === 'string' && raw.trim() !== ''){
+      url = stagerzValidateLocalSupabaseUrl(raw);
+      if(!url) return { ok: false, reason: 'environment-not-configured', name: name };
+    }
+  }
+  return { ok: true, name: name, supabaseUrl: url, supabaseKey: key, authRedirectUrl: env.authRedirectUrl || origin };
 }
 // === STAGERZ ENVIRONMENT SELECTION (END) ===
 var STAGERZ_ENV = stagerzSelectEnvironment(window.location.hostname, window.location.origin, function(){
   try{ return window.localStorage.getItem('stagerz:local-supabase-key'); }catch(e){ return null; }
+}, function(){
+  try{ return window.localStorage.getItem('stagerz:local-supabase-url'); }catch(e){ return null; }
 });
 var SUPA_URL = STAGERZ_ENV.ok ? STAGERZ_ENV.supabaseUrl : null;
 var SUPA_KEY = STAGERZ_ENV.ok ? STAGERZ_ENV.supabaseKey : null;
