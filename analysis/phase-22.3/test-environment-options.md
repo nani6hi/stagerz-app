@@ -2,6 +2,8 @@
 
 **Status:** evaluation. **No cloud environment created; no cost-confirmation workflow started.** Update 2026-09-20: the T1 tooling is installed and T1 remains the preferred first test environment, but its Storage runtime is blocked (`storage-api:v1.72.1` exit 139), so only the database gate could be run locally. Auth/API/Realtime, Edge Function and Storage API runtimes need either a fixed local stack or T2.
 
+**Status at Phase 22.3 closeout (2026-09-20):** the strategy stands (T1 first, T2 as the standing environment), but **T2 creation, legacy-project pause/delete and a Supabase Pro upgrade are NOT approved**, so no environment exists. Gates D, E, G and C3 therefore remain open and are the scope of the proposed Phase 22.5. See `closeout.md` §2 and §5.
+
 **Constraints (facts, 2026-09-19):**
 - organisation `STAGERZ` on the **Free** plan;
 - **2 active projects**: production `kbnmkyvbwkuvcklywdhk` and the contained legacy `edxicnafggnnvcdvxemk`;

@@ -79,6 +79,8 @@ Only the header comments differ between the two files. The executable SQL is byt
 
 **Phase 22.3 is not a full Supabase runtime proof.** It proves the database baseline and its equivalence to the production database contract.
 
+**Closure note (2026-09-20).** Phase 22.3 was closed **COMPLETE / PASS** with **C3, D, E and G still open**. They are carried forward, unchanged in status, as the scope of the proposed Phase 22.5, and must not be described as passed. What each one actually leaves unproven — and what production evidence already exists for it — is set out in `closeout.md` §2. Nothing in this record was revised at closure.
+
 ## 7. Cleanup
 
 Both test containers and both volumes were removed (0 remaining). Cached images kept. Docker and WSL left installed and healthy. No `.wslconfig` was created, no WSL distribution unregistered, no Docker reset.

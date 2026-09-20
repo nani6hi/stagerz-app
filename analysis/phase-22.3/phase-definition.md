@@ -3,7 +3,7 @@
 **Branch:** `phase-22.3-production-designation-reproducible-backend-baseline`, from `main` @ `7ae06c17be0b1341fd00db6195809107a0176e5e` (the PR #25 merge of Phase 22.2). A remote branch of the same name already existed at the same commit; nothing has been pushed.
 **Assigned:** 2026-09-19 by the product owner, following Phase 22.2 (Option A approved).
 **Production backend of record:** `kbnmkyvbwkuvcklywdhk`.
-**Status:** **ACTIVE — BASELINE VERIFIED AND PROMOTED TO CANONICAL (2026-09-20); AUTH CAPTURE COMPLETE; RUNTIME VALIDATION (Auth/API/Realtime, Edge Functions, Storage API) STILL OPEN. No production mutation has occurred.** See §6 and `baseline-verification-record.md`.
+**Status:** **COMPLETE / PASS — closed 2026-09-20.** The baseline was verified and promoted to canonical, the Auth capture is complete, and no production mutation occurred. **Gates D (Auth/API/Realtime), E (Edge Functions), G (Storage API) and C3 (full Auth-account fixture) remain OPEN and are carried forward to the proposed Phase 22.5 — they must not be described as passed.** Closure, the deferred gates and the Netlify stale-surface finding: `closeout.md`. Gate evidence: `baseline-verification-record.md`. Next Foundation phase: **Phase 22.4 — Current-Epoch Production Smoke & Deployment Surface Reconciliation**.
 
 ---
 
@@ -64,8 +64,11 @@ Not permitted:
 | `supabase/migrations/20260919120000_stagerz_baseline.sql` | **Canonical baseline** (promoted 2026-09-20 from the verified DRAFT; substantive SQL byte-identical). Verified by two clean rebuilds, 20/20 fingerprint categories; never executed on production |
 | `supabase/verify/fingerprint.sql`, `supabase/verify/expected-production.json` | Reproducibility gate and production fingerprint |
 | `supabase/config/environment-inventory.md`, `supabase/seed/README.md`, `supabase/README.md` | Config and secrets-by-name inventory, seed strategy, rebuild runbook |
+| `analysis/phase-22.3/closeout.md` | **Closeout (2026-09-20):** closure statement, the four deferred gates D / E / G / C3, the Netlify stale-surface finding, acceptance-criteria outcome, the Phase 22.4 definition and the Docker/WSL disposition |
 
 ## 5. Acceptance criteria (for the whole phase)
+
+**Final outcome (2026-09-20): all ten criteria MET — see `closeout.md` §4.** Criteria 4, 5 and 8 were met at the source/config/database/strategy level only; the corresponding service runtimes are gates E, G and D, which remain open.
 
 1. An inventory of all application-owned database state, with platform-managed state separated. **Draft done.**
 2. The baseline strategy decided by the owner.
