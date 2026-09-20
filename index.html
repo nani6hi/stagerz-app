@@ -1010,8 +1010,47 @@ html,body{width:100%;height:100%;background:#08080f;color:#f0f0f5;font-family:'I
 
 <script>
 // --- SUPABASE ---
-var SUPA_URL = 'https://kbnmkyvbwkuvcklywdhk.supabase.co';
-var SUPA_KEY = 'sb_publishable_IEGmrqIhtavD8EtrA9_3NA_zfnU3UIw';
+// === STAGERZ ENVIRONMENT SELECTION (BEGIN) ===
+// Phase 22.3 -- explicit hostname -> environment map. Unknown hosts FAIL
+// CLOSED: no client is created and nothing ever falls back to production.
+// Publishable keys are public by design; no secret belongs here. The
+// local key is not stored in the repository: set it once in the browser
+// with localStorage.setItem('stagerz:local-supabase-key', <key from
+// `supabase status`>). See analysis/phase-22.3/frontend-environment-mapping.md.
+var STAGERZ_ENVIRONMENTS = {
+  production: {
+    supabaseUrl: 'https://kbnmkyvbwkuvcklywdhk.supabase.co',
+    supabaseKey: 'sb_publishable_IEGmrqIhtavD8EtrA9_3NA_zfnU3UIw',
+    authRedirectUrl: 'https://stagerz.app'
+  },
+  local: {
+    supabaseUrl: 'http://127.0.0.1:54321',
+    supabaseKey: null,
+    authRedirectUrl: null
+  }
+};
+var STAGERZ_HOST_ENVIRONMENT = {
+  'stagerz.app': 'production',
+  'www.stagerz.app': 'production',
+  'aquamarine-puppy-beccd9.netlify.app': 'production',
+  'main--aquamarine-puppy-beccd9.netlify.app': 'production',
+  'localhost': 'local',
+  '127.0.0.1': 'local'
+};
+function stagerzSelectEnvironment(hostname, origin, getLocalKey){
+  var name = Object.prototype.hasOwnProperty.call(STAGERZ_HOST_ENVIRONMENT, hostname) ? STAGERZ_HOST_ENVIRONMENT[hostname] : null;
+  if(!name) return { ok: false, reason: 'unknown-host' };
+  var env = STAGERZ_ENVIRONMENTS[name];
+  var key = env.supabaseKey || (typeof getLocalKey === 'function' ? getLocalKey() : null);
+  if(!key) return { ok: false, reason: 'environment-not-configured', name: name };
+  return { ok: true, name: name, supabaseUrl: env.supabaseUrl, supabaseKey: key, authRedirectUrl: env.authRedirectUrl || origin };
+}
+// === STAGERZ ENVIRONMENT SELECTION (END) ===
+var STAGERZ_ENV = stagerzSelectEnvironment(window.location.hostname, window.location.origin, function(){
+  try{ return window.localStorage.getItem('stagerz:local-supabase-key'); }catch(e){ return null; }
+});
+var SUPA_URL = STAGERZ_ENV.ok ? STAGERZ_ENV.supabaseUrl : null;
+var SUPA_KEY = STAGERZ_ENV.ok ? STAGERZ_ENV.supabaseKey : null;
 
 // Phase 21.2 -- guarded initialisation. The vendor bundle binds a global
 // `var supabase`, so when the SDK does not load the identifier is not
@@ -1031,7 +1070,9 @@ var supabaseClient = null;
 var startupFailure = null;
 
 try{
-  if(typeof supabase === 'undefined' || !supabase || typeof supabase.createClient !== 'function'){
+  if(!STAGERZ_ENV.ok){
+    startupFailure = STAGERZ_ENV.reason;
+  } else if(typeof supabase === 'undefined' || !supabase || typeof supabase.createClient !== 'function'){
     startupFailure = 'sdk-unavailable';
   } else {
     supabaseClient = supabase.createClient(SUPA_URL, SUPA_KEY);
@@ -1050,7 +1091,9 @@ function showStartupFailure(code){
   console.error('STAGERZ startup failed:', code);
   var msg = document.getElementById('bootMessage');
   var actions = document.getElementById('bootActions');
-  if(msg) msg.textContent = 'STAGERZ could not start. Please check your connection and reload.';
+  if(msg) msg.textContent = (code === 'unknown-host' || code === 'environment-not-configured')
+    ? 'This address is not configured for STAGERZ.'
+    : 'STAGERZ could not start. Please check your connection and reload.';
   if(actions) actions.style.display = 'block';
 }
 
@@ -1420,7 +1463,7 @@ async function sendOtp(isResend){
   var btn = document.getElementById(isResend ? null : 'authEmailBtn');
   if(btn){ btn.textContent = 'SENDING...'; btn.style.opacity = '.6'; }
   try{
-    var res = await supabaseClient.auth.signInWithOtp({ email: email, options: { shouldCreateUser: true, emailRedirectTo: 'https://stagerz.app' } });
+    var res = await supabaseClient.auth.signInWithOtp({ email: email, options: { shouldCreateUser: true, emailRedirectTo: STAGERZ_ENV.authRedirectUrl } });
     if(res.error){
       console.error('sendOtp FAILED:', res.error);
       showToast(backendErrorMessage(res.error, 'Could not send email. Please try again.'));
