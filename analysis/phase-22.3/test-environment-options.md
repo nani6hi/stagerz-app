@@ -6,9 +6,13 @@
 
 **Constraints (facts, 2026-09-19):**
 - organisation `STAGERZ` on the **Free** plan;
-- **2 active projects**: production `kbnmkyvbwkuvcklywdhk` and the contained legacy `edxicnafggnnvcdvxemk`;
+- **2 active projects**: production `kbnmkyvbwkuvcklywdhk` and the contained legacy `edxicnafggnnvcdvxemk`; — **SUPERSEDED 2026-09-20, see the note below**
 - the Free limit is 2 active free projects, and paused projects do not count;
 - local: Supabase CLI 2.117.0 installed; **Docker not installed**; `pg_dump` not installed.
+
+> **SUPERSEDING NOTE (2026-09-20) — the constraints above are preserved as the dated facts of 2026-09-19 and are NOT rewritten.**
+> **Current state:** the legacy project `edxicnafggnnvcdvxemk` was **exported and paused** by the owner and is verified **`INACTIVE`**, so there is now **one active project**, production `kbnmkyvbwkuvcklywdhk`. The Free-plan active-project slot constraint is therefore **resolved**, against the owner-observed dashboard rule (free-project limit 2; another free project requires one to be deleted, paused or upgraded).
+> This **satisfies the prerequisite for T2 only — it does NOT authorize creating T2**, which remains an unapproved owner decision, as does a Pro upgrade. **DELETE of the legacy project remains NOT authorized.** The paused-project restore/retention window is **not established and must not be guessed**. The historical reasoning in the comparison table below is unchanged. See `analysis/phase-22.5/legacy-paused-record.md`.
 
 Prices are Supabase documentation list prices, not quotes.
 
