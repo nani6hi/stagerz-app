@@ -1,6 +1,17 @@
 # Phase 22.3 — Production / Test Label Inventory (F)
 
-**Status:** inventory only; **wording not changed yet**. Update 2026-09-19: L-4 and L-5 (the hard-coded backend and redirect) were addressed by owner decision 4. `index.html` now selects the backend and the redirect by hostname (`frontend-environment-mapping.md`), with production values unchanged. The comment wording (L-1 … L-3) still awaits the §5 product decision.
+**Status: CLEANUP APPLIED 2026-09-20** (branch `phase-22.3-production-label-cleanup`), after Phase 22.2 designated `kbnmkyvbwkuvcklywdhk` the production backend and PR #26 established the repository-backed baseline.
+
+| Item | Action taken |
+|---|---|
+| L-1, L-2, L-3 (`index.html` TEST ONLY / "disposable test project" / "test version" comments) | **Reworded to current reality** (comments only, no behaviour change): the shipped flow is passwordless magic link; the production email template is link-based; custom SMTP is off; a numeric-code UX is named as a **separate future product / SMTP decision**, not as current behaviour or as a commitment. See §5 |
+| L-4, L-5 (hard-coded backend and redirect) | Addressed earlier by owner decision 4: `index.html` selects both by hostname (`frontend-environment-mapping.md`), production values unchanged |
+| L-6 (project name `stagerz-foundation-v2-test`) | **Unchanged** — the rename is deferred (owner decision 3). Dashboard metadata, not repository wording |
+| L-7, L-8 (function fallback origin, workflow URL) | **Unchanged** — correct for production; per-environment via `STAGERZ_ALLOWED_ORIGIN` |
+| L-9, L-10, L-11, L-12 (`PROJECT_CONTEXT.md` "test project" / "status not established" wording) | **Corrected**: each now names `kbnmkyvbwkuvcklywdhk` as the production backend of record while preserving the historical fact that its status was not yet established when those changes were applied |
+| L-13 (open question quoting the `index.html` labels) | **Marked ANSWERED and CLOSED**, with the answer and its phase references; the original question text is preserved |
+| L-15 (stale `emailRedirectTo` line reference) | **Corrected** in `PROJECT_CONTEXT.md` with an update note; the Phase 21.3 `backend-contract.md` citation is left as the historical record it is |
+| L-14, L-16, L-17 and all `analysis/` history | **Unchanged by design** — historical records keep their original wording |
 
 **Classes:**
 - **F1** documentation-only;
