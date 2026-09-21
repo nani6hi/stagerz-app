@@ -2,11 +2,12 @@
 
 **Branch of this prerequisite step:** `phase-22.5-local-supabase-url-override`, from `main` @
 `0e27be81685a3c4459615e92d8ddc5ae0bb27a32`.
-**Status:** **IN PROGRESS — gates C3, D and G CLOSED (2026-09-22).** T2 `kjhszwlddzqxcglkpzrn`:
-canonical baseline applied, **fingerprint 20/20** (before and after testing); **C3 PASS**; **D PASS**
-(D1–D6, through the shipped app in real headless Edge); **G PASS** (G1–G4, including the drainer's
-first present-object run). Only the **destructive half of E** remains open, and it is **NOT
-APPROVED**. Record: `t2-execution-record.md` §12–§13.
+**Status:** **IN PROGRESS — all four target gates PASS: C3, D, G and E (2026-09-22). Phase 22.5 is
+NOT yet complete:** the phase closeout and T2 disposition remain separate owner decisions. T2
+`kjhszwlddzqxcglkpzrn`: fingerprint 20/20 before and after every test phase. **E1** `delete-account`
+(valid session, dedicated disposable account) and **E2** seeded `process-pending-deletions` (second
+disposable account) both PASS; no fixture touched; orphan-reaper destructive mode NOT RUN. An
+access-token hardening follow-up is carried forward. Record: `t2-execution-record.md` §12–§15.
 **Production backend of record:** `kbnmkyvbwkuvcklywdhk` — never used for any destructive test.
 
 ---
