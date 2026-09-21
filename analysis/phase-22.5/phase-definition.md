@@ -2,11 +2,11 @@
 
 **Branch of this prerequisite step:** `phase-22.5-local-supabase-url-override`, from `main` @
 `0e27be81685a3c4459615e92d8ddc5ae0bb27a32`.
-**Status:** **IN PROGRESS — non-destructive setup COMPLETE (2026-09-22).** T2 created as
-`kjhszwlddzqxcglkpzrn`; canonical baseline applied, **fingerprint gate 20/20**; **gate C3 CLOSED**;
-Edge Functions deployed; 16/16 safe probes PASS. A first T2 attempt failed the gate on a CRLF
-transport artifact and was replaced. Gates **D** and **G** runs, and the **destructive half of E**,
-remain open — the latter awaits separate owner approval. Record: `t2-execution-record.md`.
+**Status:** **IN PROGRESS — gates C3, D and G CLOSED (2026-09-22).** T2 `kjhszwlddzqxcglkpzrn`:
+canonical baseline applied, **fingerprint 20/20** (before and after testing); **C3 PASS**; **D PASS**
+(D1–D6, through the shipped app in real headless Edge); **G PASS** (G1–G4, including the drainer's
+first present-object run). Only the **destructive half of E** remains open, and it is **NOT
+APPROVED**. Record: `t2-execution-record.md` §12–§13.
 **Production backend of record:** `kbnmkyvbwkuvcklywdhk` — never used for any destructive test.
 
 ---

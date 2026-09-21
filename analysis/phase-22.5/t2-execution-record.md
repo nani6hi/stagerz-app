@@ -267,7 +267,7 @@ token.)*
 
 ---
 
-## 11. Gate status after this run
+## 11. Gate status after this run — **SUPERSEDED by §13 (Gates D and G, 2026-09-22)**
 
 | Gate | Status |
 |---|---|
@@ -278,3 +278,138 @@ token.)*
 
 Housekeeping: CLI link residue (`supabase/.temp/`, pointing at the deleted first T2) was removed
 from the working tree; the repository contains no CLI state, secret or backup artifact.
+
+---
+
+## 12. Gates D and G — executed 2026-09-22 against T2 only
+
+**Approval scope:** Gates D and G on T2 (`kjhszwlddzqxcglkpzrn`) only. **Not approved and not run:**
+the destructive half of Gate E (`delete-account` with a valid session, a seeded
+`process-pending-deletions`, any throwaway account, any Auth-user deletion, reaper delete mode).
+
+### Preflight — all invariants PASS
+
+`main` = `a11c7183f5f002006025b07621663c5280ce513f`, clean tree; T2 `ACTIVE_HEALTHY`; production and
+legacy refs refused by a guard in every query and delete helper; **fingerprint 20/20 before
+testing**; fixture/C3 state consistent (3 auth users, 0 non-fixture, 3 mappings, 7 users, 0
+anonymised, 1 collaboration with 2 participants); all 4 Edge Functions `ACTIVE`; reaper delete flag
+unset.
+
+### Method
+
+- The **shipped application** (`index.html` served content-identical to `main` at
+  `http://localhost:8080`) ran in **real Microsoft Edge (headless)**, driven over the DevTools
+  protocol. It targeted T2 through the approved `stagerz:local-supabase-url` /
+  `stagerz:local-supabase-key` override — **no application code was changed**. Resolved
+  environment: `local`, URL = T2, `startupFailure = null`.
+- Sign-in used an **admin-generated magic link**: the browser was navigated to the link exactly as a
+  user clicking it would be, and no mail was sent. Second-user sessions (for controls) were minted
+  from the same admin API and verified server-side. **No link, token, key or secret was printed or
+  stored in the repository.**
+- Every test went through the **app's own functions** where one exists: `getMyDomainId()`,
+  `fetchMyProfile()`, `supaSelect()`, `supaUpdate()`, `openCollaboration()` (with its own Realtime
+  subscription), `uploadCollaborationAsset()` and `deleteCollaborationAssetPrompt()`.
+
+### Gate D — PASS
+
+| ID | Result | Evidence |
+|---|---|---|
+| **D1** Authentication | **PASS** | Real Auth session for `fixture_owner` (`aud=authenticated`, access and refresh tokens present); landed on `localhost:8080` with the token cleared from the URL; the app entered `screen-stage`. **After a full page reload the session was restored** for the same user and Stage was shown again |
+| **D2** Account contract | **PASS** | `getMyDomainId()` resolved the public user id through `user_auth_accounts`; `fetchMyProfile()` returned `username = fixture_owner` |
+| **D3** Authenticated reads | **PASS** | Own profile, `public_profiles` (another artist, non-empty `display_name`), Stage (`wanted_posts` open: 4 rows), collaboration, participants (2), messages (1), tasks (1) — all HTTP 200, with `supaSelect()` returning the same rows. Own `users` row read with **exactly the app's 7 columns** → HTTP 200, 1 row; **another user's row → 0 rows** (policy *"authenticated can read own row"*) |
+| **D4** Anonymous denial | **PASS** | Anonymous `users`, `user_auth_accounts` and `collaboration_messages` → **HTTP 401 / `42501`, 0 rows** |
+| **D5** Reversible write | **PASS** | `supaUpdate('profiles', …, {bio: marker})` → HTTP 200; read-back showed the marker; restored to the exact original (an **empty string**); read-back equal. Independently confirmed by an unchanged fixture row-hash that distinguishes `null` from `''` |
+| **D6** Realtime | **PASS** | `openCollaboration()` joined the app's own channel `realtime:collaboration-…0301` (`state = joined`); the G1 upload produced `postgres_changes` that **the app's own channel received**, for both `collaboration_assets` and `collaboration_activity` |
+
+**Three test-design corrections, recorded rather than hidden:**
+
+1. **D3 own `users` row — run 1 returned 403.** The probe requested `select=*`. `authenticated` has
+   **no table-level** `SELECT` on `users`, only **column-level** `SELECT` on 7 columns (the Phase
+   21.3 W-1/W-3 narrowing), which are exactly the columns the app requests in `fetchMyProfile()`.
+   With those columns the read returns 200. The 403 came from the test's column list, not a defect.
+2. **D4 `profiles` — anonymous read returned 200.** `profiles` carries the explicit policy
+   **`profiles are publicly readable`** (roles `public`, `using true`), with anonymous column grants
+   limited to 16 public artist fields (display name, bio, skills, location, counts, …). It is a
+   **deliberate public surface**, identical in production (the fingerprint matches policies and
+   grants 20/20), so the test had misclassified it as protected. `public_profiles` is likewise
+   public (INFO).
+3. **Separate cross-user Realtime control — INCONCLUSIVE, and NOT used as evidence.** Beyond the
+   required test, a second participant (`fixture_member`) and a nonparticipant
+   (`fixture_applicant`) were subscribed from a separate Deno script. The member received nothing,
+   although the app's own channel did. Because that positive control failed, the nonparticipant's
+   "0 events" is uninterpretable. **This control is used neither as evidence for D6 nor as evidence
+   of nonparticipant Realtime isolation**, and **it is not required to close Gate D**. A plausible
+   cause is how the script authenticated its Realtime connection; that was not investigated, and it
+   was not re-run, to avoid further writes and scope.
+
+   **The required D6 PASS rests solely on the application's own Realtime collaboration channel**
+   (`openCollaboration()` → `realtime:collaboration-…0301`, `state = joined`), which received the
+   `postgres_changes` events for `collaboration_assets` and `collaboration_activity`.
+
+### Gate G — PASS
+
+| ID | Result | Evidence |
+|---|---|---|
+| **G1** Authorised upload | **PASS** | `uploadCollaborationAsset()` as `fixture_owner`: a 321-byte object (a text header plus every byte value 0–255) accepted by Storage under the fixture collaboration folder; metadata row created |
+| **G2** Authorised download | **PASS** | Owner download: 321 bytes, **SHA-256 identical**. Control: the other participant (`fixture_member`) also downloaded an identical object |
+| **G3** Nonparticipant refusal | **PASS** | `fixture_applicant` (verified not a participant): download **refused** (`Object not found`), **no content returned**; folder listing showed **0 objects**. Anonymous download: **HTTP 400**, no content |
+| **G4** Deletion path + drainer | **PASS** (see caveat) | `deleteCollaborationAssetPrompt()` (confirm answered OK) soft-deleted the asset and queued **exactly 1** row matching its id and path. `process-pending-asset-deletions` with the T2 maintenance secret → **HTTP 200, `processed = 1`, status `deleted`** — the **first exercise of the drainer's present-object branch**. Afterwards: catalog 0 objects, queue 0, asset rows 0; participant listing 0; metadata API 400; one immediate download on the previously used URL returned 200 (see caveat), after which that URL and a cache-busted URL returned **HTTP 400, no content**; a second drainer run processed 0 |
+
+**G4 caveat — a transient post-delete 200.**
+
+*Observation (fact):*
+
+- `process-pending-asset-deletions` reported `processed = 1`, status `deleted`.
+- The Storage catalog then held **0 objects**; `pending_asset_deletions` and `collaboration_assets`
+  were both **empty**; a participant's folder listing showed 0 objects.
+- A participant download issued **immediately** afterwards, on the **previously used URL**, returned
+  **HTTP 200 — once**. The same participant token had downloaded that same URL moments before the
+  drain.
+- **Shortly afterwards the same URL returned HTTP 400** with no content.
+- A **cache-busted URL returned HTTP 400** with no content, and the metadata API returned 400.
+- A **second drainer run processed 0**.
+
+*Hypothesis (not proven):* a plausible explanation for the single 200 is **CDN / edge caching** of
+the earlier response to the same URL and token, with invalidation not yet propagated. **This is not
+established:** cache-related response headers were **not captured** on the 200 response, so the
+cause cannot be confirmed from this run. It was deliberately not re-investigated, to avoid another
+T2 write.
+
+*Recorded finding:* immediately after deletion, the previously used URL returned the object once for
+a participant who had just fetched it; the object was unavailable shortly afterwards. The cause is
+unconfirmed.
+
+### Post-test state
+
+| Check | Result |
+|---|---|
+| Fixture row-hash (users, profiles incl. `bio`, posts, messages, collaboration, participants) | **Identical** to pre-test (`5201c9e527f03ea5f18525a3ee9178fa`) |
+| Auth users / mappings / anonymised | 3 / 3 / 0 — **no Auth user deleted** |
+| `pending_auth_deletions` | **0 — never seeded** |
+| Storage objects / `pending_asset_deletions` / `collaboration_assets` | 0 / 0 / 0 — **the G test object is gone** |
+| Auth sessions | 0 — every test session signed out |
+| Expected residual fixture data | +2 `collaboration_activity` (`asset_uploaded`, `asset_deleted`) and +1 notification (`collaboration_asset_uploaded`) — trigger side effects of the app's own upload and delete paths |
+| Reaper delete flag | Unset |
+| **Fingerprint after testing** | **20/20 PASS** |
+
+CLI residue (`supabase/.temp/`, created by a CLI call from the repository root) was removed again;
+the working tree contains no CLI state, key, secret or backup artifact.
+
+### Production and legacy — unchanged
+
+- **Production `kbnmkyvbwkuvcklywdhk`:** `ACTIVE_HEALTHY`; **43 migrations, latest
+  `20260917143322`**; Edge Functions still v8 / v9 / v11 / v4 with identical bundle hashes and
+  timestamps. Read-only queries only.
+- **Legacy `edxicnafggnnvcdvxemk`:** `INACTIVE`, untouched.
+- No DNS, Netlify, GitHub Pages or GitHub Actions change.
+
+---
+
+## 13. Gate status after Gates D and G
+
+| Gate | Status |
+|---|---|
+| **C3** | **CLOSED — PASS** (§5) |
+| **D** | **CLOSED — PASS** (§12). D6 rests on the app's own Realtime channel; the separate cross-user control was inconclusive, is not used as evidence, and is not required |
+| **G** | **CLOSED — PASS** (§12), with one transient post-delete HTTP 200 recorded (cause unconfirmed; caching is a hypothesis only) |
+| **E** | Non-destructive half done (§8); the drainer's present-object branch is now exercised (G4). **Destructive half — `delete-account` and a seeded `process-pending-deletions` — NOT APPROVED, NOT RUN** |
