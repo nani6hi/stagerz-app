@@ -2,8 +2,11 @@
 
 **Branch of this prerequisite step:** `phase-22.5-local-supabase-url-override`, from `main` @
 `0e27be81685a3c4459615e92d8ddc5ae0bb27a32`.
-**Status:** **PREREQUISITE IN PROGRESS.** The frontend local-URL override is implemented; **T2 has
-NOT been created and is NOT authorized**; the gates remain open.
+**Status:** **IN PROGRESS — non-destructive setup COMPLETE (2026-09-22).** T2 created as
+`kjhszwlddzqxcglkpzrn`; canonical baseline applied, **fingerprint gate 20/20**; **gate C3 CLOSED**;
+Edge Functions deployed; 16/16 safe probes PASS. A first T2 attempt failed the gate on a CRLF
+transport artifact and was replaced. Gates **D** and **G** runs, and the **destructive half of E**,
+remain open — the latter awaits separate owner approval. Record: `t2-execution-record.md`.
 **Production backend of record:** `kbnmkyvbwkuvcklywdhk` — never used for any destructive test.
 
 ---
