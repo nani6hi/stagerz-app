@@ -6,6 +6,8 @@
 configuration, Edge Function deployment, and safe non-destructive probes.
 **Not executed, and not authorized:** `delete-account`; a seeded `process-pending-deletions` run;
 creation or destruction of destructive-test throwaway accounts; any destructive Storage cleanup.
+*(Scope statement for the original run, preserved. SUPERSEDED: Gates D/G and the destructive half
+of Gate E were later executed under separate owner approvals — see §12 and §14.)*
 
 ---
 
@@ -405,7 +407,7 @@ the working tree contains no CLI state, key, secret or backup artifact.
 
 ---
 
-## 13. Gate status after Gates D and G
+## 13. Gate status after Gates D and G — **SUPERSEDED by §15 (Gate E, 2026-09-22)**
 
 | Gate | Status |
 |---|---|
@@ -413,3 +415,176 @@ the working tree contains no CLI state, key, secret or backup artifact.
 | **D** | **CLOSED — PASS** (§12). D6 rests on the app's own Realtime channel; the separate cross-user control was inconclusive, is not used as evidence, and is not required |
 | **G** | **CLOSED — PASS** (§12), with one transient post-delete HTTP 200 recorded (cause unconfirmed; caching is a hypothesis only) |
 | **E** | Non-destructive half done (§8); the drainer's present-object branch is now exercised (G4). **Destructive half — `delete-account` and a seeded `process-pending-deletions` — NOT APPROVED, NOT RUN** |
+
+---
+
+## 14. Destructive Gate E — executed 2026-09-22 against T2 only
+
+### Owner approval boundary
+
+Approved: **E1** — one dedicated, newly created disposable T2 Auth account tested through
+`delete-account` with a valid session; **E2** — one different dedicated, newly created disposable
+T2 Auth account tested through a seeded `process-pending-deletions` run.
+
+Explicitly **not** approved, and **not** done: deleting, anonymising or queueing any fixture or
+showcase/system user; any account beyond E1 and E2; destructive orphan-reaper mode; repeating the
+asset drainer (already proven in G4); any change to Edge Function source, Auth configuration,
+secrets, schema, RLS, baseline, seeds or GitHub Actions; any production or legacy change.
+
+### Safety preflight — all invariants PASS
+
+`main` = `d6839c4a61c53c9676bc23c383398016cf65cb03`, clean tree; T2 `kjhszwlddzqxcglkpzrn`
+`ACTIVE_HEALTHY`; production `kbnmkyvbwkuvcklywdhk` and legacy `edxicnafggnnvcdvxemk` (`INACTIVE`)
+confirmed by ref, not by name; **fingerprint 20/20**; 3 fixture Auth users and 0 others; 3
+mappings; 0 anonymised; `pending_auth_deletions` empty and no fixture pending; Storage empty;
+asset queue empty; 0 sessions; collaboration scenario intact; reaper delete flag unset.
+
+### Deny-list procedure
+
+1. **Captured before any creation:** the 3 fixture Auth user ids and **all 7 pre-existing public
+   user ids** (so showcase/system users were protected too), plus a content hash over every
+   pre-existing user, profile, mapping, Auth user, collaboration and participant row
+   (`6bbcc06c7d11cce29314b0bbe4a1d9ef`).
+2. **A single guard module** used by every destructive step: it refuses any URL containing the
+   production or legacy ref, refuses anything not on the T2 host, refuses malformed ids, and
+   refuses any Auth id or public id on the deny-list.
+3. **The guard was proven before use:** it refused all 3 fixture Auth ids, a pre-existing public
+   id, both protected refs and a malformed id, and allowed only novel ids (the control).
+4. **Re-checked immediately before each destructive call:** before `delete-account` (the session's
+   own user id and the target public id), before seeding (inside the SQL transaction), and before
+   the drainer (every row in the **live** queue).
+
+### E1 — `delete-account` end-to-end: **PASS (14/14)**
+
+Target: a new account labelled `gate-e1-disposable-…@stagerz.test`, created with the Auth admin API
+(`email_confirm`), whose `on_auth_user_created` trigger produced the public row, profile and
+mapping as for a real sign-up. It was **not** on the deny-list. Before deletion, server-side: 4
+Auth users (3 fixtures + E1), 4 mappings, E1 not anonymised, pre-existing hash unchanged.
+
+| Check | Result |
+|---|---|
+| Real session | Minted for the E1 account only via an admin-generated magic link (never printed); `uid` matched the target; `GET /auth/v1/user` 200; own mapping row visible |
+| **Invocation** | **First approved valid-session call:** `delete-account` → **HTTP 200, `status: processed`, one result, E1's Auth id, `status: deleted`** |
+| Auth user | **Removed** (admin API 404) |
+| Mapping | **Removed** — `user_auth_accounts` row cascaded (FK `ON DELETE CASCADE`) |
+| Application account | `public.users` row **retained and anonymised**: `anonymized_at` set; `username`, `first_name`, `last_name`, `photo_url`, `bio`, `location` all null |
+| Profile | `display_name = 'Deleted User'`; `role`, `location`, `country_flag` empty; `skills`, `looking_for` empty arrays |
+| Public surface | `public_profiles`: `display_name = 'Deleted User'`, `is_deleted = true` |
+| Queue | `pending_auth_deletions` entry **cleared** |
+| Old session — Auth | `GET /auth/v1/user` → **403** |
+| Old session — refresh | Refresh token → **400**, no new session |
+| Old session — data | The database API (PostgREST) still **accepted** the unexpired access JWT (HTTP 200); the **one tested** own-identity lookup (own `user_auth_accounts` row) returned **0 rows**, because the mapping was gone. Other endpoints were not tested — see Findings (hardening follow-up) |
+| **Idempotency** | Second call with the same, now-deleted session → **401 `Invalid session.`**, refused at `getUser()` before any admin action |
+
+**`already_processed` branch — NOT exercised, and it does not block E1 PASS.** The implementation
+reaches that branch only for a caller whose Auth user still exists but whose mapping is already
+gone — for example after a failed Auth deletion. In the successful-deletion scenario the deleted Auth
+identity can no longer authenticate, so `getUser()` rejects it (401) before the branch can be
+reached. Exercising it would need another account; **no additional account was created**, per the
+approval boundary.
+
+### E2 — `process-pending-deletions` end-to-end: **PASS (8/8)**
+
+Target: a **different** new account labelled `gate-e2-disposable-…@stagerz.test` (Auth id, public
+id and e-mail all distinct from E1), created the same way, not on the deny-list.
+
+**Seeded state.** In production a `pending_auth_deletions` row exists only after
+`admin_anonymize_account` has run — `delete-account` anonymises first, queues, and then deletes the
+Auth user; the drainer exists for the case where that last step fails. The faithful pre-state is
+therefore **anonymised + queued**, and exactly that was seeded, **for E2 only**, in one transaction
+guarded against fixture ids, pre-existing public ids, any account that was not the E2 disposable
+account, a mapping mismatch, and a non-empty queue. Result: queue rows = 1, the sole row = E2,
+fixture rows queued = 0, E2 anonymised, E2 Auth user present.
+
+> *Harness incident, recorded:* the first seed attempt failed with an SQL syntax error (malformed
+> dollar-quoting in the generated SQL) and was rejected before executing anything. **Zero mutation
+> was verified** — queue still empty, only E1 anonymised, E2 untouched — before the same seed, for
+> the same target, was regenerated correctly and applied. No replacement target was created.
+
+| Check | Result |
+|---|---|
+| Live-queue pre-check | Exactly 1 row, the E2 target; no fixture queued; differs from E1; every row passed the deny-list guard; project ref re-verified |
+| **Invocation** | `process-pending-deletions` with the T2 maintenance secret (never printed) → **HTTP 200, `processed = 1`, E2's Auth id, `status: deleted`** |
+| Auth user | **Removed** (admin API 404) |
+| Mapping | **Removed** (cascade) |
+| Application account | `public.users` row retained and still anonymised — the drainer deletes only the Auth user, per contract |
+| Queue | Entry **cleared** |
+| Second invocation | **HTTP 200, `processed = 0`** |
+
+### Fixture preservation and post-state
+
+| Check | Result |
+|---|---|
+| Pre-existing data hash | **Identical** before E1, after E1 and after E2 (`6bbcc06c7d11cce29314b0bbe4a1d9ef`) |
+| Fixture Auth users | **Exactly 3**, all present; 0 non-fixture Auth users |
+| Fixture mappings | **3 / 3** intact |
+| Disposable accounts | **Both gone** from Auth |
+| Collaboration scenario | 1 collaboration, 2 participants, 1 message, 1 task — unchanged |
+| `pending_auth_deletions` / `pending_asset_deletions` | 0 / 0 |
+| Storage objects / `collaboration_assets` | 0 / 0 |
+| Sessions / live refresh tokens | 0 / 0 |
+| Reaper delete flag | **Unset** — destructive reaper mode **not run** |
+| Expected residue | **2 anonymised `Deleted User` public rows** (E1, E2) — the implemented contract retains and scrubs the application row rather than deleting it |
+| **Fingerprint after destructive testing** | **20/20 PASS** |
+
+### Production and legacy — unchanged
+
+- **Production `kbnmkyvbwkuvcklywdhk`:** `ACTIVE_HEALTHY`; **43 migrations, latest
+  `20260917143322`**; Edge Functions still v8 / v9 / v11 / v4 with identical bundle hashes and
+  timestamps. Read-only queries only.
+- **Legacy `edxicnafggnnvcdvxemk`:** `INACTIVE`, untouched.
+
+### Findings
+
+1. **SECURITY / HARDENING FOLLOW-UP — existing access JWTs may remain technically usable at the
+   database API until expiry.**
+
+   *Observed, after the successful E1 deletion:*
+   - Supabase Auth **rejected** the deleted user's existing session on user lookup
+     (`GET /auth/v1/user` → 403).
+   - The refresh token **could not** create a new session (400).
+   - The still-unexpired access JWT was nevertheless **accepted** by the database API (PostgREST,
+     HTTP 200).
+   - With that JWT, the **one tested** own-identity lookup — the user's own `user_auth_accounts`
+     row — returned **0 rows**, because the identity mapping was gone.
+
+   *Not tested, and not claimed:* that deleted-user access tokens are harmless; that a deleted user
+   can access nothing; that every RLS path, view, RPC or Storage endpoint is safe after account
+   deletion. Only the single lookup above was exercised.
+
+   *Follow-up:* existing access JWTs may remain technically usable at the database API until they
+   expire, subject to the claims and RLS behaviour of each endpoint. The captured **production**
+   JWT lifetime is **3600 seconds**; **T2's lifetime was not independently observed**. Candidate
+   hardening options (not evaluated here): a shorter JWT lifetime, or endpoint-by-endpoint review
+   of what an `authenticated` token without an application identity can reach.
+
+2. **Account deletion is anonymisation plus Auth removal — not full data erasure.**
+
+   *Demonstrated at runtime (E1, and E2 for the drainer path):* the Auth login is removed; the
+   `user_auth_accounts` mapping is removed; the `public.users` row is **retained but anonymised**
+   (personal columns nulled, `anonymized_at` set); the profile and `public_profiles` presentation
+   become **`Deleted User`** (`is_deleted = true`).
+
+   *Established from the implementation, not observed at runtime:* authored or referenced
+   application content (posts, collaborations, messages, tasks, assets, credits, activity) is
+   **retained** and remains attributed to the anonymised user. The deletion path contains no
+   content-deletion step. **The two disposable accounts authored no content, so this retention was
+   not itself exercised in these tests.**
+
+3. **`already_processed` is not reachable from a normal client after a successful deletion** (see
+   E1). It was not exercised, and that does not affect the E1 result.
+
+---
+
+## 15. Gate status after Gate E
+
+| Gate | Status |
+|---|---|
+| **C3** | **CLOSED — PASS** (§5) |
+| **D** | **CLOSED — PASS** (§12). D6 rests on the app's own Realtime channel; the separate cross-user control was inconclusive, is not used as evidence, and is not required |
+| **G** | **CLOSED — PASS** (§12), with one transient post-delete HTTP 200 recorded (cause unconfirmed; caching is a hypothesis only) |
+| **E** | **CLOSED — PASS.** E1 `delete-account` **PASS**; E2 `process-pending-deletions` **PASS** (§14). Retained earlier evidence: unauthorised and invalid `delete-account` requests PASS (§8); empty-queue `process-pending-deletions` PASS (§8); `process-pending-asset-deletions` real-object path PASS (G4, §12); orphan reaper dry-run PASS (§8). **Orphan-reaper destructive mode was NOT RUN**, and it is not required to close the currently defined Phase 22.5 target gates |
+
+**Phase 22.5 itself is NOT yet marked COMPLETE.** All four currently defined target gates pass, but
+the phase closeout and the disposition of T2 remain separate owner decisions. The access-token
+hardening follow-up (§14, Findings 1) is carried forward.
