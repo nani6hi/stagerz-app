@@ -7,6 +7,9 @@
 the closeout is **approved**; Phase 22.5 may be recorded as **COMPLETE / PASS**. T2 disposition is
 **not executed**, and T2 stays intact until this closeout is merged. Docker/WSL are **not** removed.
 The local repository folder is **not** moved.
+**Post-closeout update (2026-09-22):** after this closeout merged (PR #37, `3318b8f`), the owner
+approved the disposal of T2, and T2 `kjhszwlddzqxcglkpzrn` was **permanently deleted**. See §6.1.
+The Phase 22.5 verdict is unchanged.
 
 Evidence of record: `phase-definition.md`, `preflight.md`, `t2-execution-record.md` (§1–§15),
 `legacy-pre-pause-record.md`, `legacy-paused-record.md`. This document summarises that evidence. It
@@ -222,7 +225,7 @@ failure; they are a hardening follow-up.
 
 **Verdict: SAFE TO DISPOSE after this closeout is merged.**
 
-T2 `kjhszwlddzqxcglkpzrn` **still exists** and is **not deleted or paused**. It holds only:
+*At closeout,* T2 `kjhszwlddzqxcglkpzrn` still existed and was not deleted or paused. It held only:
 - the fixture and showcase data
 - the 2 expected anonymised `Deleted User` rows left by E1/E2
 
@@ -235,7 +238,45 @@ required Phase 22.5 purpose, and it can be rebuilt reproducibly from the canonic
 | Pause | Preserves nothing the phase requires |
 | Retain temporarily | Only useful as a scratch target for later hardening work |
 
-The disposition requires a separate explicit owner action. **It has not been executed.**
+At closeout, the disposition required a separate explicit owner action and had not been executed.
+It has since been executed (§6.1).
+
+### 6.1 Disposition outcome — T2 permanently deleted (2026-09-22)
+
+- **Approval:** the owner approved permanent deletion after this closeout merged (PR #37,
+  `main` @ `3318b8f1d3e78d780ff0ea9eb4480a9cb61d563e`). A read-only pre-deletion check first confirmed
+  the three project refs, T2's status (`ACTIVE_HEALTHY`) and that T2 had no remaining purpose.
+- **Target:** identified by exact project ref, `kjhszwlddzqxcglkpzrn` (name
+  `stagerz-t2-disposable-test-r2`), never by name alone. An identity guard ran on a fresh project
+  list immediately before each delete invocation. It required the target ref with the expected
+  name, and both protected refs present separately.
+- **Execution (2026-09-22, Supabase CLI, by ref):**
+  1. The first `supabase projects delete kjhszwlddzqxcglkpzrn` invocation, without `--yes`, was
+     **cancelled at the confirmation prompt** (`context canceled`). It never passed the confirmation
+     gate and **made no change**. A read-only re-check showed all three projects present and
+     unchanged.
+  2. The identity guard was re-run and passed. The second invocation, with `--yes`, returned
+     `Deleted project` for `stagerz-t2-disposable-test-r2`, **exit 0**.
+- **Final observed state (read-only project list after deletion):**
+
+  | Ref | Supabase project name | Role | Status |
+  |---|---|---|---|
+  | `kbnmkyvbwkuvcklywdhk` | `stagerz-foundation-v2-test` | **Production** (the name is historical and misleading) | `ACTIVE_HEALTHY` |
+  | `edxicnafggnnvcdvxemk` | `stagerz-app` | **Legacy** (the name is misleading) | `INACTIVE` |
+  | `kjhszwlddzqxcglkpzrn` | `stagerz-t2-disposable-test-r2` | Disposable T2 | **ABSENT — permanently deleted** |
+
+- **No replacement T2 was created.** Production and legacy were not modified, and no other project
+  was changed.
+- **What was destroyed:** T2's database, Auth data, Storage state, Edge Function deployments and
+  configuration, and its project settings and secrets, including the T2-only maintenance secret.
+- **What is preserved in Git:**
+  - the canonical baseline and the fingerprint definitions
+  - `t2-execution-record.md`, the C3/D/E/G evidence and this closeout
+
+  If another disposable environment is needed later, it can be rebuilt from the canonical baseline
+  and the documented configuration. Apply the raw LF blob; see `t2-execution-record.md` §2.
+- **Unchanged:** Docker/WSL have **not** been uninstalled, and the local STAGERZ folder has **not**
+  been moved.
 
 ---
 
@@ -268,7 +309,8 @@ validation objectives were satisfied:
 - all security hardening is complete, including the JWT follow-up in §4.3
 - destructive orphan reaping was tested
 - all production data issues are resolved, including the 2 `collaboration_assets` rows
-- T2 has been disposed of, or Docker/WSL removed
+- Docker/WSL have been removed (T2's later disposal, §6.1, is a separate owner action and not part
+  of this verdict)
 
 ---
 
