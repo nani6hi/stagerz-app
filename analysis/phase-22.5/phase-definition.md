@@ -2,8 +2,15 @@
 
 **Branch of this prerequisite step:** `phase-22.5-local-supabase-url-override`, from `main` @
 `0e27be81685a3c4459615e92d8ddc5ae0bb27a32`.
-**Status:** **IN PROGRESS — all four target gates PASS: C3, D, G and E (2026-09-22). Phase 22.5 is
-NOT yet complete:** the phase closeout and T2 disposition remain separate owner decisions. T2
+**Status:** **COMPLETE / PASS — closed 2026-09-22.** Gates C3, D, E and G all CLOSED — PASS on the
+disposable T2 `kjhszwlddzqxcglkpzrn`; production and legacy unchanged. Qualifications carried into
+the closeout: AC2 (the first T2 fingerprint failure was CRLF transport mutation, not the SQL) and the
+owner-accepted AC6 qualification (the public `/otp` magic-link sign-up endpoint was **not**
+exercised). Orphan-reaper destructive mode NOT RUN (not required); the access-token hardening
+follow-up is carried forward. T2 still exists — its disposition is a separate owner action. COMPLETE
+/ PASS does **not** mean STAGERZ is production- or public-beta-ready. Closeout: `closeout.md`.
+*Status before closeout (historical, preserved):* **IN PROGRESS — all four target gates PASS: C3, D,
+G and E (2026-09-22). Phase 22.5 is NOT yet complete:** the phase closeout and T2 disposition remain separate owner decisions. T2
 `kjhszwlddzqxcglkpzrn`: fingerprint 20/20 before and after every test phase. **E1** `delete-account`
 (valid session, dedicated disposable account) and **E2** seeded `process-pending-deletions` (second
 disposable account) both PASS; no fixture touched; orphan-reaper destructive mode NOT RUN. An
