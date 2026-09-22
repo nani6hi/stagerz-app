@@ -7,7 +7,7 @@ disposable T2 `kjhszwlddzqxcglkpzrn`; production and legacy unchanged. Qualifica
 the closeout: AC2 (the first T2 fingerprint failure was CRLF transport mutation, not the SQL) and the
 owner-accepted AC6 qualification (the public `/otp` magic-link sign-up endpoint was **not**
 exercised). Orphan-reaper destructive mode NOT RUN (not required); the access-token hardening
-follow-up is carried forward. T2 still exists — its disposition is a separate owner action. COMPLETE
+follow-up is carried forward. T2 was permanently deleted on 2026-09-22 after the closeout merged (owner-approved; `closeout.md` §6.1). COMPLETE
 / PASS does **not** mean STAGERZ is production- or public-beta-ready. Closeout: `closeout.md`.
 *Status before closeout (historical, preserved):* **IN PROGRESS — all four target gates PASS: C3, D,
 G and E (2026-09-22). Phase 22.5 is NOT yet complete:** the phase closeout and T2 disposition remain separate owner decisions. T2
