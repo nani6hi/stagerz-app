@@ -6,11 +6,39 @@ Decisions.**
 **Branch of this definition step:** `phase-23.0-production-reverification`, from `main` @
 `0a5b7cb9598ee376244d48b15ecb82f51eaf30f2`.
 
-**Status: DEFINITION ONLY — NOTHING HAS BEEN EXECUTED.** This document defines Phase 23.0. It does
-not perform it. **No production re-verification has been executed**, no production query has been
-issued, and no Supabase, GitHub, Netlify or DNS state has been read or changed by this step. Owner
-approval to *begin Phase 23.0* is approval to write this definition — it is **not** approval to run
-the capture defined in §5. That requires a separate owner go-ahead (§8, gate SG-1).
+**Status: COMPLETE / PASS — Phase 23.0 closed 2026-09-23.** All thirteen gates R-1 … R-13 are
+satisfied; **R-7 and R-13 carry explicitly recorded, owner-acknowledged qualifications** (the CAPTCHA
+provider was not captured and is immaterial while CAPTCHA is OFF; R-13's endpoint equality is not a
+mathematical proof of non-mutation). **R-11 closed on 2026-09-23 when the owner decided all seven
+OD-23.0 items** — `owner-decision-register.md`, which also records the eight decision-to-current-state
+gaps G-1 … G-8 assigned to later sub-phases. **COMPLETE / PASS does NOT mean STAGERZ is ready for an
+external beta, and it does not mean any owner decision is implemented; Phase 23.0 changed nothing, by
+design.** Verdict and reasoning: `closeout.md`. **Next phase: Phase 23.1 — Backup & Restore
+Capability — NOT started and not authorised by this document**; §I additionally requires the baseline
+committed, this closeout merged, and explicit owner approval. Phase 22.5 remains COMPLETE / PASS and
+is not reopened.
+
+*Status during execution (historical, preserved):* **SG-1 APPROVED AND EXECUTED — READ-ONLY CAPTURE
+COMPLETE (2026-09-23). Phase 23.0 is NOT yet closed.** The owner approved stop gate SG-1 and the
+read-only production capture defined in §D
+was executed against `kbnmkyvbwkuvcklywdhk` on 2026-09-23 (00:13:51Z–00:16:40Z). **Result:
+production is unchanged since 2026-09-19 — fingerprint 20/20, every recorded count identical, both
+maintenance queues empty, Advisor state identical (1 ERROR / 26 WARN / 2 INFO).** **R-7 was closed on
+2026-09-23 by the owner's manual read-only dashboard capture** — GoTrue settings are
+**OWNER/DASHBOARD-CAPTURED**, never tool-read, and are kept separate from the TOOL-READ database
+observations. Gates **R-1 … R-10, R-12 and R-13 PASS**; **R-11 is OPEN** — the seven owner decisions
+are presented, not answered, and **Phase 23.0 must not be marked COMPLETE / PASS merely because R-7
+is closed.** **No production mutation
+was issued or observed**, no Edge Function was invoked in any mode, the legacy project's database was
+never queried, and no disposable project was created. Record: `production-reverification-record.md`.
+**No later Phase 23.x sub-phase has been started.**
+
+*Status before SG-1 (historical, preserved):* **DEFINITION ONLY — NOTHING HAS BEEN EXECUTED.** This
+document defines Phase 23.0. It does not perform it. **No production re-verification has been
+executed**, no production query has been issued, and no Supabase, GitHub, Netlify or DNS state has
+been read or changed by this step. Owner approval to *begin Phase 23.0* is approval to write this
+definition — it is **not** approval to run the capture defined in §5. That requires a separate owner
+go-ahead (§8, gate SG-1).
 
 **Production backend of record:** `kbnmkyvbwkuvcklywdhk`. **Nothing in Phase 23.0 may mutate it.**
 
